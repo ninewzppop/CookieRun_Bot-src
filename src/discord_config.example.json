@@ -1,0 +1,9 @@
+{
+  "webhook_url": "",
+  "enabled": false,
+  "notify_boxes": true,
+  "notify_rounds": true,
+  "notify_antibot": true,
+  "notify_status": true,
+  "attach_screenshot": true
+}

@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CookieRun Classic Bot - Web Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Prompt', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              400: '#fb923c',
+              500: '#f97316',
+              600: '#ea580c',
+            },
+            dark: {
+              bg: '#0f172a',
+              card: '#1e293b',
+              border: '#334155',
+              hover: '#334155'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background: radial-gradient(circle at top right, #1e1b4b 0%, #0f172a 50%, #020617 100%);
+      min-height: 100vh;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    .tap-ripple {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(249, 115, 22, 0.6);
+      transform: translate(-50%, -50%) scale(0);
+      animation: ripple 0.5s ease-out forwards;
+      pointer-events: none;
+    }
+    @keyframes ripple {
+      to {
+        transform: translate(-50%, -50%) scale(2.5);
+        opacity: 0;
+      }
+    }
+    .rainbow-gradient {
+      background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc, #f472b6, #fbbf24);
+    }
+  </style>
+</head>
+<body class="text-slate-100 font-sans antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Navbar -->
+  <header class="sticky top-0 z-40 backdrop-blur-md bg-slate-900/80 border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20 text-2xl">
+          🍪
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-wide text-white flex items-center gap-2">
+            CookieRun Classic <span class="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Bot Dashboard</span>
+          </h1>
+          <p class="text-xs text-slate-400">ระบบควบคุม สตรีมมิ่ง และตรวจจับกล่องปริศนาแยกเกรด</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Status Indicator -->
+        <div id="status-pill" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-xs font-medium">
+          <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+          <span id="status-text" class="text-slate-300">Idle (ไม่ได้เริ่ม)</span>
+        </div>
+
+        <!-- Uptime Badge -->
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-xs font-mono text-slate-300">
+          ⏱️ <span id="uptime-display">00:00:00</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- Primary Stats Bar -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-slate-800/80 backdrop-blur border border-slate-700/70 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div>
+          <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">สถานะปัจจุบัน</p>
+          <h3 id="stat-stage" class="text-base sm:text-lg font-bold text-orange-400 mt-1 truncate max-w-[150px]">IDLE</h3>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-xl text-orange-400">
+          🎯
+        </div>
+      </div>
+
+      <div class="bg-slate-800/80 backdrop-blur border border-slate-700/70 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div>
+          <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">รอบที่เล่น (Rounds)</p>
+          <h3 id="stat-rounds" class="text-2xl font-bold text-white mt-1">0</h3>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xl text-emerald-400">
+          🏃
+        </div>
+      </div>
+
+      <div class="bg-slate-800/80 backdrop-blur border border-slate-700/70 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div>
+          <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">กล่องรวมทั้งหมด</p>
+          <h3 id="stat-boxes" class="text-2xl font-bold text-amber-400 mt-1">0</h3>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-xl text-amber-400">
+          🎁
+        </div>
+      </div>
+
+      <div class="bg-slate-800/80 backdrop-blur border border-slate-700/70 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div>
+          <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">เวลาทำงาน (Uptime)</p>
+          <h3 id="stat-uptime" class="text-2xl font-bold text-sky-400 mt-1 font-mono">00:00:00</h3>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-xl text-sky-400">
+          ⏳
+        </div>
+      </div>
+    </div>
+
+    <!-- Real-time Accumulated Coin & EXP Tracking Card -->
+    <div class="bg-gradient-to-r from-amber-950/50 via-slate-800/90 to-sky-950/50 border border-amber-500/40 rounded-2xl p-5 shadow-xl space-y-4">
+      <div class="flex items-center justify-between border-b border-amber-500/20 pb-3">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">💰</span>
+          <div>
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+              สถิติเหรียญ & EXP สะสม (Accumulated Coins & EXP)
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-normal">Real-time</span>
+            </h2>
+            <p class="text-xs text-slate-400">บวกสะสมยอดเหรียญและ EXP จริงต่อเนื่องตลอดการปล่อยบอท</p>
+          </div>
+        </div>
+        <span id="stat-coins-badge" class="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full font-mono font-bold">
+          Active Session
+        </span>
+      </div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <!-- Total Session Coins Earned -->
+        <div class="bg-slate-900/70 border border-amber-500/30 rounded-xl p-3.5 flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-semibold text-amber-300/80 uppercase tracking-wider">📈 เหรียญสะสมทั้งหมด</p>
+            <h3 id="stat-coins-earned" class="text-xl sm:text-2xl font-bold text-amber-300 font-mono mt-1">+0 🪙</h3>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-xl text-amber-400 shrink-0">
+            ✨
+          </div>
+        </div>
+
+        <!-- Total Session EXP Earned -->
+        <div class="bg-slate-900/70 border border-sky-500/30 rounded-xl p-3.5 flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-semibold text-sky-300/80 uppercase tracking-wider">⭐ EXP สะสมทั้งหมด</p>
+            <h3 id="stat-xp-earned" class="text-xl sm:text-2xl font-bold text-sky-300 font-mono mt-1">+0 EXP</h3>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-xl text-sky-400 shrink-0">
+            🌟
+          </div>
+        </div>
+
+        <!-- Last Round Coins -->
+        <div class="bg-slate-900/70 border border-slate-700/70 rounded-xl p-3.5 flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">🏁 เหรียญรอบล่าสุด</p>
+            <h3 id="stat-coins-last" class="text-xl sm:text-2xl font-bold text-white font-mono mt-1">0 🪙</h3>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xl text-emerald-400 shrink-0">
+            🍪
+          </div>
+        </div>
+
+        <!-- Last Round EXP -->
+        <div class="bg-slate-900/70 border border-slate-700/70 rounded-xl p-3.5 flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">🎯 EXP รอบล่าสุด</p>
+            <h3 id="stat-xp-last" class="text-xl sm:text-2xl font-bold text-sky-200 font-mono mt-1">0 EXP</h3>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-xl text-indigo-400 shrink-0">
+            🎖️
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mystery Box Tier Breakdown (4 Boxes) -->
+    <div class="bg-slate-800/90 backdrop-blur border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-700/80 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">📦</span>
+          <h2 class="text-sm sm:text-base font-bold text-white">สถิติจำนวนกล่องปริศนา (Mystery Boxes Breakdown)</h2>
+        </div>
+        <span class="text-xs text-slate-400 font-mono">ตรวจจับภาพอัตโนมัติ 4 ระดับ</span>
+      </div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <!-- Wood Box -->
+        <div class="bg-gradient-to-b from-amber-950/40 to-slate-900/80 border border-amber-800/40 rounded-xl p-3.5 flex items-center gap-3 relative overflow-hidden group hover:border-amber-700/60 transition">
+          <div class="w-12 h-12 rounded-lg bg-amber-900/30 border border-amber-700/40 flex items-center justify-center shrink-0 shadow-inner p-1">
+            <img src="/templates/BOX_WOOD.png" alt="Wood Box" class="w-full h-full object-contain drop-shadow" onerror="this.outerHTML='🟤'">
+          </div>
+          <div>
+            <p class="text-[11px] font-semibold text-amber-300 uppercase tracking-wider">กล่องไม้ (Wood)</p>
+            <h4 id="box-count-wood" class="text-2xl font-bold text-amber-100 font-mono mt-0.5">0</h4>
+          </div>
+          <div class="absolute right-2 top-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-900/50 text-amber-300 font-mono">Common</div>
+        </div>
+
+        <!-- Silver Box -->
+        <div class="bg-gradient-to-b from-slate-700/30 to-slate-900/80 border border-slate-600/50 rounded-xl p-3.5 flex items-center gap-3 relative overflow-hidden group hover:border-slate-500/70 transition">
+          <div class="w-12 h-12 rounded-lg bg-slate-700/40 border border-slate-500/40 flex items-center justify-center shrink-0 shadow-inner p-1">
+            <img src="/templates/BOX_SILVER.png" alt="Silver Box" class="w-full h-full object-contain drop-shadow" onerror="this.outerHTML='⚪'">
+          </div>
+          <div>
+            <p class="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">กล่องเงิน (Silver)</p>
+            <h4 id="box-count-silver" class="text-2xl font-bold text-white font-mono mt-0.5">0</h4>
+          </div>
+          <div class="absolute right-2 top-2 text-[10px] px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-300 font-mono">Rare</div>
+        </div>
+
+        <!-- Gold Box -->
+        <div class="bg-gradient-to-b from-yellow-950/40 to-slate-900/80 border border-yellow-600/40 rounded-xl p-3.5 flex items-center gap-3 relative overflow-hidden group hover:border-yellow-500/60 transition">
+          <div class="w-12 h-12 rounded-lg bg-yellow-900/30 border border-yellow-500/40 flex items-center justify-center shrink-0 shadow-inner p-1">
+            <img src="/templates/BOX_GOLD.png" alt="Gold Box" class="w-full h-full object-contain drop-shadow" onerror="this.outerHTML='🟡'">
+          </div>
+          <div>
+            <p class="text-[11px] font-semibold text-yellow-300 uppercase tracking-wider">กล่องทอง (Gold)</p>
+            <h4 id="box-count-gold" class="text-2xl font-bold text-yellow-100 font-mono mt-0.5">0</h4>
+          </div>
+          <div class="absolute right-2 top-2 text-[10px] px-1.5 py-0.5 rounded bg-yellow-900/50 text-yellow-300 font-mono">Epic</div>
+        </div>
+
+        <!-- Rainbow Box -->
+        <div class="bg-gradient-to-b from-indigo-950/40 to-slate-900/80 border border-purple-500/40 rounded-xl p-3.5 flex items-center gap-3 relative overflow-hidden group hover:border-purple-400/70 transition">
+          <div class="w-12 h-12 rounded-lg bg-purple-900/40 border border-purple-400/50 flex items-center justify-center shrink-0 shadow-inner shadow-purple-500/10 p-1">
+            <img src="/templates/BOX_RAINBOW.png" alt="Rainbow Box" class="w-full h-full object-contain drop-shadow" onerror="this.outerHTML='🌈'">
+          </div>
+          <div>
+            <p class="text-[11px] font-semibold bg-gradient-to-r from-cyan-300 via-pink-300 to-amber-300 bg-clip-text text-transparent uppercase tracking-wider">กล่องรุ้ง (Rainbow)</p>
+            <h4 id="box-count-rainbow" class="text-2xl font-bold text-pink-100 font-mono mt-0.5">0</h4>
+          </div>
+          <div class="absolute right-2 top-2 text-[10px] px-1.5 py-0.5 rounded rainbow-gradient text-slate-900 font-bold font-mono">Legendary</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Left Column: Screen Stream + Logs (7 cols) -->
+      <div class="lg:col-span-7 space-y-6">
+
+        <!-- Live Emulator Screen Card -->
+        <div class="bg-slate-800/90 backdrop-blur border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
+          <div class="px-5 py-3.5 border-b border-slate-700/80 flex items-center justify-between bg-slate-900/50">
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+              <h2 class="text-sm font-semibold text-white">Live Screen (แตะบนจอเพื่อคลิก)</h2>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-slate-400 bg-slate-800 px-2.5 py-1 rounded-md border border-slate-700 font-mono">1280×720</span>
+              <button onclick="reloadStream()" title="รีเฟรชสตรีม" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition">
+                🔄
+              </button>
+              <a href="/api/screenshot" target="_blank" title="ดูภาพหน้าจอเต็ม" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition">
+                📸
+              </a>
+            </div>
+          </div>
+
+          <!-- Video Stream Container -->
+          <div class="relative bg-black aspect-video flex items-center justify-center overflow-hidden group cursor-crosshair select-none" id="stream-container">
+            <img id="stream-img" src="/api/stream" alt="Live Screen Stream" class="w-full h-full object-contain pointer-events-auto" />
+            <div id="stream-overlay" class="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg border border-white/10 text-xs font-mono text-orange-300">
+              Stage: <span id="overlay-stage">IDLE</span>
+            </div>
+          </div>
+          <div class="px-4 py-2 bg-slate-900/60 text-[11px] text-slate-400 flex items-center justify-between border-t border-slate-800">
+            <span>💡 คลิกตำแหน่งใดก็ได้บนหน้าจอเพื่อจำลองการแตะ (Tap) บน Emulator</span>
+            <span id="tap-feedback" class="text-orange-400 font-mono"></span>
+          </div>
+        </div>
+
+        <!-- 50-Round Detailed History Card -->
+        <div class="bg-slate-800/90 backdrop-blur border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
+          <div class="px-5 py-3.5 border-b border-slate-700/80 flex items-center justify-between bg-slate-900/50">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">📜</span>
+              <div>
+                <h3 class="text-sm font-bold text-white">ประวัติการเล่นย้อนหลัง 50 รอบ</h3>
+                <p class="text-[11px] text-slate-400">คลิกที่แต่ละรอบเพื่อดูภาพผลลัพธ์จบเกม (เงิน / EXP / กล่อง)</p>
+              </div>
+            </div>
+            <span id="history-total-badge" class="text-xs text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2.5 py-1 rounded-full font-mono font-semibold">0 รอบ</span>
+          </div>
+
+          <div class="p-3.5 max-h-[320px] overflow-y-auto custom-scrollbar">
+            <div id="round-history-container" class="space-y-2">
+              <div class="text-xs text-slate-500 italic p-4 text-center">[ยังไม่มีประวัติการเล่นในเซสชันนี้ — เมื่อจบเกมจะบันทึกที่นี่อัตโนมัติ]</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real-time Logs Card -->
+        <div class="bg-slate-800/90 backdrop-blur border border-slate-700 rounded-2xl overflow-hidden shadow-xl flex flex-col h-[280px]">
+          <div class="px-5 py-3 border-b border-slate-700/80 flex items-center justify-between bg-slate-900/50">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold text-white">💻 Live Console Logs</span>
+              <span id="ws-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono">WebSocket Connected</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer">
+                <input type="checkbox" id="autoscroll-toggle" checked class="rounded border-slate-700 text-orange-500 focus:ring-0">
+                Auto-scroll
+              </label>
+              <button onclick="clearLogs()" class="text-xs text-slate-400 hover:text-slate-200 px-2 py-1 rounded bg-slate-800 border border-slate-700">
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div id="logs-container" class="flex-1 p-4 overflow-y-auto font-mono text-xs space-y-1.5 custom-scrollbar bg-slate-950/70">
+            <div class="text-slate-500 italic">[Waiting for logs...]</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Controls & Settings (5 cols) -->
+      <div class="lg:col-span-5 space-y-6">
+
+        <!-- Master Bot Controls Card -->
+        <div class="bg-slate-800/90 backdrop-blur border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            🎮 ควบคุมการทำงาน
+          </h2>
+
+          <!-- Main Start/Stop Button -->
+          <button id="btn-toggle-bot" onclick="toggleBot()" class="w-full py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-200 shadow-lg bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white shadow-emerald-500/25">
+            <span class="text-2xl">▶</span>
+            <span>เริ่มทำงานบอท (Start Bot)</span>
+          </button>
+
+          <!-- Secondary Action Buttons -->
+          <div class="grid grid-cols-2 gap-3 pt-1">
+            <button onclick="testConnection()" class="py-2.5 px-3 rounded-xl bg-slate-700/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition border border-slate-600">
+              🔌 ทดสอบเชื่อมต่อ ADB
+            </button>
+            <button onclick="resetGameApp()" class="py-2.5 px-3 rounded-xl bg-slate-700/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition border border-slate-600">
+              🔄 รีสตาร์ทแอปเกม
+            </button>
+          </div>
+
+          <div id="conn-test-result" class="hidden text-xs p-3 rounded-xl border"></div>
+        </div>
+
+        <!-- Configuration Settings Card -->
+        <div class="bg-slate-800/90 backdrop-blur border border-slate-700 rounded-2xl p-5 shadow-xl space-y-5">
+          <div class="flex items-center justify-between border-b border-slate-700/80 pb-3">
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+              ⚙️ ตั้งค่าการเล่น (Bot Settings)
+            </h2>
+            <div class="flex items-center gap-2">
+              <span id="settings-save-badge" class="text-[11px] text-emerald-400 font-medium hidden">💾 จำค่าแล้ว</span>
+              <button onclick="resetStats()" class="text-xs text-orange-400 hover:text-orange-300">
+                รีเซ็ตสถิติ
+              </button>
+            </div>
+          </div>
+
+          <!-- Connection Config -->
+          <div class="space-y-3">
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+              ADB Connection (Emulator)
+            </label>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="col-span-2">
+                <input type="text" id="cfg-ip" value="127.0.0.1" oninput="saveBotSettingsAuto()" placeholder="IP" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500 font-mono">
+              </div>
+              <div>
+                <input type="number" id="cfg-port" value="5595" oninput="saveBotSettingsAuto()" placeholder="Port" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500 font-mono">
+              </div>
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              <span class="text-[11px] text-slate-400 self-center mr-1">Presets:</span>
+              <button onclick="setPreset('127.0.0.1', 5595)" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 hover:border-orange-500 text-slate-300 transition">
+                MuMu (5595)
+              </button>
+              <button onclick="setPreset('127.0.0.1', 16384)" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 hover:border-orange-500 text-slate-300 transition">
+                MuMu / LD2 (16384)
+              </button>
+              <button onclick="setPreset('127.0.0.1', 5555)" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 hover:border-orange-500 text-slate-300 transition">
+                LD / BS (5555)
+              </button>
+              <button onclick="setPreset('127.0.0.1', 62001)" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 hover:border-orange-500 text-slate-300 transition">
+                Nox (62001)
+              </button>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-700/60 pt-4 space-y-4">
+            <!-- Fast Start Section -->
+            <div class="space-y-2.5 bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/60">
+              <label class="flex items-center justify-between cursor-pointer group">
+                <div>
+                  <span class="text-sm font-semibold text-white group-hover:text-orange-300 transition">⚡ ใช้งาน Fast Start (ออกตัวเร็ว)</span>
+                  <p class="text-xs text-slate-400">กดใช้ไอเทมออกตัวเร็วเมื่อเริ่มเกม</p>
+                </div>
+                <input type="checkbox" id="cfg-fast-start" onchange="saveBotSettingsAuto()" class="w-5 h-5 rounded bg-slate-900 border-slate-700 text-orange-500 focus:ring-0">
+              </label>
+              <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-800">
+                <span class="text-slate-400 flex items-center gap-1">🛒 ซื้อเพิ่มเมื่อเหลือน้อยกว่าหรือเท่ากับ:</span>
+                <div class="flex items-center gap-1.5">
+                  <input type="number" id="cfg-fast-start-min" value="10" min="0" max="999" oninput="saveBotSettingsAuto()" class="w-16 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-center text-xs text-amber-300 font-bold focus:outline-none focus:border-orange-500 font-mono">
+                  <span class="text-slate-400">ชิ้น</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cookie Relay Section -->
+            <div class="space-y-2.5 bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/60">
+              <label class="flex items-center justify-between cursor-pointer group">
+                <div>
+                  <span class="text-sm font-semibold text-white group-hover:text-orange-300 transition">🍪 ใช้งาน Cookie Relay (ผลัดคุกกี้)</span>
+                  <p class="text-xs text-slate-400">กดใช้ตัวผลัดคุกกี้เมื่อตัวหลักหมดพลัง</p>
+                </div>
+                <input type="checkbox" id="cfg-cookie-relay" onchange="saveBotSettingsAuto()" class="w-5 h-5 rounded bg-slate-900 border-slate-700 text-orange-500 focus:ring-0">
+              </label>
+              <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-800">
+                <span class="text-slate-400 flex items-center gap-1">🛒 ซื้อเพิ่มเมื่อเหลือน้อยกว่าหรือเท่ากับ:</span>
+                <div class="flex items-center gap-1.5">
+                  <input type="number" id="cfg-cookie-relay-min" value="10" min="0" max="999" oninput="saveBotSettingsAuto()" class="w-16 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-center text-xs text-amber-300 font-bold focus:outline-none focus:border-orange-500 font-mono">
+                  <span class="text-slate-400">ชิ้น</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Random Boost Toggle & Selector -->
+            <div class="space-y-2">
+              <label class="flex items-center justify-between cursor-pointer group">
+                <div>
+                  <span class="text-sm font-semibold text-white group-hover:text-orange-300 transition">🎲 สุ่ม Random Boost ที่ต้องการ</span>
+                  <p class="text-xs text-slate-400">สุ่มซื้อจนกว่าจะได้บัฟที่เลือกไว้</p>
+                </div>
+                <input type="checkbox" id="cfg-random-boost" onchange="toggleBoostSelect(); saveBotSettingsAuto();" class="w-5 h-5 rounded bg-slate-900 border-slate-700 text-orange-500 focus:ring-0">
+              </label>
+
+              <div id="boost-select-wrap" class="hidden pl-2">
+                <select id="cfg-boost-id" onchange="saveBotSettingsAuto()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500">
+                  <option value="double_coins">Double Coins (เหรียญ x2)</option>
+                  <option value="score_15">+15% Score Bonus (คะแนน +15%)</option>
+                  <option value="hp_drain_15">-15% HP Drain (พลังลดช้าลง 15%)</option>
+                  <option value="revive_80">Revive Once with 80 HP (ฟื้นคืนชีพ 80 HP)</option>
+                  <option value="crush_70">70% Crush Chance (โอกาสทำลายสิ่งกีดขวาง 70%)</option>
+                  <option value="speed_17">+17% Base Speed (ความเร็วพื้นฐาน +17%)</option>
+                  <option value="coin_magic">Gold Coin Magic (เวทมนตร์เหรียญทอง)</option>
+                  <option value="damage_30">-30% Collision Damage (ลดความเสียหายชน 30%)</option>
+                  <option value="potions_20">+20% HP from Potions (เพิ่มพลังจากขวดเลือด 20%)</option>
+                  <option value="magnetic">Magnetic Aura (ออร่าแม่เหล็ก)</option>
+                  <option value="pit_lifts_2">2 Pit Lifts (ช่วยตกเหว 2 ครั้ง)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Relic Detect Toggle -->
+            <label class="flex items-center justify-between cursor-pointer group">
+              <div>
+                <span class="text-sm font-semibold text-white group-hover:text-orange-300 transition">🏺 เปิดกล่อง Relic อัตโนมัติ</span>
+                <p class="text-xs text-slate-400">ตรวจจับและกดรับชิ้นส่วนสมบัติโบราณ</p>
+              </div>
+              <input type="checkbox" id="cfg-detect-relic" checked onchange="saveBotSettingsAuto()" class="w-5 h-5 rounded bg-slate-900 border-slate-700 text-orange-500 focus:ring-0">
+            </label>
+
+            <!-- Send Friend Lives -->
+            <label class="flex items-center justify-between cursor-pointer group">
+              <div>
+                <span class="text-sm font-semibold text-white group-hover:text-orange-300 transition">💌 ส่งหัวใจให้เพื่อน</span>
+                <p class="text-xs text-slate-400">กดรับและส่งหัวใจให้เพื่อนทุก ~30 นาที</p>
+              </div>
+              <input type="checkbox" id="cfg-send-lives" checked onchange="saveBotSettingsAuto()" class="w-5 h-5 rounded bg-slate-900 border-slate-700 text-orange-500 focus:ring-0">
+            </label>
+
+            <!-- Auto-Stop Goals Section -->
+            <div class="border-t border-slate-700/60 pt-3.5 space-y-3">
+              <div class="flex items-center gap-2">
+                <span class="text-base">🎯</span>
+                <span class="text-sm font-bold text-amber-300">ตั้งเป้าหมายหยุดบอทอัตโนมัติ (Auto-Stop Goals)</span>
+              </div>
+
+              <!-- Goal 1: Max Rounds -->
+              <div class="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-slate-700/60">
+                <label class="flex items-center gap-2.5 cursor-pointer">
+                  <input type="checkbox" id="cfg-goal-rounds-enabled" onchange="saveBotSettingsAuto()" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-orange-500 focus:ring-0">
+                  <span class="text-xs text-white font-semibold">🔄 หยุดเมื่อวิ่งครบ:</span>
+                </label>
+                <div class="flex items-center gap-1.5">
+                  <input type="number" id="cfg-goal-rounds-target" value="50" min="1" max="9999" oninput="saveBotSettingsAuto()" class="w-20 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-center text-xs text-amber-300 font-bold focus:outline-none focus:border-orange-500 font-mono">
+                  <span class="text-xs text-slate-400">รอบ</span>
+                </div>
+              </div>
+
+              <!-- Goal 2: Max Time (Hours) -->
+              <div class="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-slate-700/60">
+                <label class="flex items-center gap-2.5 cursor-pointer">
+                  <input type="checkbox" id="cfg-goal-time-enabled" onchange="saveBotSettingsAuto()" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-orange-500 focus:ring-0">
+                  <span class="text-xs text-white font-semibold">⏳ หยุดเมื่อปล่อยครบ:</span>
+                </label>
+                <div class="flex items-center gap-1.5">
+                  <input type="number" id="cfg-goal-time-hours" value="2" min="0.1" step="0.5" max="72" oninput="saveBotSettingsAuto()" class="w-20 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-center text-xs text-amber-300 font-bold focus:outline-none focus:border-orange-500 font-mono">
+                  <span class="text-xs text-slate-400">ชั่วโมง</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Discord Notification Card -->
+        <div class="bg-slate-800/90 backdrop-blur border border-indigo-500/30 rounded-2xl p-5 shadow-xl space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-700/80 pb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">📢</span>
+              <h2 class="text-base font-bold text-white">แจ้งเตือนผ่าน Discord</h2>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="discord-enabled" class="sr-only peer" onchange="saveDiscordSettings()">
+              <div class="w-11 h-6 bg-slate-900 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+            </label>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div>
+              <label class="block font-semibold text-slate-300 mb-1">Discord Webhook URL</label>
+              <input type="text" id="discord-webhook-url" placeholder="https://discord.com/api/webhooks/..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <button onclick="saveDiscordSettings(true)" class="py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center justify-center gap-1.5 transition">
+                💾 บันทึก
+              </button>
+              <button onclick="testDiscordWebhook()" class="py-2 px-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold flex items-center justify-center gap-1.5 transition border border-slate-600">
+                🧪 ทดสอบส่ง
+              </button>
+            </div>
+
+            <div id="discord-test-result" class="hidden p-2.5 rounded-xl border text-[11px]"></div>
+
+            <div class="border-t border-slate-700/60 pt-3 space-y-2.5">
+              <label class="flex items-center justify-between cursor-pointer">
+                <span class="text-slate-300">🏁 แจ้งเตือนผลลัพธ์ทุกรอบ (เงิน & EXP ต่อรอบ/สะสม)</span>
+                <input type="checkbox" id="discord-notify-rounds" checked onchange="saveDiscordSettings()" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-500">
+              </label>
+              <label class="flex items-center justify-between cursor-pointer">
+                <span class="text-slate-300">🎁 แจ้งเตือนเมื่อได้กล่องปริศนา (แนบรูป)</span>
+                <input type="checkbox" id="discord-notify-boxes" checked onchange="saveDiscordSettings()" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-500">
+              </label>
+              <label class="flex items-center justify-between cursor-pointer">
+                <span class="text-slate-300">⚠️ แจ้งเตือนเมื่อเจอ Anti-Bot</span>
+                <input type="checkbox" id="discord-notify-antibot" checked onchange="saveDiscordSettings()" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-500">
+              </label>
+              <label class="flex items-center justify-between cursor-pointer">
+                <span class="text-slate-300">🚀 แจ้งเตือนสถานะเริ่ม/หยุด/หลุด</span>
+                <input type="checkbox" id="discord-notify-status" checked onchange="saveDiscordSettings()" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-500">
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info Card -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 text-xs text-slate-400 space-y-1.5">
+          <p class="font-semibold text-slate-300">📌 ข้อมูลระบบ:</p>
+          <p id="info-adb" class="font-mono text-[11px] truncate">ADB Path: Loading...</p>
+          <p>⚠️ ความละเอียดหน้าจอต้องตั้งเป็น <strong>1280 × 720 (DPI 240)</strong> เสมอ</p>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Round Detail Modal -->
+  <div id="round-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl space-y-4 p-5 custom-scrollbar">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h3 id="modal-round-title" class="text-lg font-bold text-white flex items-center gap-2">
+            🏁 ผลลัพธ์รอบที่ #0
+          </h3>
+          <p id="modal-round-meta" class="text-xs text-slate-400 font-mono mt-0.5">เวลา: 00:00:00 | ใช้เวลา: 0s</p>
+        </div>
+        <button onclick="closeRoundModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-700">
+          ✕
+        </button>
+      </div>
+
+      <!-- Box Rewards in that round -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">📦 กล่องปริศนาที่ได้ในรอบนี้:</h4>
+        <div id="modal-boxes-list" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <!-- Result Screen Snapshot -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">📸 ภาพหน้าจอผลลัพธ์จริง (เงิน, EXP, คะแนน):</h4>
+          <a id="modal-img-link" href="#" target="_blank" class="text-xs text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1 font-medium">
+            🔍 เปิดดูภาพขนาดเต็ม ↗
+          </a>
+        </div>
+        <div class="bg-black rounded-xl overflow-hidden border border-slate-800 aspect-video flex items-center justify-center relative group">
+          <img id="modal-screenshot-img" src="" alt="Round Result Screen" class="w-full h-full object-contain" onerror="this.src='/api/stream'">
+        </div>
+      </div>
+
+      <div class="pt-2 flex items-center justify-between border-t border-slate-800/80">
+        <span class="text-[11px] text-slate-400">💡 ภาพบันทึกจากหน้าจอ Emulator ขณะจบเกมรอบนี้</span>
+        <button onclick="closeRoundModal()" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let isRunning = false;
+    let ws = null;
+
+    // Load available boosts
+    async function loadBoostOptions() {
+      try {
+        const res = await fetch('/api/boosts');
+        const boosts = await res.json();
+        const select = document.getElementById('cfg-boost-id');
+        select.innerHTML = '';
+        boosts.forEach(b => {
+          const opt = document.createElement('option');
+          opt.value = b.id;
+          opt.textContent = b.name;
+          select.appendChild(opt);
+        });
+      } catch (e) {
+        console.error("Failed to load boosts", e);
+      }
+    }
+
+    async function loadBotSettings() {
+      // 1. Try LocalStorage first for instant UI response
+      try {
+        const local = localStorage.getItem('cr_bot_settings');
+        if (local) {
+          applySettings(JSON.parse(local));
+        }
+      } catch (e) {}
+
+      // 2. Fetch authoritative settings from backend JSON
+      try {
+        const res = await fetch('/api/settings');
+        if (res.ok) {
+          const data = await res.json();
+          applySettings(data);
+          localStorage.setItem('cr_bot_settings', JSON.stringify(data));
+        }
+      } catch (e) {
+        console.error("Failed to load bot settings from server", e);
+      }
+    }
+
+    function applySettings(data) {
+      if (!data) return;
+      if (data.device_ip !== undefined) document.getElementById('cfg-ip').value = data.device_ip;
+      if (data.device_port !== undefined) document.getElementById('cfg-port').value = data.device_port;
+      if (data.use_fast_start !== undefined) document.getElementById('cfg-fast-start').checked = !!data.use_fast_start;
+      if (data.fast_start_min_stock !== undefined) document.getElementById('cfg-fast-start-min').value = data.fast_start_min_stock;
+      if (data.use_cookie_relay !== undefined) document.getElementById('cfg-cookie-relay').checked = !!data.use_cookie_relay;
+      if (data.cookie_relay_min_stock !== undefined) document.getElementById('cfg-cookie-relay-min').value = data.cookie_relay_min_stock;
+      if (data.use_desired_random_boost !== undefined) document.getElementById('cfg-random-boost').checked = !!data.use_desired_random_boost;
+      toggleBoostSelect();
+      if (data.desired_boost_id !== undefined) document.getElementById('cfg-boost-id').value = data.desired_boost_id;
+      if (data.detect_relic !== undefined) document.getElementById('cfg-detect-relic').checked = !!data.detect_relic;
+      if (data.send_friend_lives !== undefined) document.getElementById('cfg-send-lives').checked = !!data.send_friend_lives;
+      if (data.stop_goal_rounds_enabled !== undefined) document.getElementById('cfg-goal-rounds-enabled').checked = !!data.stop_goal_rounds_enabled;
+      if (data.stop_goal_rounds_target !== undefined) document.getElementById('cfg-goal-rounds-target').value = data.stop_goal_rounds_target;
+      if (data.stop_goal_time_enabled !== undefined) document.getElementById('cfg-goal-time-enabled').checked = !!data.stop_goal_time_enabled;
+      if (data.stop_goal_time_hours !== undefined) document.getElementById('cfg-goal-time-hours').value = data.stop_goal_time_hours;
+    }
+
+    async function saveBotSettingsAuto() {
+      const payload = {
+        device_ip: document.getElementById('cfg-ip').value.trim() || '127.0.0.1',
+        device_port: parseInt(document.getElementById('cfg-port').value) || 5595,
+        use_fast_start: document.getElementById('cfg-fast-start').checked,
+        fast_start_min_stock: parseInt(document.getElementById('cfg-fast-start-min').value) || 10,
+        use_cookie_relay: document.getElementById('cfg-cookie-relay').checked,
+        cookie_relay_min_stock: parseInt(document.getElementById('cfg-cookie-relay-min').value) || 10,
+        use_desired_random_boost: document.getElementById('cfg-random-boost').checked,
+        desired_boost_id: document.getElementById('cfg-boost-id').value,
+        detect_relic: document.getElementById('cfg-detect-relic').checked,
+        send_friend_lives: document.getElementById('cfg-send-lives').checked,
+        stop_goal_rounds_enabled: document.getElementById('cfg-goal-rounds-enabled').checked,
+        stop_goal_rounds_target: parseInt(document.getElementById('cfg-goal-rounds-target').value) || 50,
+        stop_goal_time_enabled: document.getElementById('cfg-goal-time-enabled').checked,
+        stop_goal_time_hours: parseFloat(document.getElementById('cfg-goal-time-hours').value) || 2.0,
+      };
+
+      try {
+        localStorage.setItem('cr_bot_settings', JSON.stringify(payload));
+        const badge = document.getElementById('settings-save-badge');
+        if (badge) {
+          badge.classList.remove('hidden');
+          setTimeout(() => badge.classList.add('hidden'), 1500);
+        }
+
+        await fetch('/api/settings/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {
+        console.error("Failed to auto-save bot settings", e);
+      }
+    }
+
+    function setPreset(ip, port) {
+      document.getElementById('cfg-ip').value = ip;
+      document.getElementById('cfg-port').value = port;
+      saveBotSettingsAuto();
+    }
+
+    function toggleBoostSelect() {
+      const checked = document.getElementById('cfg-random-boost').checked;
+      const wrap = document.getElementById('boost-select-wrap');
+      if (checked) {
+        wrap.classList.remove('hidden');
+      } else {
+        wrap.classList.add('hidden');
+      }
+    }
+
+    async function toggleBot() {
+      const btn = document.getElementById('btn-toggle-bot');
+      btn.disabled = true;
+
+      if (!isRunning) {
+        const payload = {
+          device_ip: document.getElementById('cfg-ip').value.trim(),
+          device_port: parseInt(document.getElementById('cfg-port').value),
+          use_fast_start: document.getElementById('cfg-fast-start').checked,
+          fast_start_min_stock: parseInt(document.getElementById('cfg-fast-start-min').value) || 10,
+          use_cookie_relay: document.getElementById('cfg-cookie-relay').checked,
+          cookie_relay_min_stock: parseInt(document.getElementById('cfg-cookie-relay-min').value) || 10,
+          use_desired_random_boost: document.getElementById('cfg-random-boost').checked,
+          desired_boost_id: document.getElementById('cfg-boost-id').value,
+          detect_relic: document.getElementById('cfg-detect-relic').checked,
+          send_friend_lives: document.getElementById('cfg-send-lives').checked,
+          stop_goal_rounds_enabled: document.getElementById('cfg-goal-rounds-enabled').checked,
+          stop_goal_rounds_target: parseInt(document.getElementById('cfg-goal-rounds-target').value) || 50,
+          stop_goal_time_enabled: document.getElementById('cfg-goal-time-enabled').checked,
+          stop_goal_time_hours: parseFloat(document.getElementById('cfg-goal-time-hours').value) || 2.0,
+        };
+
+        try {
+          const res = await fetch('/api/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || data.message);
+        } catch (e) {
+          alert('❌ เริ่มต้นบอทไม่สำเร็จ: ' + e.message);
+        }
+      } else {
+        try {
+          const res = await fetch('/api/stop', { method: 'POST' });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || data.message);
+        } catch (e) {
+          alert('❌ หยุดบอทไม่สำเร็จ: ' + e.message);
+        }
+      }
+
+      btn.disabled = false;
+      fetchStatus();
+    }
+
+    async function testConnection() {
+      const resultBox = document.getElementById('conn-test-result');
+      resultBox.classList.remove('hidden', 'bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300', 'bg-rose-500/10', 'border-rose-500/30', 'text-rose-300');
+      resultBox.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700');
+      resultBox.textContent = '⏳ กำลังทดสอบเชื่อมต่อ ADB...';
+
+      try {
+        const res = await fetch('/api/test-connection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            device_ip: document.getElementById('cfg-ip').value.trim(),
+            device_port: parseInt(document.getElementById('cfg-port').value),
+          })
+        });
+        const data = await res.json();
+        resultBox.classList.remove('bg-slate-800', 'text-slate-300', 'border-slate-700');
+        if (data.success) {
+          resultBox.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300');
+          resultBox.innerHTML = `✅ เชื่อมต่อสำเร็จ: <strong>${data.message}</strong>`;
+        } else {
+          resultBox.classList.add('bg-rose-500/10', 'border-rose-500/30', 'text-rose-300');
+          resultBox.innerHTML = `❌ ไม่สามารถเชื่อมต่อได้: ${data.message}`;
+        }
+      } catch (e) {
+        resultBox.classList.add('bg-rose-500/10', 'border-rose-500/30', 'text-rose-300');
+        resultBox.textContent = `❌ เกิดข้อผิดพลาด: ${e.message}`;
+      }
+    }
+
+    async function resetGameApp() {
+      if (!confirm('ต้องการสั่งบังคับปิดและเปิดเกม CookieRun ใหม่หรือไม่?')) return;
+      try {
+        await fetch('/api/reset-app', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            device_ip: document.getElementById('cfg-ip').value.trim(),
+            device_port: parseInt(document.getElementById('cfg-port').value),
+          })
+        });
+      } catch (e) {
+        alert('เกิดข้อผิดพลาด: ' + e.message);
+      }
+    }
+
+    async function resetStats() {
+      await fetch('/api/reset-stats', { method: 'POST' });
+      fetchStatus();
+    }
+
+    function renderRoundHistory(history) {
+      const container = document.getElementById('round-history-container');
+      const badge = document.getElementById('history-total-badge');
+      if (!history || history.length === 0) {
+        container.innerHTML = '<div class="text-xs text-slate-500 italic p-4 text-center">[ยังไม่มีประวัติการเล่นในเซสชันนี้ — เมื่อจบเกมจะบันทึกที่นี่อัตโนมัติ]</div>';
+        badge.textContent = '0 รอบ';
+        return;
+      }
+
+      badge.textContent = `${history.length} รอบ (ล่าสุด)`;
+      container.innerHTML = '';
+
+      const boxStyles = {
+        wood: { name: 'กล่องไม้', img: '/templates/BOX_WOOD.png', icon: '🟤', bg: 'bg-amber-950/60 text-amber-300 border-amber-800/60' },
+        silver: { name: 'กล่องเงิน', img: '/templates/BOX_SILVER.png', icon: '⚪', bg: 'bg-slate-700/60 text-slate-200 border-slate-600' },
+        gold: { name: 'กล่องทอง', img: '/templates/BOX_GOLD.png', icon: '🟡', bg: 'bg-yellow-950/60 text-yellow-300 border-yellow-600/60' },
+        rainbow: { name: 'กล่องรุ้ง', img: '/templates/BOX_RAINBOW.png', icon: '🌈', bg: 'bg-purple-950/60 text-pink-300 border-purple-500/60 font-semibold' },
+      };
+
+      history.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between p-3 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-indigo-500/60 transition cursor-pointer group';
+        div.onclick = () => openRoundModal(item);
+
+        let boxesHtml = '';
+        if (item.boxes && item.boxes.length > 0) {
+          boxesHtml = item.boxes.map(b => {
+            const s = boxStyles[b] || { name: b, img: '', icon: '📦', bg: 'bg-slate-800 text-slate-300 border-slate-700' };
+            const imgTag = s.img ? `<img src="${s.img}" class="w-3.5 h-3.5 object-contain inline-block" onerror="this.outerHTML='${s.icon}'">` : s.icon;
+            return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] ${s.bg}">${imgTag} ${s.name}</span>`;
+          }).join(' ');
+        } else {
+          boxesHtml = '<span class="text-slate-500 text-[11px] italic">ไม่มีกล่องในรอบนี้</span>';
+        }
+
+        const coinsBadge = item.coins ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] bg-yellow-950/40 text-yellow-300 border-yellow-700/50 font-mono font-semibold">+${item.coins.toLocaleString()} 🪙</span>` : '';
+        const xpBadge = item.xp ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] bg-sky-950/40 text-sky-300 border-sky-700/50 font-mono font-semibold">+${item.xp.toLocaleString()} EXP</span>` : '';
+
+        div.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center font-mono font-bold text-orange-400 text-xs shrink-0">
+              #${item.round}
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-white text-xs font-semibold">รอบที่ ${item.round}</span>
+                <span class="text-slate-500 text-[11px] font-mono">(${item.time})</span>
+                <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono">⏱️ ${item.duration || '0s'}</span>
+                ${coinsBadge}
+              </div>
+              <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                ${boxesHtml}
+              </div>
+            </div>
+          </div>
+          <button class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white text-xs font-medium flex items-center gap-1.5 transition group-hover:bg-indigo-600 group-hover:text-white shrink-0">
+            <span>🔍 ดูผลลัพธ์</span>
+          </button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function openRoundModal(item) {
+      document.getElementById('modal-round-title').innerHTML = `🏁 รายละเอียดผลลัพธ์รอบที่ #${item.round}`;
+      const earnedInfo = [];
+      if (item.coins) earnedInfo.push(`💰 ได้รับ: +${item.coins.toLocaleString()} 🪙`);
+      if (item.xp) earnedInfo.push(`⭐ EXP: +${item.xp.toLocaleString()}`);
+      const earnedStr = earnedInfo.length > 0 ? ` | ${earnedInfo.join(' | ')}` : '';
+      document.getElementById('modal-round-meta').textContent = `เวลาที่เล่น: ${item.time} | ใช้เวลา: ${item.duration || 'N/A'}${earnedStr}`;
+
+      const boxStyles = {
+        wood: { name: 'กล่องไม้ (Wood)', img: '/templates/BOX_WOOD.png', icon: '🟤', bg: 'bg-amber-950/60 text-amber-300 border-amber-800/60' },
+        silver: { name: 'กล่องเงิน (Silver)', img: '/templates/BOX_SILVER.png', icon: '⚪', bg: 'bg-slate-700/60 text-slate-200 border-slate-600' },
+        gold: { name: 'กล่องทอง (Gold)', img: '/templates/BOX_GOLD.png', icon: '🟡', bg: 'bg-yellow-950/60 text-yellow-300 border-yellow-600/60' },
+        rainbow: { name: 'กล่องรุ้ง (Rainbow)', img: '/templates/BOX_RAINBOW.png', icon: '🌈', bg: 'bg-purple-950/60 text-pink-300 border-purple-500/60 font-semibold' },
+      };
+
+      const boxesContainer = document.getElementById('modal-boxes-list');
+      if (item.boxes && item.boxes.length > 0) {
+        boxesContainer.innerHTML = item.boxes.map(b => {
+          const s = boxStyles[b] || { name: b, img: '', icon: '📦', bg: 'bg-slate-800 text-slate-300 border-slate-700' };
+          const imgTag = s.img ? `<img src="${s.img}" class="w-5 h-5 object-contain inline-block" onerror="this.outerHTML='${s.icon}'">` : s.icon;
+          return `<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs ${s.bg}">${imgTag} <span class="font-semibold">${s.name}</span></div>`;
+        }).join(' ');
+      } else {
+        boxesContainer.innerHTML = '<span class="text-xs text-slate-500 italic">[รอบนี้ไม่ได้รับกล่องปริศนา]</span>';
+      }
+
+      const imgUrl = `/api/round-screenshot/${item.round}?t=${Date.now()}`;
+      document.getElementById('modal-screenshot-img').src = imgUrl;
+      document.getElementById('modal-img-link').href = imgUrl;
+
+      document.getElementById('round-modal').classList.remove('hidden');
+    }
+
+    function closeRoundModal() {
+      document.getElementById('round-modal').classList.add('hidden');
+    }
+
+    // Close modal on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeRoundModal();
+    });
+
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+
+        isRunning = data.is_running;
+
+        const btn = document.getElementById('btn-toggle-bot');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        const statusPill = document.getElementById('status-pill');
+
+        if (isRunning) {
+          btn.className = "w-full py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-200 shadow-lg bg-rose-500 hover:bg-rose-600 active:scale-[0.98] text-white shadow-rose-500/25";
+          btn.innerHTML = `<span class="text-2xl animate-pulse">⏹</span><span>หยุดทำงานบอท (Stop Bot)</span>`;
+          statusDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+          statusText.textContent = "กำลังทำงาน (Running)";
+          statusPill.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-xs font-medium text-emerald-300";
+        } else {
+          btn.className = "w-full py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-200 shadow-lg bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white shadow-emerald-500/25";
+          btn.innerHTML = `<span class="text-2xl">▶</span><span>เริ่มทำงานบอท (Start Bot)</span>`;
+          statusDot.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
+          statusText.textContent = "Idle (ไม่ได้เริ่ม)";
+          statusPill.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-xs font-medium text-slate-300";
+        }
+
+        // Primary Stats
+        document.getElementById('stat-stage').textContent = data.current_stage || 'IDLE';
+        document.getElementById('overlay-stage').textContent = data.current_stage || 'IDLE';
+        document.getElementById('stat-rounds').textContent = data.rounds_played;
+        document.getElementById('stat-boxes').textContent = data.mystery_boxes;
+        document.getElementById('stat-uptime').textContent = data.uptime;
+        document.getElementById('uptime-display').textContent = data.uptime;
+        document.getElementById('info-adb').textContent = `ADB Path: ${data.adb_path}`;
+
+        // Coin & EXP Stats
+        if (data.coin_stats) {
+          document.getElementById('stat-coins-earned').textContent = `+${(data.coin_stats.session_earned || 0).toLocaleString()} 🪙`;
+          document.getElementById('stat-xp-earned').textContent = `+${(data.coin_stats.session_xp_earned || 0).toLocaleString()} EXP`;
+          document.getElementById('stat-coins-last').textContent = `+${(data.coin_stats.last_round || 0).toLocaleString()} 🪙`;
+          document.getElementById('stat-xp-last').textContent = `+${(data.coin_stats.last_round_xp || 0).toLocaleString()} EXP`;
+        }
+
+        // Detailed Box Counts
+        if (data.box_counts) {
+          document.getElementById('box-count-wood').textContent = data.box_counts.wood || 0;
+          document.getElementById('box-count-silver').textContent = data.box_counts.silver || 0;
+          document.getElementById('box-count-gold').textContent = data.box_counts.gold || 0;
+          document.getElementById('box-count-rainbow').textContent = data.box_counts.rainbow || 0;
+        }
+
+        // 50-Round History
+        renderRoundHistory(data.round_history || []);
+
+      } catch (e) {
+        console.error("Error fetching status", e);
+      }
+    }
+
+    const streamContainer = document.getElementById('stream-container');
+    const streamImg = document.getElementById('stream-img');
+
+    streamContainer.addEventListener('click', async (e) => {
+      const rect = streamImg.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+
+      if (clickX < 0 || clickY < 0 || clickX > rect.width || clickY > rect.height) return;
+
+      const targetX = Math.round((clickX / rect.width) * 1280);
+      const targetY = Math.round((clickY / rect.height) * 720);
+
+      const ripple = document.createElement('div');
+      ripple.className = 'tap-ripple';
+      ripple.style.left = `${e.clientX - streamContainer.getBoundingClientRect().left}px`;
+      ripple.style.top = `${e.clientY - streamContainer.getBoundingClientRect().top}px`;
+      streamContainer.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
+
+      document.getElementById('tap-feedback').textContent = `Tapped: (${targetX}, ${targetY})`;
+      setTimeout(() => document.getElementById('tap-feedback').textContent = '', 2000);
+
+      try {
+        await fetch('/api/tap', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            x: targetX,
+            y: targetY,
+            device_ip: document.getElementById('cfg-ip').value.trim(),
+            device_port: parseInt(document.getElementById('cfg-port').value)
+          })
+        });
+      } catch (err) {
+        console.error("Tap error", err);
+      }
+    });
+
+    function reloadStream() {
+      streamImg.src = '/api/stream?t=' + new Date().getTime();
+    }
+
+    function connectWebSocket() {
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${proto}//${location.host}/ws/logs`;
+
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        document.getElementById('ws-badge').textContent = 'WebSocket Connected';
+        document.getElementById('ws-badge').className = 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono';
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        appendLog(data);
+      };
+
+      ws.onclose = () => {
+        document.getElementById('ws-badge').textContent = 'Disconnected (Reconnecting...)';
+        document.getElementById('ws-badge').className = 'text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-mono';
+        setTimeout(connectWebSocket, 3000);
+      };
+    }
+
+    function appendLog(entry) {
+      const container = document.getElementById('logs-container');
+      const div = document.createElement('div');
+      div.className = 'flex items-start gap-2 py-0.5 leading-relaxed';
+
+      let colorClass = 'text-slate-300';
+      let tag = 'INFO';
+      let tagBg = 'bg-slate-800 text-slate-400';
+
+      if (entry.level === 'stage') {
+        colorClass = 'text-orange-300 font-semibold';
+        tag = 'STAGE';
+        tagBg = 'bg-orange-500/20 text-orange-400';
+      } else if (entry.level === 'success') {
+        colorClass = 'text-emerald-300 font-medium';
+        tag = 'SUCCESS';
+        tagBg = 'bg-emerald-500/20 text-emerald-400';
+      } else if (entry.level === 'warning') {
+        colorClass = 'text-amber-300';
+        tag = 'WARN';
+        tagBg = 'bg-amber-500/20 text-amber-400';
+      } else if (entry.level === 'error') {
+        colorClass = 'text-rose-400 font-bold';
+        tag = 'ERROR';
+        tagBg = 'bg-rose-500/20 text-rose-400';
+      }
+
+      div.innerHTML = `
+        <span class="text-slate-500 shrink-0 select-none">[${entry.time}]</span>
+        <span class="text-[10px] px-1.5 py-0.2 rounded font-bold shrink-0 ${tagBg}">${tag}</span>
+        <span class="${colorClass} break-all">${escapeHtml(entry.message)}</span>
+      `;
+
+      container.appendChild(div);
+
+      if (document.getElementById('autoscroll-toggle').checked) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function clearLogs() {
+      document.getElementById('logs-container').innerHTML = '';
+    }
+
+    async function loadDiscordSettings() {
+      try {
+        const res = await fetch('/api/discord');
+        const data = await res.json();
+        document.getElementById('discord-webhook-url').value = data.webhook_url || '';
+        document.getElementById('discord-enabled').checked = !!data.enabled;
+        document.getElementById('discord-notify-rounds').checked = data.notify_rounds !== false;
+        document.getElementById('discord-notify-boxes').checked = data.notify_boxes !== false;
+        document.getElementById('discord-notify-antibot').checked = data.notify_antibot !== false;
+        document.getElementById('discord-notify-status').checked = data.notify_status !== false;
+      } catch (e) {
+        console.error("Error loading Discord settings", e);
+      }
+    }
+
+    async function saveDiscordSettings(showAlert = false) {
+      const payload = {
+        webhook_url: document.getElementById('discord-webhook-url').value.trim(),
+        enabled: document.getElementById('discord-enabled').checked,
+        notify_rounds: document.getElementById('discord-notify-rounds').checked,
+        notify_boxes: document.getElementById('discord-notify-boxes').checked,
+        notify_antibot: document.getElementById('discord-notify-antibot').checked,
+        notify_status: document.getElementById('discord-notify-status').checked,
+        attach_screenshot: true,
+      };
+
+      try {
+        const res = await fetch('/api/discord/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (showAlert) alert('✅ บันทึกการตั้งค่า Discord สำเร็จ!');
+      } catch (e) {
+        if (showAlert) alert('❌ บันทึกไม่สำเร็จ: ' + e.message);
+      }
+    }
+
+    async function testDiscordWebhook() {
+      const url = document.getElementById('discord-webhook-url').value.trim();
+      const resultBox = document.getElementById('discord-test-result');
+      if (!url) {
+        alert('กรุณากรอก Discord Webhook URL ก่อนทดสอบ');
+        return;
+      }
+
+      resultBox.classList.remove('hidden', 'bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300', 'bg-rose-500/10', 'border-rose-500/30', 'text-rose-300');
+      resultBox.classList.add('bg-slate-900', 'text-slate-300', 'border-slate-700');
+      resultBox.textContent = '⏳ กำลังส่งข้อความทดสอบเข้า Discord...';
+
+      try {
+        const res = await fetch('/api/discord/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ webhook_url: url })
+        });
+        const data = await res.json();
+        resultBox.classList.remove('bg-slate-900', 'text-slate-300', 'border-slate-700');
+        if (res.ok && data.success) {
+          resultBox.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300');
+          resultBox.innerHTML = `✅ <strong>${data.message}</strong>`;
+        } else {
+          resultBox.classList.add('bg-rose-500/10', 'border-rose-500/30', 'text-rose-300');
+          resultBox.innerHTML = `❌ ${data.message || data.detail || 'เกิดข้อผิดพลาด กรุณารีสตาร์ทโปรแกรม run_web.bat ใหม่'}`;
+        }
+      } catch (e) {
+        resultBox.classList.add('bg-rose-500/10', 'border-rose-500/30', 'text-rose-300');
+        resultBox.textContent = `❌ เกิดข้อผิดพลาด: ${e.message}`;
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadBoostOptions();
+      await loadBotSettings();
+      await loadDiscordSettings();
+      connectWebSocket();
+      fetchStatus();
+      setInterval(fetchStatus, 2000);
+    });
+  </script>
+</body>
+</html>

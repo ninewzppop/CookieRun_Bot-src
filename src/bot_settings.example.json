@@ -1,0 +1,16 @@
+{
+  "device_ip": "127.0.0.1",
+  "device_port": 5595,
+  "use_fast_start": false,
+  "fast_start_min_stock": 10,
+  "use_cookie_relay": false,
+  "cookie_relay_min_stock": 10,
+  "use_desired_random_boost": false,
+  "desired_boost_id": "double_coins",
+  "detect_relic": true,
+  "send_friend_lives": true,
+  "stop_goal_rounds_enabled": false,
+  "stop_goal_rounds_target": 50,
+  "stop_goal_time_enabled": false,
+  "stop_goal_time_hours": 2.0
+}
