@@ -122,7 +122,7 @@ def purchase_desired_random_boost(desired_template, desired_name):
         if detect_templates(screen, desired_template, RANDOM_BOOST_REGION):
             print(f"✅ Desired Boost detected: {desired_name}!")
             break
-        time.sleep(0.5)
+        time.sleep(random.uniform(0.35, 0.65))
 
 
 def using_fast_start():
@@ -277,8 +277,8 @@ def handle_send_friend_life():
             print("✅ Top of Friend Leaderboard reached.")
             break
         print("🔄 Scrolling up to find Send Friend Life...")
-        safe_device_scroll(config.DEVICE_IP, config.DEVICE_PORT, LEADERBOARD_BOTTOM_POSITION[0], LEADERBOARD_BOTTOM_POSITION[1], direction="down", distance=300, duration=150)
-        time.sleep(random.uniform(0.8, 1.4))
+        safe_device_scroll(config.DEVICE_IP, config.DEVICE_PORT, LEADERBOARD_BOTTOM_POSITION[0], LEADERBOARD_BOTTOM_POSITION[1], direction="down", distance=random.randint(285, 320), duration=random.randint(130, 175))
+        time.sleep(random.uniform(0.85, 1.45))
         screen = device_capture_screen(config.DEVICE_IP, config.DEVICE_PORT)
     no_button_scroll_count = 0
     while True:
@@ -305,8 +305,8 @@ def handle_send_friend_life():
                 print("⚠️ No send life buttons found for 30 consecutive scrolls. Giving up.")
                 break
             print(f"🔄 No send life buttons found, scrolling down... ({no_button_scroll_count}/30)")
-            safe_device_scroll(config.DEVICE_IP, config.DEVICE_PORT, LEADERBOARD_TOP_POSITION[0], LEADERBOARD_TOP_POSITION[1], direction="up", distance=70, duration=150)
-            time.sleep(random.uniform(0.8, 1.4))
+            safe_device_scroll(config.DEVICE_IP, config.DEVICE_PORT, LEADERBOARD_TOP_POSITION[0], LEADERBOARD_TOP_POSITION[1], direction="up", distance=random.randint(62, 82), duration=random.randint(125, 175))
+            time.sleep(random.uniform(0.85, 1.45))
 
 
 def handle_quick_receive_and_send_lives():
@@ -350,10 +350,12 @@ def close_announcement_popup():
 
 def close_announcement_dialog():
     print("🖱️ Closing announcement dialog...")
-    for i in range(5):
-        print(f"🖱️ Tapping close announcement dialog button {i+1}/5")
+    # สุ่ม 4-6 ครั้งให้ดูไม่เป็นบอท แต่ยังครอบคลุมทุก popup (ไม่เพี้ยน)
+    count = random.randint(4, 6)
+    for i in range(count):
+        print(f"🖱️ Tapping close announcement dialog button {i+1}/{count}")
         safe_device_tap(config.DEVICE_IP, config.DEVICE_PORT, CLOSE_ANNOUNCEMENT_DIALOG_BUTTON[0], CLOSE_ANNOUNCEMENT_DIALOG_BUTTON[1])
-        time.sleep(random.uniform(0.8, 1.4))
+        time.sleep(random.uniform(0.75, 1.45))
     # also try generic close button (covers Party Pass Season 9 variants etc.)
     safe_device_tap(config.DEVICE_IP, config.DEVICE_PORT, ANNOUNCEMENT_CLOSE_BUTTON[0], ANNOUNCEMENT_CLOSE_BUTTON[1])
     time.sleep(random.uniform(0.8, 1.4))

@@ -48,6 +48,7 @@ from adb import (
     device_is_app_running,
     device_reset_app,
     device_tap,
+    safe_device_tap,
     get_adb_path,
 )
 from config import (
@@ -408,7 +409,7 @@ class BotEngine:
                     self.update_frame(device_screen)
                 except Exception as e:
                     self.log(f"⚠️ Screen capture error: {e}", "error")
-                    if self.interruptible_sleep(1.0):
+                    if self.interruptible_sleep(random.uniform(0.8, 1.2)):
                         break
                     continue
 
@@ -430,7 +431,9 @@ class BotEngine:
                     self.current_stage = f"{detection_group} (Searching...)"
 
                 if stage == last_stage:
-                    if self.interruptible_sleep(0.1):
+                    # IN_GAME ต้องวนไวขึ้นเพื่อจับ GAME_COMPLETE ให้ทัน + สุ่มเวลา human-like
+                    fast_sleep = random.uniform(0.04, 0.08) if detection_group == "IN_GAME" else random.uniform(0.08, 0.14)
+                    if self.interruptible_sleep(fast_sleep):
                         break
                     continue
 
@@ -438,8 +441,9 @@ class BotEngine:
 
                 if stage == "MAINMENU":
                     self.log("🎮 Detected Stage: MAINMENU", "stage")
-                    self.log("⏳ Waiting 5 seconds for screen refresh...")
-                    if self.interruptible_sleep(5.0):
+                    wait_refresh = random.uniform(4.5, 5.5)
+                    self.log(f"⏳ Waiting {wait_refresh:.1f}s for screen refresh...")
+                    if self.interruptible_sleep(wait_refresh):
                         break
 
                     if pending_send_friend_life and self.send_friend_lives:
@@ -454,7 +458,7 @@ class BotEngine:
                     if elapsed >= session_reset_interval:
                         self.log(f"🔄 Session reset triggered after {elapsed / 3600:.2f}h — restarting app...")
                         device_reset_app(self.device_ip, self.device_port)
-                        if self.interruptible_sleep(5.0):
+                        if self.interruptible_sleep(random.uniform(4.5, 5.8)):
                             break
                         close_announcement_dialog()
                         pending_send_friend_life = True
@@ -518,7 +522,10 @@ class BotEngine:
                         break
 
                     if not is_first_game:
-                        delay = random.uniform(25, 45)
+                        # สุ่มกว้างขึ้น 22-48s + 8% มีพักยาวเหมือนคนเผลอ เหมือนคนจริง
+                        delay = random.uniform(22, 48)
+                        if random.random() < 0.08:
+                            delay += random.uniform(12, 22)
                         self.log(f"⏳ Waiting {delay:.1f}s before starting next round to avoid detection...")
                         if self.interruptible_sleep(delay):
                             break
@@ -558,7 +565,7 @@ class BotEngine:
                     self.current_round_recorded = False
                     self.current_round_screen = None
                     self.log(f"🏁 Round {self.rounds_played} started!", "success")
-                    if self.interruptible_sleep(0.2):
+                    if self.interruptible_sleep(random.uniform(0.15, 0.30)):
                         break
                     last_stage = None
 
@@ -577,35 +584,61 @@ class BotEngine:
                 elif stage == "GAME_COMPLETE":
                     self.log("✅ Detected Stage: GAME_COMPLETE (กำลังรอสรุปผลคะแนน, เหรียญ & EXP...)", "stage")
 
-                    # 1. Wait a bit for card to enter, then tap to skip animation
-                    time.sleep(random.uniform(1.0, 1.5))
-                    device_tap(self.device_ip, self.device_port, 640, 260)
+                    # 1. Tap quickly to skip card enter animation (shortened + jitter)
+                    time.sleep(random.uniform(0.5, 0.8))
+                    safe_device_tap(self.device_ip, self.device_port, 640, 260)
 
-                    # 2. Wait for score, coins, and XP to count up fully
-                    time.sleep(random.uniform(3.5, 4.5))
+                    # 2. Adaptive polling: wait until coins/XP stop counting (แทน sleep ตายตัว 3.5+2.0s) - สุ่มทุก poll
+                    self.log("⏳ รอเหรียญ/EXP นับเสร็จ (adaptive polling)...", "info")
+                    poll_deadline = time.time() + 8.0
+                    last_coins = -1
+                    last_xp = -1
+                    stable_count = 0
+                    round_coins = 0
+                    round_xp = 0
+                    second_tap_done = False
+                    while time.time() < poll_deadline:
+                        if self.should_stop:
+                            break
+                        time.sleep(random.uniform(0.32, 0.48))
+                        try:
+                            fresh_screen = device_capture_screen(self.device_ip, self.device_port)
+                            if fresh_screen is not None:
+                                device_screen = fresh_screen
+                                self.update_frame(device_screen)
+                        except Exception:
+                            continue
+                        c = extract_result_coins(device_screen) if device_screen is not None else 0
+                        x = extract_result_xp(device_screen) if device_screen is not None else 0
+                        # ถ้ายังเป็น 0 หลังผ่านไป ~1.5s ให้แตะซ้ำเพื่อข้าม bonus animation (สุ่มตำแหน่ง)
+                        if not second_tap_done and time.time() > poll_deadline - 6.5 and c == 0:
+                            safe_device_tap(self.device_ip, self.device_port, 640, 260)
+                            second_tap_done = True
+                            continue
+                        if c == last_coins and x == last_xp and c != 0:
+                            stable_count += 1
+                            if stable_count >= 2:
+                                round_coins, round_xp = c, x
+                                self.log(f"🔒 ตัวเลขนิ่งแล้ว: {c:,} 🪙 / {x:,} EXP — พร้อมกด OK", "info")
+                                break
+                        else:
+                            stable_count = 0
+                        last_coins, last_xp = c, x
+                        round_coins, round_xp = c, x
 
-                    # 3. Tap second time to ensure level bonus / combi bonus settle
-                    device_tap(self.device_ip, self.device_port, 640, 260)
-                    time.sleep(random.uniform(2.0, 2.5))
-
-                    # 4. Capture fresh screen once numbers have completely settled
-                    fresh_screen = device_capture_screen(self.device_ip, self.device_port)
-                    if fresh_screen is not None:
-                        device_screen = fresh_screen
-
-                    # 5. Extract real in-game coins and XP directly from Result screen
-                    round_coins = extract_result_coins(device_screen) if device_screen is not None else 0
-                    round_xp = extract_result_xp(device_screen) if device_screen is not None else 0
-
-                    # 6. Safety retry if still 0
+                    # fallback if still 0 after polling (สุ่ม)
                     if round_coins == 0 and device_screen is not None:
-                        device_tap(self.device_ip, self.device_port, 640, 260)
-                        time.sleep(2.0)
-                        fresh_screen = device_capture_screen(self.device_ip, self.device_port)
-                        if fresh_screen is not None:
-                            device_screen = fresh_screen
-                            round_coins = extract_result_coins(device_screen)
-                            round_xp = extract_result_xp(device_screen)
+                        self.log("⚠️ ยังอ่านเหรียญได้ 0 — ลองแตะซ้ำแล้วอ่านใหม่", "warning")
+                        safe_device_tap(self.device_ip, self.device_port, 640, 260)
+                        time.sleep(random.uniform(0.8, 1.25))
+                        try:
+                            fresh_screen = device_capture_screen(self.device_ip, self.device_port)
+                            if fresh_screen is not None:
+                                device_screen = fresh_screen
+                                round_coins = extract_result_coins(device_screen)
+                                round_xp = extract_result_xp(device_screen)
+                        except Exception:
+                            pass
 
                     if device_screen is not None:
                         self.current_round_screen = device_screen.copy()
@@ -664,16 +697,19 @@ class BotEngine:
                             screen_img=device_screen,
                         )
 
-                    # 7. Generous pause before tapping OK so the final score screen stays visible
-                    time.sleep(random.uniform(2.0, 3.0))
+                    # 7. Random jitter 0.5-1.5s before tapping OK (ตามที่เลือก) เพื่อดูเป็นธรรมชาติ
+                    jitter = random.uniform(0.5, 1.5)
+                    self.log(f"⏳ รอ {jitter:.1f}s ก่อนกด OK (jitter 0.5-1.5s)...", "info")
+                    if self.interruptible_sleep(jitter):
+                        break
 
-                    # 8. Tap OK to complete and dismiss the Result screen
+                    # 8. Tap OK to complete and dismiss the Result screen (สุ่มอยู่แล้วใน complete_finish)
                     complete_finish()
                     detection_group = "POST_GAME"
 
                 elif stage == "MYSTERY_BOX":
-                    # Wait briefly for box reveal animation to settle
-                    time.sleep(random.uniform(0.8, 1.2))
+                    # Wait briefly for box reveal animation to settle (สุ่ม)
+                    time.sleep(random.uniform(0.75, 1.35))
                     fresh_mb_screen = device_capture_screen(self.device_ip, self.device_port)
                     if fresh_mb_screen is not None:
                         device_screen = fresh_mb_screen
@@ -750,7 +786,7 @@ class BotEngine:
                     )
 
                     accept_mystery_box()
-                    if self.interruptible_sleep(2.0):
+                    if self.interruptible_sleep(random.uniform(1.7, 2.4)):
                         break
                     detection_group = "POST_GAME"
                     last_stage = None
@@ -832,7 +868,7 @@ class BotEngine:
                     self.log("🔌 Detected Stage: CONNECTION_LOST — resetting app...", "error")
                     discord_notifier.send_connection_lost(self.device_ip, self.device_port)
                     device_reset_app(self.device_ip, self.device_port)
-                    if self.interruptible_sleep(5.0):
+                    if self.interruptible_sleep(random.uniform(4.5, 5.8)):
                         break
                     close_announcement_dialog()
                     session_start_time = time.time()
@@ -855,7 +891,9 @@ class BotEngine:
                     handle_inactive()
                     last_stage = None
 
-                if self.interruptible_sleep(0.25):
+                # IN_GAME วนลูปถี่ขึ้น + สุ่ม human-like
+                loop_sleep = random.uniform(0.10, 0.16) if detection_group == "IN_GAME" else random.uniform(0.20, 0.32)
+                if self.interruptible_sleep(loop_sleep):
                     break
 
         except Exception as e:

@@ -9,6 +9,8 @@ MATCH_THRESHOLD = 0.8
 STAGE_THRESHOLDS = {
     "ANNOUNCEMENT_POPUP": 0.42,
     "EMU_HOME": 0.60,
+    "GAME_COMPLETE": 0.62,
+    "MYSTERY_BOX": 0.65,
 }
 SESSION_RESET_INTERVAL = (5400, 10800)  # 1.5-3 hours
 GAME_PACKAGE = "com.devsisters.crg"
@@ -238,9 +240,9 @@ DETECTION_GROUPS = {
 }
 
 DETECTION_RECOVERY_SCAN_INTERVAL = {
-    "PRE_GAME":  60.0,  # seconds
-    "IN_GAME":  300.0,  # seconds
-    "POST_GAME": 30.0,  # seconds
+    "PRE_GAME":  8.0,  # seconds (เดิม 60 - ลดให้เจอ MAINMENU ไวขึ้นหลังหลุด)
+    "IN_GAME":  2.5,  # seconds (เดิม 300 - แก้ช้า 10วิ: ให้ scan กว้างทุก 2.5s ถ้าจับ GAME_COMPLETE ไม่เจอ)
+    "POST_GAME": 5.0,  # seconds (เดิม 30)
 }
 
 # -------------------

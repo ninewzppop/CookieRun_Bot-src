@@ -1,7 +1,7 @@
 import random
 import time
 
-from adb import device_capture_screen, device_connect, device_is_app_running, device_reset_app, device_tap
+from adb import device_capture_screen, device_connect, device_is_app_running, device_reset_app, device_tap, safe_device_tap
 from actions import (
     accept_congratulations,
     accept_daily_checkin,
@@ -54,7 +54,7 @@ from config import (
     GAME_PACKAGE,
     SESSION_RESET_INTERVAL,
 )
-from detection import detect_stage, is_emu_home_visible, load_templates
+from detection import detect_stage, extract_result_coins, extract_result_xp, is_emu_home_visible, load_templates
 from debug import save_debug_screen
 
 # -------------------
@@ -189,16 +189,16 @@ def main():
                 last_detected_time = time.time()
 
             if stage == last_stage:
-                time.sleep(0.1)
+                time.sleep(random.uniform(0.04, 0.08) if detection_group == "IN_GAME" else random.uniform(0.08, 0.14))
                 continue
 
             last_stage = stage
 
             if stage == "MAINMENU":
                 print("🎮 Detected Stage: MAINMENU")
-                # Wait screen refresh
-                print("⏳ Waiting 5 seconds for screen refresh...")
-                time.sleep(5)
+                wait_refresh = random.uniform(4.5, 5.5)
+                print(f"⏳ Waiting {wait_refresh:.1f}s for screen refresh...")
+                time.sleep(wait_refresh)
                 if pending_send_friend_life:
                     print("💌 Sending friend lives after app reset...")
                     handle_send_friend_life()
@@ -210,7 +210,7 @@ def main():
                 if elapsed >= session_reset_interval:
                     print(f"🔄 Session reset triggered after {elapsed / 3600:.2f}h — restarting app...")
                     device_reset_app(DEVICE_IP, DEVICE_PORT)
-                    time.sleep(5)
+                    time.sleep(random.uniform(4.5, 5.8))
                     close_announcement_dialog()
                     pending_send_friend_life = True
                     session_start_time = time.time()
@@ -234,7 +234,9 @@ def main():
                     last_stage = None
                     continue
                 if not is_first_game:
-                    delay = random.uniform(30, 60)
+                    delay = random.uniform(28, 52)
+                    if random.random() < 0.08:
+                        delay += random.uniform(12, 22)
                     print(f"⏳ Waiting for {delay:.2f} seconds before starting the next game...")
                     time.sleep(delay)
                 is_first_game = False
@@ -250,7 +252,7 @@ def main():
                     purchase_desired_random_boost(options["desired_boost_template"], options["desired_boost_name"])
                 play_game()
                 detection_group = "IN_GAME"
-                time.sleep(0.2)
+                time.sleep(random.uniform(0.15, 0.30))
                 last_stage = None
             elif stage == "GAME_START":
                 print("🏁 Detected Stage: GAME_START")
@@ -263,13 +265,46 @@ def main():
                     using_cookie_relay()
                 detection_group = "IN_GAME"
             elif stage == "GAME_COMPLETE":
-                print("✅ Detected Stage: GAME_COMPLETE")
+                print("✅ Detected Stage: GAME_COMPLETE (adaptive polling...)")
+                time.sleep(random.uniform(0.5, 0.8))
+                safe_device_tap(DEVICE_IP, DEVICE_PORT, 640, 260)
+                # Adaptive polling until coins/XP stable (สุ่มทุก poll)
+                poll_deadline = time.time() + 8.0
+                last_coins = -1
+                last_xp = -1
+                stable_count = 0
+                second_tap_done = False
+                while time.time() < poll_deadline:
+                    time.sleep(random.uniform(0.32, 0.48))
+                    try:
+                        fresh = device_capture_screen(DEVICE_IP, DEVICE_PORT)
+                        if fresh is not None:
+                            device_screen = fresh
+                    except Exception:
+                        continue
+                    c = extract_result_coins(device_screen) if device_screen is not None else 0
+                    x = extract_result_xp(device_screen) if device_screen is not None else 0
+                    if not second_tap_done and time.time() > poll_deadline - 6.5 and c == 0:
+                        safe_device_tap(DEVICE_IP, DEVICE_PORT, 640, 260)
+                        second_tap_done = True
+                        continue
+                    if c == last_coins and x == last_xp and c != 0:
+                        stable_count += 1
+                        if stable_count >= 2:
+                            print(f"🔒 ตัวเลขนิ่งแล้ว: {c:,} 🪙 / {x:,} EXP — พร้อมกด OK")
+                            break
+                    else:
+                        stable_count = 0
+                    last_coins, last_xp = c, x
+                jitter = random.uniform(0.5, 1.5)
+                print(f"⏳ รอ {jitter:.1f}s ก่อนกด OK (jitter 0.5-1.5s)...")
+                time.sleep(jitter)
                 complete_finish()
                 detection_group = "POST_GAME"
             elif stage == "MYSTERY_BOX":
                 print("🎁 Detected Stage: MYSTERY_BOX")
                 accept_mystery_box()
-                time.sleep(3)
+                time.sleep(random.uniform(2.7, 3.4))
                 detection_group = "POST_GAME"
                 last_stage = None
             elif stage == "CONGRATULATIONS":
@@ -333,7 +368,7 @@ def main():
             elif stage == "CONNECTION_LOST":
                 print("🔌 Detected Stage: CONNECTION_LOST")
                 device_reset_app(DEVICE_IP, DEVICE_PORT)
-                time.sleep(5)
+                time.sleep(random.uniform(4.5, 5.8))
                 close_announcement_dialog()
                 session_start_time = time.time()
                 session_reset_interval = random.uniform(*SESSION_RESET_INTERVAL)
@@ -352,7 +387,7 @@ def main():
                 print("💤 Detected Stage: INACTIVE")
                 handle_inactive()
                 last_stage = None
-            time.sleep(0.25)
+            time.sleep(random.uniform(0.10, 0.16) if detection_group == "IN_GAME" else random.uniform(0.20, 0.32))
     except KeyboardInterrupt:
         print("🛑 Bot stopped by user.")
     except Exception as e:

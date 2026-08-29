@@ -98,8 +98,21 @@ def device_tap(ip: str, port: int, x: int, y: int):
 
 
 def safe_device_tap(ip: str, port: int, x: int, y: int):
-    jitter_x = x + random.randint(-15, 15)
-    jitter_y = y + random.randint(-15, 15)
+    # Human-like jitter: 70% จะอยู่ใกล้กลาง +-8px, 30% ออกห่าง +-15px, ยังกดโดนชัวร์ไม่เพี้ยน
+    # ใช้ Gaussian คร่าวๆ แบบ clamp เพื่อไม่ให้หลุดปุ่ม
+    dx = int(random.gauss(0, 5))
+    dy = int(random.gauss(0, 5))
+    dx = max(-15, min(15, dx))
+    dy = max(-15, min(15, dy))
+    # 5% มี outlier เล็กน้อยให้ดูเป็นคนจริง แต่ยัง clamp ไม่ให้หลุด
+    if random.random() < 0.05:
+        dx = random.randint(-18, 18)
+        dy = random.randint(-18, 18)
+        dx = max(-18, min(18, dx))
+        dy = max(-18, min(18, dy))
+    # clamp ให้อยู่ในจอ 1280x720 เสมอ กันเพี้ยนกดไม่โดน
+    jitter_x = max(0, min(1280, x + dx))
+    jitter_y = max(0, min(720, y + dy))
     adb = get_adb_path()
     _run_cmd(
         [adb, "-s", f"{ip}:{port}", "shell", "input", "tap", str(jitter_x), str(jitter_y)],
@@ -110,8 +123,8 @@ def safe_device_tap(ip: str, port: int, x: int, y: int):
 
 
 def safe_device_scroll(ip: str, port: int, x: int, y: int, direction: str = "up", distance: int = 500, duration: int = 300):
-    jx = x + random.randint(-15, 15)
-    jy = y + random.randint(-15, 15)
+    jx = x + int(max(-15, min(15, random.gauss(0, 5))))
+    jy = y + int(max(-15, min(15, random.gauss(0, 5))))
     direction_map = {
         "up":    (jx, jy + distance, jx, jy - distance),
         "down":  (jx, jy - distance, jx, jy + distance),
@@ -152,7 +165,7 @@ def device_reset_app(ip: str, port: int, package: str = "com.devsisters.crg", ma
         text=True,
     )
     print(f"⏳ Waiting 15 seconds for app {package} to stop...")
-    time.sleep(15)
+    time.sleep(random.uniform(14.5, 15.8))
 
     for attempt in range(1, max_retries + 1):
         print(f"📱 Restarting app {package} on device at {ip}:{port} (attempt {attempt}/{max_retries})...")
@@ -163,13 +176,13 @@ def device_reset_app(ip: str, port: int, package: str = "com.devsisters.crg", ma
             text=True,
         )
         print(f"⏳ Waiting 15 seconds to check if app started...")
-        time.sleep(15)
+        time.sleep(random.uniform(14.2, 15.9))
 
         if device_is_app_running(ip, port, package):
             print(f"📊 App {package} is running, verifying stability...")
             stable = True
             for check in range(1, 4):
-                time.sleep(20)
+                time.sleep(random.uniform(19.5, 20.8))
                 if not device_is_app_running(ip, port, package):
                     print(f"💥 App {package} crashed during stability check ({check}/3).")
                     stable = False
@@ -182,6 +195,6 @@ def device_reset_app(ip: str, port: int, package: str = "com.devsisters.crg", ma
         print(f"💥 App {package} appears to have crashed after launch.")
         if attempt < max_retries:
             print(f"🔁 Retrying in 5 seconds...")
-            time.sleep(5)
+            time.sleep(random.uniform(4.5, 5.7))
 
     raise Exception(f"❌ Failed to start {package} after {max_retries} attempts.")
