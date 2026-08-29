@@ -1,7 +1,7 @@
 import random
 import time
 
-from adb import device_capture_screen, device_connect, device_reset_app, device_tap
+from adb import device_capture_screen, device_connect, device_is_app_running, device_reset_app, device_tap
 from actions import (
     accept_congratulations,
     accept_daily_checkin,
@@ -19,6 +19,7 @@ from actions import (
     close_announcement_dialog,
     complete_finish,
     handle_anti_bot,
+    handle_emu_home,
     handle_inactive,
     handle_quick_receive_and_send_lives,
     handle_send_friend_life,
@@ -48,9 +49,12 @@ from config import (
     DETECTION_RECOVERY_SCAN_INTERVAL,
     DEVICE_IP,
     DEVICE_PORT,
+    EMU_HOME_CHECK_INTERVAL,
+    EMU_HOME_TAP,
+    GAME_PACKAGE,
     SESSION_RESET_INTERVAL,
 )
-from detection import detect_stage, load_templates
+from detection import detect_stage, is_emu_home_visible, load_templates
 from debug import save_debug_screen
 
 # -------------------
@@ -152,13 +156,34 @@ def main():
         last_lives_time = time.time()
         lives_interval = random.uniform(25 * 60, 35 * 60)
         pending_send_friend_life = False
+        last_emu_check_time = time.time()
 
         while True:
+            # Watchdog: หลุดมาหน้า Emu Home (แอปไม่รัน) -> กดเข้าเกมที่ (537,235)
+            if time.time() - last_emu_check_time >= EMU_HOME_CHECK_INTERVAL:
+                last_emu_check_time = time.time()
+                try:
+                    running = device_is_app_running(DEVICE_IP, DEVICE_PORT, GAME_PACKAGE)
+                except Exception:
+                    running = False
+                if not running:
+                    print("🏠 ตรวจพบหลุดมาหน้า Emu (แอปไม่รัน) — กำลังกดเข้าเกมใหม่ที่ (537,235)...")
+                    handle_emu_home()
+                    detection_group = "PRE_GAME"
+                    last_stage = None
+                    is_first_game = True
+                    last_detected_time = time.time()
+                    continue
+
             device_screen = device_capture_screen(DEVICE_IP, DEVICE_PORT)
             stage = detect_stage(device_screen, get_detection_stage_names(detection_group, exclude=relic_exclude))
+            if stage is None and is_emu_home_visible(device_screen):
+                stage = "EMU_HOME"
             if stage is None:
                 if time.time() - last_detected_time >= DETECTION_RECOVERY_SCAN_INTERVAL[detection_group]:
                     stage = detect_stage(device_screen, exclude=relic_exclude)
+                    if stage is None and is_emu_home_visible(device_screen):
+                        stage = "EMU_HOME"
                     last_detected_time = time.time()
             else:
                 last_detected_time = time.time()
@@ -314,6 +339,12 @@ def main():
                 session_reset_interval = random.uniform(*SESSION_RESET_INTERVAL)
                 last_lives_time = time.time()
                 lives_interval = random.uniform(25 * 60, 35 * 60)
+                detection_group = "PRE_GAME"
+                last_stage = None
+                is_first_game = True
+            elif stage == "EMU_HOME":
+                print("🏠 Detected Stage: EMU_HOME — tapping CookieRun Classic...")
+                handle_emu_home()
                 detection_group = "PRE_GAME"
                 last_stage = None
                 is_first_game = True

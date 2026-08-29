@@ -28,6 +28,7 @@ from actions import (
     close_announcement_dialog,
     complete_finish,
     handle_anti_bot,
+    handle_emu_home,
     handle_inactive,
     handle_quick_receive_and_send_lives,
     handle_send_friend_life,
@@ -44,6 +45,7 @@ from adb import (
     device_capture_screen,
     device_check_connection,
     device_connect,
+    device_is_app_running,
     device_reset_app,
     device_tap,
     get_adb_path,
@@ -63,6 +65,8 @@ from config import (
     DETECTION_ALWAYS_STAGES,
     DETECTION_GROUPS,
     DETECTION_RECOVERY_SCAN_INTERVAL,
+    EMU_HOME_CHECK_INTERVAL,
+    GAME_PACKAGE,
     SESSION_RESET_INTERVAL,
 )
 from detection import (
@@ -72,6 +76,7 @@ from detection import (
     extract_item_stock,
     extract_result_coins,
     extract_result_xp,
+    is_emu_home_visible,
     load_templates,
 )
 from discord_notifier import discord_notifier
@@ -377,10 +382,27 @@ class BotEngine:
             last_lives_time = time.time()
             lives_interval = random.uniform(25 * 60, 35 * 60)
             pending_send_friend_life = False
+            last_emu_check_time = time.time()
 
             self.log("🏁 Main loop started. Waiting for game screen...")
 
             while not self.should_stop:
+                # Emu Home watchdog: หลุดมาหน้า Emu -> กดไอคอนเข้าเกมใหม่
+                if time.time() - last_emu_check_time >= EMU_HOME_CHECK_INTERVAL:
+                    last_emu_check_time = time.time()
+                    try:
+                        running = device_is_app_running(self.device_ip, self.device_port, GAME_PACKAGE)
+                    except Exception:
+                        running = False
+                    if not running:
+                        self.log("🏠 ตรวจพบหลุดมาหน้า Emu (แอปไม่รัน) — กดเข้าเกมที่ (537,235)...", "warning")
+                        handle_emu_home()
+                        detection_group = "PRE_GAME"
+                        last_stage = None
+                        is_first_game = True
+                        last_detected_time = time.time()
+                        continue
+
                 try:
                     device_screen = device_capture_screen(self.device_ip, self.device_port)
                     self.update_frame(device_screen)
@@ -391,9 +413,13 @@ class BotEngine:
                     continue
 
                 stage = detect_stage(device_screen, get_detection_stage_names(detection_group, exclude=relic_exclude))
+                if stage is None and is_emu_home_visible(device_screen):
+                    stage = "EMU_HOME"
                 if stage is None:
                     if time.time() - last_detected_time >= DETECTION_RECOVERY_SCAN_INTERVAL[detection_group]:
                         stage = detect_stage(device_screen, exclude=relic_exclude)
+                        if stage is None and is_emu_home_visible(device_screen):
+                            stage = "EMU_HOME"
                         last_detected_time = time.time()
                 else:
                     last_detected_time = time.time()
@@ -813,6 +839,13 @@ class BotEngine:
                     session_reset_interval = random.uniform(*SESSION_RESET_INTERVAL)
                     last_lives_time = time.time()
                     lives_interval = random.uniform(25 * 60, 35 * 60)
+                    detection_group = "PRE_GAME"
+                    last_stage = None
+                    is_first_game = True
+
+                elif stage == "EMU_HOME":
+                    self.log("🏠 Detected Stage: EMU_HOME — tapping CookieRun Classic at (537,235)...", "warning")
+                    handle_emu_home()
                     detection_group = "PRE_GAME"
                     last_stage = None
                     is_first_game = True

@@ -16,6 +16,7 @@ from config import (
     MATCH_THRESHOLD,
     STAGE_REGIONS,
     STAGE_TEMPLATES,
+    STAGE_THRESHOLDS,
     TEMPLATE_DIR,
 )
 
@@ -105,7 +106,14 @@ def detect_templates(screen, template_files, region=None):
             continue
         result = cv2.matchTemplate(screen_gray, template, cv2.TM_CCOEFF_NORMED)
         _, max_val, _, max_loc = cv2.minMaxLoc(result)
-        if max_val >= MATCH_THRESHOLD:
+        # use per-template threshold if available
+        th_name = None
+        for k, v in STAGE_TEMPLATES.items():
+            if filename in v:
+                th_name = k
+                break
+        threshold = STAGE_THRESHOLDS.get(th_name, MATCH_THRESHOLD) if th_name and isinstance(STAGE_THRESHOLDS, dict) else MATCH_THRESHOLD
+        if max_val >= threshold:
             th, tw = template.shape[:2]
             x = max_loc[0] + offset_x
             y = max_loc[1] + offset_y
@@ -126,6 +134,7 @@ def detect_stage(screen, stage_names=None, exclude=None):
         if not template_files:
             continue
         search_area = _crop_region(screen_gray, STAGE_REGIONS.get(stage_name))
+        threshold = STAGE_THRESHOLDS.get(stage_name, MATCH_THRESHOLD) if isinstance(STAGE_THRESHOLDS, dict) else MATCH_THRESHOLD
         for filename in template_files:
             template = _get_template_gray(filename)
             if template is None:
@@ -137,7 +146,7 @@ def detect_stage(screen, stage_names=None, exclude=None):
                 continue
             result = cv2.matchTemplate(search_area, template, cv2.TM_CCOEFF_NORMED)
             _, max_val, _, _ = cv2.minMaxLoc(result)
-            if max_val >= MATCH_THRESHOLD:
+            if max_val >= threshold:
                 return stage_name
     return None
 
@@ -424,6 +433,75 @@ def extract_item_stock(screen, item_type: str) -> int:
     except ValueError:
         return 0
 
+
+
+def is_announcement_popup_visible(screen) -> bool:
+    """
+    Heuristic fallback for generic popups (Party Pass etc.) that share the same X at 1126,57.
+    Checks the close-button region for a gray circular button with white X — works across all variants
+    even if the inner template changes.
+    """
+    screen_bgr = _normalize(screen)
+    if screen_bgr is None:
+        return False
+    h, w = screen_bgr.shape[:2]
+    # region around 1126,57 -> 1090:1160, 15:95 (approx 70x80)
+    x1, y1, x2, y2 = 1090, 15, 1160, 95
+    if w < x2 or h < y2:
+        # scale coordinates if screen not 1280x720
+        x1, y1, x2, y2 = int(w*0.851), int(h*0.020), int(w*0.906), int(h*0.131)
+    crop = screen_bgr[y1:y2, x1:x2]
+    if crop.size == 0:
+        return False
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    # Close button is light gray (~150-190) on darker background; check for circular blob
+    # Simple check: mean std and presence of white X pixels
+    _, thresh_white = cv2.threshold(gray, 230, 255, cv2.THRESH_BINARY)
+    white_ratio = float(np.count_nonzero(thresh_white)) / thresh_white.size
+    # X button has ~5-12% white pixels (the X) inside crop
+    if 0.02 < white_ratio < 0.18:
+        # also check gray circle presence: pixels 110-190
+        gray_mask = cv2.inRange(gray, 110, 200)
+        gray_ratio = float(np.count_nonzero(gray_mask)) / gray_mask.size
+        if gray_ratio > 0.15:
+            return True
+    return False
+
+
+def is_emu_home_visible(screen) -> bool:
+    """
+    Heuristic for Emu launcher home (หลุดมาหน้า Emu).
+    Checks 2 cues:
+    1) Top search bar: white rounded bar with 'Search for games & apps' near (640, 150)
+    2) Store/System apps text row is not same as game UI
+    Works without template file; fallback when EMU_HOME_1.png missing.
+    """
+    screen_bgr = _normalize(screen)
+    if screen_bgr is None:
+        return False
+    h, w = screen_bgr.shape[:2]
+    # Expect 1280x720, but scale-safe
+    # Search bar region: y 110-180, x 350-920
+    x1, y1, x2, y2 = int(w*0.27), int(h*0.13), int(w*0.72), int(h*0.25)
+    crop = screen_bgr[y1:y2, x1:x2]
+    if crop.size == 0:
+        return False
+    # White bar detection: high V, low S
+    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+    white_mask = cv2.inRange(hsv, (0, 0, 200), (180, 40, 255))
+    white_ratio = float(np.count_nonzero(white_mask)) / white_mask.size
+    if white_ratio < 0.15:
+        return False
+    # Icon row check: look for ~3 icons around 537,235 area -> colorful blobs
+    # Simple: bottom of search bar + dark background still has icons, but game screens never have this white bar ratio
+    # Confirm dark background around
+    bg_crop = screen_bgr[int(h*0.30):int(h*0.50), int(w*0.05):int(w*0.55)]
+    gray = cv2.cvtColor(bg_crop, cv2.COLOR_BGR2GRAY)
+    mean_val = float(np.mean(gray))
+    # Emu home has dark overlay ~20-50 mean, game screens are brighter (~70+)
+    if mean_val > 60:
+        return False
+    return True
 
 
 def detect_result_screen_mystery_box(screen) -> list:

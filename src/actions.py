@@ -19,6 +19,7 @@ from config import (
     ACCEPT_TOO_MANY_TREASURES_BUTTON,
     ALL_LIVES_RECEIVED_AND_SENT_REGION,
     ALL_LIVES_RECEIVED_AND_SENT_TEMPLATE,
+    ANNOUNCEMENT_CLOSE_BUTTON,
     CLOSE_ANNOUNCEMENT_DIALOG_BUTTON,
     CLOSE_SEND_LIFE_DIALOG_BUTTON,
     COMPLETE_FINISH_BUTTON,
@@ -341,18 +342,28 @@ def handle_quick_receive_and_send_lives():
     print("✉️ Quick Receive and Send Lives completed.")
 
 
+def close_announcement_popup():
+    print("❌ Closing generic announcement popup at (1126,57)...")
+    safe_device_tap(config.DEVICE_IP, config.DEVICE_PORT, ANNOUNCEMENT_CLOSE_BUTTON[0], ANNOUNCEMENT_CLOSE_BUTTON[1])
+    time.sleep(random.uniform(0.8, 1.4))
+
+
 def close_announcement_dialog():
     print("🖱️ Closing announcement dialog...")
     for i in range(5):
         print(f"🖱️ Tapping close announcement dialog button {i+1}/5")
         safe_device_tap(config.DEVICE_IP, config.DEVICE_PORT, CLOSE_ANNOUNCEMENT_DIALOG_BUTTON[0], CLOSE_ANNOUNCEMENT_DIALOG_BUTTON[1])
         time.sleep(random.uniform(0.8, 1.4))
+    # also try generic close button (covers Party Pass Season 9 variants etc.)
+    safe_device_tap(config.DEVICE_IP, config.DEVICE_PORT, ANNOUNCEMENT_CLOSE_BUTTON[0], ANNOUNCEMENT_CLOSE_BUTTON[1])
     time.sleep(random.uniform(0.8, 1.4))
     device_screen = device_capture_screen(config.DEVICE_IP, config.DEVICE_PORT)
     if detect_stage(device_screen, ["PARTY_RUN"]) == "PARTY_RUN":
         close_party_run_mode()
     elif detect_stage(device_screen, ["GAME_SETTINGS"]) == "GAME_SETTINGS":
         close_game_settings()
+    elif detect_stage(device_screen, ["ANNOUNCEMENT_POPUP"]) == "ANNOUNCEMENT_POPUP":
+        close_announcement_popup()
 
 
 def close_party_run_mode():
@@ -365,3 +376,11 @@ def close_game_settings():
     print("🖱️ Closing Game Settings...")
     safe_device_tap(config.DEVICE_IP, config.DEVICE_PORT, EXIT_GAME_SETTINGS_BUTTON[0], EXIT_GAME_SETTINGS_BUTTON[1])
     time.sleep(random.uniform(0.8, 1.4))
+
+
+def handle_emu_home():
+    """กดไอคอน CookieRun Classic ที่หน้า Emu Home (537,235) เมื่อหลุดมาหน้าหลัก"""
+    print("🏠 Detected EMU_HOME — tapping CookieRun Classic at (537,235)...")
+    from config import EMU_HOME_TAP
+    safe_device_tap(config.DEVICE_IP, config.DEVICE_PORT, EMU_HOME_TAP[0], EMU_HOME_TAP[1])
+    time.sleep(random.uniform(4, 6))
