@@ -82,6 +82,38 @@ from detection import (
 )
 from discord_notifier import discord_notifier
 
+# Persistent per-instance settings file (survives server restart)
+_INSTANCE_SETTINGS_FILE = os.path.join(os.path.dirname(__file__), "instance_settings.json")
+_INSTANCE_SETTINGS_LOCK = threading.Lock()
+
+def _load_all_instance_settings() -> dict:
+    if os.path.isfile(_INSTANCE_SETTINGS_FILE):
+        try:
+            import json
+            with open(_INSTANCE_SETTINGS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                return data if isinstance(data, dict) else {}
+        except Exception:
+            return {}
+    return {}
+
+def _save_all_instance_settings(all_data: dict):
+    try:
+        import json
+        with _INSTANCE_SETTINGS_LOCK:
+            with open(_INSTANCE_SETTINGS_FILE, "w", encoding="utf-8") as f:
+                json.dump(all_data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"[Settings] Failed to save instance_settings.json: {e}")
+
+def _load_instance_settings(instance_id: str) -> dict:
+    return _load_all_instance_settings().get(instance_id, {})
+
+def _save_instance_settings(instance_id: str, settings: dict):
+    all_data = _load_all_instance_settings()
+    all_data[instance_id] = settings
+    _save_all_instance_settings(all_data)
+
 BOOST_OPTIONS = [
     {"id": "double_coins", "name": "Double Coins (2x)", "template": BOOST_DOUBLE_COINS_TEMPLATE},
     {"id": "score_15", "name": "+15% Score Bonus", "template": BOOST_15P_SCORE_BONUS_TEMPLATE},
@@ -116,15 +148,24 @@ def get_detection_stage_names(group_name: str, exclude: Optional[set] = None) ->
 
 
 class BotEngine:
-    def __init__(self):
+    """
+    Multi-instance capable BotEngine.
+    Each instance controls ONE ADB device (host:port) independently.
+    All state is per-instance (self.xxx) with its own thread + lock.
+    """
+
+    def __init__(self, instance_id: str = "device_1", device_ip: str = "127.0.0.1", device_port: int = 5595, device_name: str = "จอ 1"):
+        self.instance_id: str = instance_id
+        self.device_name: str = device_name
         self.is_running = False
         self.should_stop = False
         self.thread: Optional[threading.Thread] = None
+        # Per-instance lock — never shared cross-instance
         self.lock = threading.Lock()
 
-        # Config state
-        self.device_ip = config.DEVICE_IP
-        self.device_port = config.DEVICE_PORT
+        # Config state — per-instance, never reads from config global directly during loop
+        self.device_ip = device_ip
+        self.device_port = int(device_port)
         self.use_fast_start = False
         self.fast_start_min_stock = 10
         self.use_cookie_relay = False
@@ -137,8 +178,26 @@ class BotEngine:
         self.stop_goal_rounds_target: int = 50
         self.stop_goal_time_enabled: bool = False
         self.stop_goal_time_hours: float = 2.0
+        # Load persisted per-instance settings if exists (survives restart)
+        try:
+            _saved = _load_instance_settings(instance_id)
+            if _saved:
+                self.use_fast_start = bool(_saved.get("use_fast_start", self.use_fast_start))
+                self.fast_start_min_stock = int(_saved.get("fast_start_min_stock", self.fast_start_min_stock))
+                self.use_cookie_relay = bool(_saved.get("use_cookie_relay", self.use_cookie_relay))
+                self.cookie_relay_min_stock = int(_saved.get("cookie_relay_min_stock", self.cookie_relay_min_stock))
+                self.use_desired_random_boost = bool(_saved.get("use_desired_random_boost", self.use_desired_random_boost))
+                self.desired_boost_id = _saved.get("desired_boost_id", self.desired_boost_id)
+                self.detect_relic = bool(_saved.get("detect_relic", self.detect_relic))
+                self.send_friend_lives = bool(_saved.get("send_friend_lives", self.send_friend_lives))
+                self.stop_goal_rounds_enabled = bool(_saved.get("stop_goal_rounds_enabled", self.stop_goal_rounds_enabled))
+                self.stop_goal_rounds_target = int(_saved.get("stop_goal_rounds_target", self.stop_goal_rounds_target))
+                self.stop_goal_time_enabled = bool(_saved.get("stop_goal_time_enabled", self.stop_goal_time_enabled))
+                self.stop_goal_time_hours = float(_saved.get("stop_goal_time_hours", self.stop_goal_time_hours))
+        except Exception as e:
+            print(f"[{instance_id}] Failed to load persisted settings: {e}")
 
-        # Runtime Stats
+        # Runtime Stats — all per-instance, no global shared state
         self.start_time: Optional[float] = None
         self.current_stage: str = "IDLE"
         self.rounds_played: int = 0
@@ -167,12 +226,12 @@ class BotEngine:
         self.session_xp_earned: int = 0
         self.last_round_xp: int = 0
 
-        # Frame buffer for live stream
+        # Frame buffer for live stream — per instance
         self.latest_frame_jpeg: Optional[bytes] = None
         self.latest_currency_crop_jpeg: Optional[bytes] = None
         self.last_frame_time: float = 0
 
-        # Logs buffer
+        # Logs buffer — per instance
         self.logs: deque = deque(maxlen=200)
         self.ws_subscribers: List[asyncio.Queue] = []
         self.loop: Optional[asyncio.AbstractEventLoop] = None
@@ -183,9 +242,11 @@ class BotEngine:
             "time": timestamp,
             "message": message,
             "level": level,
+            "instance_id": self.instance_id,
+            "device_name": self.device_name,
         }
         self.logs.append(log_entry)
-        print(f"[{timestamp}] [{level.upper()}] {message}")
+        print(f"[{timestamp}] [{self.instance_id}] [{level.upper()}] {message}")
 
         if self.loop and self.ws_subscribers:
             for q in list(self.ws_subscribers):
@@ -212,7 +273,6 @@ class BotEngine:
                 self.latest_frame_jpeg = buffer.tobytes()
                 self.last_frame_time = time.time()
 
-                # Extract top currency banner (Diamonds + Coins)
                 h, w = screen_bgr.shape[:2]
                 if h >= 100 and w >= 1200:
                     curr_crop = screen_bgr[10:72, 730:1220]
@@ -224,42 +284,251 @@ class BotEngine:
     def start(self, user_config: Dict[str, Any]):
         with self.lock:
             if self.is_running:
-                return {"success": False, "message": "Bot is already running"}
+                return {"success": False, "message": f"[{self.instance_id}] Bot is already running"}
 
-            self.device_ip = user_config.get("device_ip", self.device_ip)
-            self.device_port = int(user_config.get("device_port", self.device_port))
-            self.use_fast_start = bool(user_config.get("use_fast_start", False))
-            self.fast_start_min_stock = int(user_config.get("fast_start_min_stock", 10))
-            self.use_cookie_relay = bool(user_config.get("use_cookie_relay", False))
-            self.cookie_relay_min_stock = int(user_config.get("cookie_relay_min_stock", 10))
-            self.use_desired_random_boost = bool(user_config.get("use_desired_random_boost", False))
-            self.desired_boost_id = user_config.get("desired_boost_id", "double_coins")
-            self.detect_relic = bool(user_config.get("detect_relic", True))
-            self.send_friend_lives = bool(user_config.get("send_friend_lives", True))
-            self.stop_goal_rounds_enabled = bool(user_config.get("stop_goal_rounds_enabled", False))
-            self.stop_goal_rounds_target = int(user_config.get("stop_goal_rounds_target", 50))
-            self.stop_goal_time_enabled = bool(user_config.get("stop_goal_time_enabled", False))
-            self.stop_goal_time_hours = float(user_config.get("stop_goal_time_hours", 2.0))
+            # Device identity: defensive resolution — never allow None to overwrite
+            # Priority: host > device_ip > existing; port > device_port > existing
+            # Also handle case where frontend sends None/empty string
+            def _resolve_host(cfg, fallback):
+                for key in ("host", "device_ip"):
+                    if key in cfg:
+                        v = cfg.get(key)
+                        if v is not None and str(v).strip() != "" and str(v).lower() != "none":
+                            return str(v).strip()
+                return fallback
 
-            config.DEVICE_IP = self.device_ip
-            config.DEVICE_PORT = self.device_port
+            def _resolve_port(cfg, fallback):
+                for key in ("port", "device_port"):
+                    if key in cfg:
+                        v = cfg.get(key)
+                        # allow 0? but port 0 is invalid, treat as missing
+                        if v is not None and str(v).strip() != "" and str(v).lower() != "none":
+                            try:
+                                return int(v)
+                            except (ValueError, TypeError):
+                                continue
+                # fallback may be None -> raise
+                if fallback is None or str(fallback).strip() == "" or str(fallback).lower() == "none":
+                    raise ValueError(f"Instance {self.instance_id}: ไม่พบค่า port สำหรับเชื่อมต่อ ADB กรุณาตรวจสอบการตั้งค่า (host={self.device_ip}, port={fallback})")
+                try:
+                    return int(fallback)
+                except (ValueError, TypeError) as e:
+                    raise ValueError(f"Instance {self.instance_id}: ค่า port ไม่ถูกต้อง ({fallback}): {e}")
+
+            host_value = _resolve_host(user_config, self.device_ip)
+            if host_value is None or str(host_value).strip() == "" or str(host_value).lower() == "none":
+                raise ValueError(f"Instance {self.instance_id}: ไม่พบค่า host สำหรับเชื่อมต่อ ADB กรุณาตรวจสอบการตั้งค่า")
+            self.device_ip = str(host_value).strip()
+
+            port_value = _resolve_port(user_config, self.device_port)
+            self.device_port = int(port_value)
+            if "name" in user_config and user_config["name"]:
+                self.device_name = str(user_config["name"])
+
+            # Only update settings that are explicitly provided — keep persisted values otherwise (fixes revert bug d)
+            if "use_fast_start" in user_config:
+                self.use_fast_start = bool(user_config["use_fast_start"])
+            if "fast_start_min_stock" in user_config:
+                try: self.fast_start_min_stock = int(user_config["fast_start_min_stock"])
+                except: pass
+            if "use_cookie_relay" in user_config:
+                self.use_cookie_relay = bool(user_config["use_cookie_relay"])
+            if "cookie_relay_min_stock" in user_config:
+                try: self.cookie_relay_min_stock = int(user_config["cookie_relay_min_stock"])
+                except: pass
+            if "use_desired_random_boost" in user_config:
+                self.use_desired_random_boost = bool(user_config["use_desired_random_boost"])
+            if "desired_boost_id" in user_config:
+                self.desired_boost_id = str(user_config["desired_boost_id"])
+            if "detect_relic" in user_config:
+                self.detect_relic = bool(user_config["detect_relic"])
+            if "send_friend_lives" in user_config:
+                self.send_friend_lives = bool(user_config["send_friend_lives"])
+            if "stop_goal_rounds_enabled" in user_config:
+                self.stop_goal_rounds_enabled = bool(user_config["stop_goal_rounds_enabled"])
+            if "stop_goal_rounds_target" in user_config:
+                try: self.stop_goal_rounds_target = int(user_config["stop_goal_rounds_target"])
+                except: pass
+            if "stop_goal_time_enabled" in user_config:
+                self.stop_goal_time_enabled = bool(user_config["stop_goal_time_enabled"])
+            if "stop_goal_time_hours" in user_config:
+                try: self.stop_goal_time_hours = float(user_config["stop_goal_time_hours"])
+                except: pass
+            # Persist the (possibly updated) settings so they survive restart and next start call
+            try:
+                _save_instance_settings(self.instance_id, {
+                    "use_fast_start": self.use_fast_start,
+                    "fast_start_min_stock": self.fast_start_min_stock,
+                    "use_cookie_relay": self.use_cookie_relay,
+                    "cookie_relay_min_stock": self.cookie_relay_min_stock,
+                    "use_desired_random_boost": self.use_desired_random_boost,
+                    "desired_boost_id": self.desired_boost_id,
+                    "detect_relic": self.detect_relic,
+                    "send_friend_lives": self.send_friend_lives,
+                    "stop_goal_rounds_enabled": self.stop_goal_rounds_enabled,
+                    "stop_goal_rounds_target": self.stop_goal_rounds_target,
+                    "stop_goal_time_enabled": self.stop_goal_time_enabled,
+                    "stop_goal_time_hours": self.stop_goal_time_hours,
+                })
+            except Exception as e:
+                print(f"[{self.instance_id}] Persist on start failed: {e}")
+
             self.is_running = True
             self.should_stop = False
             self.start_time = time.time()
             self.current_round_start_time = time.time()
             self.current_round_recorded = False
             self.current_stage = "INITIALIZING"
-            self.thread = threading.Thread(target=self._run_loop, daemon=True)
+            self.thread = threading.Thread(target=self._run_loop, daemon=True, name=f"BotThread-{self.instance_id}")
             self.thread.start()
             self.log(f"▶️ Bot started (Device: {self.device_ip}:{self.device_port})", "success")
             discord_notifier.send_bot_start(self.device_ip, self.device_port)
 
-        return {"success": True, "message": "Bot started successfully"}
+        return {"success": True, "message": f"[{self.instance_id}] Bot started successfully"}
+
+    def get_settings(self) -> Dict[str, Any]:
+        """คืนค่า settings ปัจจุบันของ instance นี้ (สำหรับ API)"""
+        with self.lock:
+            return {
+                "use_fast_start": self.use_fast_start,
+                "fast_start_min_stock": self.fast_start_min_stock,
+                "use_cookie_relay": self.use_cookie_relay,
+                "cookie_relay_min_stock": self.cookie_relay_min_stock,
+                "use_desired_random_boost": self.use_desired_random_boost,
+                "desired_boost_id": self.desired_boost_id,
+                "detect_relic": self.detect_relic,
+                "send_friend_lives": self.send_friend_lives,
+                "stop_goal_rounds_enabled": self.stop_goal_rounds_enabled,
+                "stop_goal_rounds_target": self.stop_goal_rounds_target,
+                "stop_goal_time_enabled": self.stop_goal_time_enabled,
+                "stop_goal_time_hours": self.stop_goal_time_hours,
+            }
+
+    def update_settings(self, user_config: Dict[str, Any]) -> Dict[str, Any]:
+        """อัปเดต settings ของ instance นี้แบบ persistent (ใช้ได้ทั้งตอนรันและหยุด)"""
+        with self.lock:
+            # Update only keys present in payload — don't reset others to default
+            if "use_fast_start" in user_config:
+                self.use_fast_start = bool(user_config["use_fast_start"])
+            if "fast_start_min_stock" in user_config:
+                try:
+                    self.fast_start_min_stock = int(user_config["fast_start_min_stock"])
+                except: pass
+            if "use_cookie_relay" in user_config:
+                self.use_cookie_relay = bool(user_config["use_cookie_relay"])
+            if "cookie_relay_min_stock" in user_config:
+                try:
+                    self.cookie_relay_min_stock = int(user_config["cookie_relay_min_stock"])
+                except: pass
+            if "use_desired_random_boost" in user_config:
+                self.use_desired_random_boost = bool(user_config["use_desired_random_boost"])
+            if "desired_boost_id" in user_config:
+                self.desired_boost_id = str(user_config["desired_boost_id"])
+            if "detect_relic" in user_config:
+                self.detect_relic = bool(user_config["detect_relic"])
+            if "send_friend_lives" in user_config:
+                self.send_friend_lives = bool(user_config["send_friend_lives"])
+            if "stop_goal_rounds_enabled" in user_config:
+                self.stop_goal_rounds_enabled = bool(user_config["stop_goal_rounds_enabled"])
+            if "stop_goal_rounds_target" in user_config:
+                try:
+                    self.stop_goal_rounds_target = int(user_config["stop_goal_rounds_target"])
+                except: pass
+            if "stop_goal_time_enabled" in user_config:
+                self.stop_goal_time_enabled = bool(user_config["stop_goal_time_enabled"])
+            if "stop_goal_time_hours" in user_config:
+                try:
+                    self.stop_goal_time_hours = float(user_config["stop_goal_time_hours"])
+                except: pass
+            # Persist to file (per-instance) — build dict directly to avoid re-locking get_settings()
+            settings_snapshot = {
+                "use_fast_start": self.use_fast_start,
+                "fast_start_min_stock": self.fast_start_min_stock,
+                "use_cookie_relay": self.use_cookie_relay,
+                "cookie_relay_min_stock": self.cookie_relay_min_stock,
+                "use_desired_random_boost": self.use_desired_random_boost,
+                "desired_boost_id": self.desired_boost_id,
+                "detect_relic": self.detect_relic,
+                "send_friend_lives": self.send_friend_lives,
+                "stop_goal_rounds_enabled": self.stop_goal_rounds_enabled,
+                "stop_goal_rounds_target": self.stop_goal_rounds_target,
+                "stop_goal_time_enabled": self.stop_goal_time_enabled,
+                "stop_goal_time_hours": self.stop_goal_time_hours,
+            }
+            try:
+                _save_instance_settings(self.instance_id, settings_snapshot)
+            except Exception as e:
+                print(f"[{self.instance_id}] Persist failed: {e}")
+            self.log(
+                f"⚙️ บันทึกตั้งค่า [{self.instance_id}]: FastStart={'ON' if self.use_fast_start else 'OFF'}({self.fast_start_min_stock}) "
+                f"| Relay={'ON' if self.use_cookie_relay else 'OFF'}({self.cookie_relay_min_stock}) "
+                f"| Boost={'ON' if self.use_desired_random_boost else 'OFF'}({self.desired_boost_id})",
+                "info",
+            )
+            # return copy
+            return {"success": True, "message": f"[{self.instance_id}] Settings saved", "settings": dict(settings_snapshot)}
+        # outside lock for return — but we already returned inside, keep for safety
+        return {"success": True, "message": f"[{self.instance_id}] Settings saved", "settings": self.get_settings()}
+
+    def update_live_config(self, user_config: Dict[str, Any]):
+        """อัปเดต config แบบ hot-reload ขณะบอทกำลังรัน (legacy) — ตอนนี้เรียก update_settings ด้วยเพื่อ persist"""
+        # Reuse update_settings but keep running check for backward compat
+        with self.lock:
+            if not self.is_running:
+                return {"success": False, "message": f"[{self.instance_id}] Bot is not running"}
+            if "use_fast_start" in user_config:
+                self.use_fast_start = bool(user_config["use_fast_start"])
+            if "fast_start_min_stock" in user_config:
+                self.fast_start_min_stock = int(user_config["fast_start_min_stock"])
+            if "use_cookie_relay" in user_config:
+                self.use_cookie_relay = bool(user_config["use_cookie_relay"])
+            if "cookie_relay_min_stock" in user_config:
+                self.cookie_relay_min_stock = int(user_config["cookie_relay_min_stock"])
+            if "use_desired_random_boost" in user_config:
+                self.use_desired_random_boost = bool(user_config["use_desired_random_boost"])
+            if "desired_boost_id" in user_config:
+                self.desired_boost_id = user_config["desired_boost_id"]
+            if "detect_relic" in user_config:
+                self.detect_relic = bool(user_config["detect_relic"])
+            if "send_friend_lives" in user_config:
+                self.send_friend_lives = bool(user_config["send_friend_lives"])
+            if "stop_goal_rounds_enabled" in user_config:
+                self.stop_goal_rounds_enabled = bool(user_config["stop_goal_rounds_enabled"])
+            if "stop_goal_rounds_target" in user_config:
+                self.stop_goal_rounds_target = int(user_config["stop_goal_rounds_target"])
+            if "stop_goal_time_enabled" in user_config:
+                self.stop_goal_time_enabled = bool(user_config["stop_goal_time_enabled"])
+            if "stop_goal_time_hours" in user_config:
+                self.stop_goal_time_hours = float(user_config["stop_goal_time_hours"])
+            # Persist live changes as well
+            try:
+                _save_instance_settings(self.instance_id, {
+                    "use_fast_start": self.use_fast_start,
+                    "fast_start_min_stock": self.fast_start_min_stock,
+                    "use_cookie_relay": self.use_cookie_relay,
+                    "cookie_relay_min_stock": self.cookie_relay_min_stock,
+                    "use_desired_random_boost": self.use_desired_random_boost,
+                    "desired_boost_id": self.desired_boost_id,
+                    "detect_relic": self.detect_relic,
+                    "send_friend_lives": self.send_friend_lives,
+                    "stop_goal_rounds_enabled": self.stop_goal_rounds_enabled,
+                    "stop_goal_rounds_target": self.stop_goal_rounds_target,
+                    "stop_goal_time_enabled": self.stop_goal_time_enabled,
+                    "stop_goal_time_hours": self.stop_goal_time_hours,
+                })
+            except Exception as e:
+                print(f"[{self.instance_id}] Persist live failed: {e}")
+            self.log(
+                f"⚙️ อัปเดตตั้งค่าแบบ Live: FastStart={'ON' if self.use_fast_start else 'OFF'}({self.fast_start_min_stock}) "
+                f"| CookieRelay={'ON' if self.use_cookie_relay else 'OFF'}({self.cookie_relay_min_stock})",
+                "info",
+            )
+        return {"success": True, "message": "Live config updated"}
 
     def stop(self):
         with self.lock:
             if not self.is_running:
-                return {"success": False, "message": "Bot is not running"}
+                return {"success": False, "message": f"[{self.instance_id}] Bot is not running"}
 
             self.should_stop = True
             self.current_stage = "STOPPING"
@@ -284,7 +553,7 @@ class BotEngine:
                 session_xp=self.session_xp_earned,
             )
 
-        return {"success": True, "message": "Bot stopped successfully"}
+        return {"success": True, "message": f"[{self.instance_id}] Bot stopped successfully"}
 
     def reset_stats(self):
         self.rounds_played = 0
@@ -314,6 +583,8 @@ class BotEngine:
         coins_per_hour = int(self.session_coins_earned / max(0.001, uptime_sec / 3600)) if (self.is_running and uptime_sec > 5) else 0
 
         return {
+            "instance_id": self.instance_id,
+            "device_name": self.device_name,
             "is_running": self.is_running,
             "current_stage": self.current_stage,
             "uptime": uptime_str,
@@ -331,6 +602,8 @@ class BotEngine:
             "round_history": list(self.round_history),
             "device_ip": self.device_ip,
             "device_port": self.device_port,
+            "host": self.device_ip,
+            "port": self.device_port,
             "use_fast_start": self.use_fast_start,
             "fast_start_min_stock": self.fast_start_min_stock,
             "use_cookie_relay": self.use_cookie_relay,
@@ -388,7 +661,6 @@ class BotEngine:
             self.log("🏁 Main loop started. Waiting for game screen...")
 
             while not self.should_stop:
-                # Emu Home watchdog: หลุดมาหน้า Emu -> กดไอคอนเข้าเกมใหม่
                 if time.time() - last_emu_check_time >= EMU_HOME_CHECK_INTERVAL:
                     last_emu_check_time = time.time()
                     try:
@@ -397,7 +669,7 @@ class BotEngine:
                         running = False
                     if not running:
                         self.log("🏠 ตรวจพบหลุดมาหน้า Emu (แอปไม่รัน) — กดเข้าเกมที่ (537,235)...", "warning")
-                        handle_emu_home()
+                        handle_emu_home(self.device_ip, self.device_port)
                         detection_group = "PRE_GAME"
                         last_stage = None
                         is_first_game = True
@@ -431,7 +703,6 @@ class BotEngine:
                     self.current_stage = f"{detection_group} (Searching...)"
 
                 if stage == last_stage:
-                    # IN_GAME ต้องวนไวขึ้นเพื่อจับ GAME_COMPLETE ให้ทัน + สุ่มเวลา human-like
                     fast_sleep = random.uniform(0.04, 0.08) if detection_group == "IN_GAME" else random.uniform(0.08, 0.14)
                     if self.interruptible_sleep(fast_sleep):
                         break
@@ -448,7 +719,7 @@ class BotEngine:
 
                     if pending_send_friend_life and self.send_friend_lives:
                         self.log("💌 Sending friend lives after app reset...")
-                        handle_send_friend_life()
+                        handle_send_friend_life(self.device_ip, self.device_port)
                         pending_send_friend_life = False
                         last_lives_time = time.time()
                         last_stage = None
@@ -460,7 +731,7 @@ class BotEngine:
                         device_reset_app(self.device_ip, self.device_port)
                         if self.interruptible_sleep(random.uniform(4.5, 5.8)):
                             break
-                        close_announcement_dialog()
+                        close_announcement_dialog(self.device_ip, self.device_port)
                         pending_send_friend_life = True
                         session_start_time = time.time()
                         session_reset_interval = random.uniform(*SESSION_RESET_INTERVAL)
@@ -474,7 +745,7 @@ class BotEngine:
                     lives_elapsed = time.time() - last_lives_time
                     if self.send_friend_lives and lives_elapsed >= lives_interval:
                         self.log(f"💌 ~30 min passed ({lives_elapsed / 60:.1f} min) — receiving and sending lives...")
-                        handle_quick_receive_and_send_lives()
+                        handle_quick_receive_and_send_lives(self.device_ip, self.device_port)
                         last_lives_time = time.time()
                         lives_interval = random.uniform(25 * 60, 35 * 60)
                         last_stage = None
@@ -485,7 +756,6 @@ class BotEngine:
                         last_stage = None
                         continue
 
-                    # Check Auto-Stop Goals before starting next round
                     if self.stop_goal_rounds_enabled and self.rounds_played >= self.stop_goal_rounds_target:
                         goal_msg = f"วิ่งครบตามเป้าหมาย {self.stop_goal_rounds_target} รอบ"
                         self.log(f"🎯 บรรลุเป้าหมาย: {goal_msg}! กำลังหยุดการทำงานบอทอัตโนมัติ...", "success")
@@ -522,7 +792,6 @@ class BotEngine:
                         break
 
                     if not is_first_game:
-                        # สุ่มกว้างขึ้น 22-48s + 8% มีพักยาวเหมือนคนเผลอ เหมือนคนจริง
                         delay = random.uniform(22, 48)
                         if random.random() < 0.08:
                             delay += random.uniform(12, 22)
@@ -531,40 +800,65 @@ class BotEngine:
                             break
 
                     is_first_game = False
-                    start_game()
+                    start_game(self.device_ip, self.device_port)
                     detection_group = "PRE_GAME"
 
                 elif stage == "PURCHASE_ITEM":
                     self.log("🛒 Detected Stage: PURCHASE_ITEM", "stage")
 
-                    # Smart Fast Start check
                     if self.use_fast_start:
                         stock_fs = extract_item_stock(device_screen, "fast_start")
+                        if stock_fs > 99:
+                            self.log(f"⚠️ Fast Start อ่านได้ {stock_fs} ดูเพี้ยน (>99) — ถือว่า OCR พลาด จะลองซื้อกันพลาด", "warning")
+                            stock_fs = 0
                         if stock_fs <= self.fast_start_min_stock:
                             self.log(f"⚡ Fast Start ในคลัง ({stock_fs} ชิ้น <= เกณฑ์ {self.fast_start_min_stock}) -> กำลังซื้อเพิ่ม...", "info")
-                            purchase_fast_start()
+                            purchase_fast_start(self.device_ip, self.device_port)
                         else:
                             self.log(f"⚡ Fast Start ในคลังมี {stock_fs} ชิ้น (มากกว่าเกณฑ์ {self.fast_start_min_stock}) -> ข้ามการซื้อเพื่อประหยัดเหรียญ", "info")
+                    else:
+                        self.log("⚡ Fast Start ปิดอยู่ (OFF) — ข้ามการเช็คซื้อในหน้า PURCHASE_ITEM", "info")
 
-                    # Smart Cookie Relay check
                     if self.use_cookie_relay:
                         stock_cr = extract_item_stock(device_screen, "cookie_relay")
+                        if stock_cr > 99:
+                            self.log(f"⚠️ Cookie Relay อ่านได้ {stock_cr} ดูเพี้ยน (>99) — ถือว่า OCR พลาด จะลองซื้อกันพลาด", "warning")
+                            stock_cr = 0
                         if stock_cr <= self.cookie_relay_min_stock:
                             self.log(f"🍪 Cookie Relay ในคลัง ({stock_cr} ชิ้น <= เกณฑ์ {self.cookie_relay_min_stock}) -> กำลังซื้อเพิ่ม...", "info")
-                            purchase_cookie_relay()
+                            purchase_cookie_relay(self.device_ip, self.device_port)
                         else:
                             self.log(f"🍪 Cookie Relay ในคลังมี {stock_cr} ชิ้น (มากกว่าเกณฑ์ {self.cookie_relay_min_stock}) -> ข้ามการซื้อเพื่อประหยัดเหรียญ", "info")
+                    else:
+                        self.log("🍪 Cookie Relay ปิดอยู่ (OFF) — ข้ามการเช็คซื้อในหน้า PURCHASE_ITEM", "info")
 
                     if self.use_desired_random_boost and desired_boost_template:
                         self.log(f"🎲 Rolling boost for: {desired_boost_name}...")
-                        purchase_desired_random_boost(desired_boost_template, desired_boost_name)
-                    play_game()
+                        purchase_desired_random_boost(desired_boost_template, desired_boost_name, self.device_ip, self.device_port)
+                    play_game(self.device_ip, self.device_port)
                     detection_group = "IN_GAME"
                     self.rounds_played += 1
                     self.current_round_start_time = time.time()
                     self.current_round_recorded = False
                     self.current_round_screen = None
                     self.log(f"🏁 Round {self.rounds_played} started!", "success")
+                    if self.use_fast_start:
+                        self.log("⏳ รอตรวจ GAME_START หลังกด PLAY (fallback 3s)...", "info")
+                        for _ in range(6):
+                            if self.should_stop:
+                                break
+                            time.sleep(random.uniform(0.35, 0.55))
+                            try:
+                                fb = device_capture_screen(self.device_ip, self.device_port)
+                                if fb is not None:
+                                    self.update_frame(fb)
+                                    if detect_stage(fb, ["GAME_START"]) == "GAME_START":
+                                        self.log("🏁 [Fallback] เจอ GAME_START หลัง PLAY — กำลังกดใช้ Fast Start ทันที!", "success")
+                                        using_fast_start(self.device_ip, self.device_port)
+                                        last_stage = "GAME_START"
+                                        break
+                            except Exception:
+                                pass
                     if self.interruptible_sleep(random.uniform(0.15, 0.30)):
                         break
                     last_stage = None
@@ -572,23 +866,26 @@ class BotEngine:
                 elif stage == "GAME_START":
                     self.log("🏁 Detected Stage: GAME_START", "stage")
                     if self.use_fast_start:
-                        using_fast_start()
+                        self.log(f"⚡ Fast Start เปิดอยู่ (ON) — กำลังกดใช้ไอเทมที่ (655,340)...", "info")
+                        using_fast_start(self.device_ip, self.device_port)
+                    else:
+                        self.log("⚡ Fast Start ปิดอยู่ (OFF) — ข้ามการใช้ไอเทม", "info")
                     detection_group = "IN_GAME"
 
                 elif stage == "GAME_RELAY":
                     self.log("🔄 Detected Stage: GAME_RELAY (Cookie Relay Triggered)", "stage")
                     if self.use_cookie_relay:
-                        using_cookie_relay()
+                        self.log(f"🍪 Cookie Relay เปิดอยู่ (ON) — กำลังกดใช้ตัวผลัดที่ (655,340)...", "info")
+                        using_cookie_relay(self.device_ip, self.device_port)
+                    else:
+                        self.log("🍪 Cookie Relay ปิดอยู่ (OFF) — ข้ามการใช้ตัวผลัด", "info")
                     detection_group = "IN_GAME"
 
                 elif stage == "GAME_COMPLETE":
                     self.log("✅ Detected Stage: GAME_COMPLETE (กำลังรอสรุปผลคะแนน, เหรียญ & EXP...)", "stage")
-
-                    # 1. Tap quickly to skip card enter animation (shortened + jitter)
                     time.sleep(random.uniform(0.5, 0.8))
                     safe_device_tap(self.device_ip, self.device_port, 640, 260)
 
-                    # 2. Adaptive polling: wait until coins/XP stop counting (แทน sleep ตายตัว 3.5+2.0s) - สุ่มทุก poll
                     self.log("⏳ รอเหรียญ/EXP นับเสร็จ (adaptive polling)...", "info")
                     poll_deadline = time.time() + 8.0
                     last_coins = -1
@@ -610,7 +907,6 @@ class BotEngine:
                             continue
                         c = extract_result_coins(device_screen) if device_screen is not None else 0
                         x = extract_result_xp(device_screen) if device_screen is not None else 0
-                        # ถ้ายังเป็น 0 หลังผ่านไป ~1.5s ให้แตะซ้ำเพื่อข้าม bonus animation (สุ่มตำแหน่ง)
                         if not second_tap_done and time.time() > poll_deadline - 6.5 and c == 0:
                             safe_device_tap(self.device_ip, self.device_port, 640, 260)
                             second_tap_done = True
@@ -626,7 +922,6 @@ class BotEngine:
                         last_coins, last_xp = c, x
                         round_coins, round_xp = c, x
 
-                    # fallback if still 0 after polling (สุ่ม)
                     if round_coins == 0 and device_screen is not None:
                         self.log("⚠️ ยังอ่านเหรียญได้ 0 — ลองแตะซ้ำแล้วอ่านใหม่", "warning")
                         safe_device_tap(self.device_ip, self.device_port, 640, 260)
@@ -658,7 +953,6 @@ class BotEngine:
                         self.session_xp_earned += round_xp
                         self.last_round_xp = round_xp
 
-                    # Detect mystery box presence on Result screen
                     round_boxes = detect_result_screen_mystery_box(device_screen) if device_screen is not None else []
                     if round_boxes:
                         for b in round_boxes:
@@ -666,7 +960,6 @@ class BotEngine:
                         self.box_counts["total"] += len(round_boxes)
                         self.mystery_boxes = self.box_counts["total"]
 
-                    # Record round history if not already
                     if not self.current_round_recorded:
                         dur_sec = int(time.time() - self.current_round_start_time) if self.current_round_start_time else 0
                         dur_str = f"{dur_sec // 60}m {dur_sec % 60}s" if dur_sec >= 60 else f"{dur_sec}s"
@@ -697,27 +990,22 @@ class BotEngine:
                             screen_img=device_screen,
                         )
 
-                    # 7. Random jitter 0.5-1.5s before tapping OK (ตามที่เลือก) เพื่อดูเป็นธรรมชาติ
                     jitter = random.uniform(0.5, 1.5)
                     self.log(f"⏳ รอ {jitter:.1f}s ก่อนกด OK (jitter 0.5-1.5s)...", "info")
                     if self.interruptible_sleep(jitter):
                         break
 
-                    # 8. Tap OK to complete and dismiss the Result screen (สุ่มอยู่แล้วใน complete_finish)
-                    complete_finish()
+                    complete_finish(self.device_ip, self.device_port)
                     detection_group = "POST_GAME"
 
                 elif stage == "MYSTERY_BOX":
-                    # Wait briefly for box reveal animation to settle (สุ่ม)
                     time.sleep(random.uniform(0.75, 1.35))
                     fresh_mb_screen = device_capture_screen(self.device_ip, self.device_port)
                     if fresh_mb_screen is not None:
                         device_screen = fresh_mb_screen
 
-                    # Detect specific box grades
                     detected_grades = detect_mystery_box_grades(device_screen)
                     if not detected_grades:
-                        # Fallback: In MYSTERY_BOX stage, at least 1 box was dropped
                         detected_grades = ["wood"]
 
                     box_names_th = {
@@ -746,7 +1034,6 @@ class BotEngine:
                         except Exception:
                             pass
 
-                    # Update or append round history record
                     if self.round_history and self.round_history[0]["round"] == self.rounds_played:
                         self.round_history[0]["boxes"] = detected_grades
                         self.round_history[0]["box_count"] = len(detected_grades)
@@ -785,7 +1072,7 @@ class BotEngine:
                         screen_img=device_screen
                     )
 
-                    accept_mystery_box()
+                    accept_mystery_box(self.device_ip, self.device_port)
                     if self.interruptible_sleep(random.uniform(1.7, 2.4)):
                         break
                     detection_group = "POST_GAME"
@@ -793,75 +1080,75 @@ class BotEngine:
 
                 elif stage == "CONGRATULATIONS":
                     self.log("🎉 Detected Stage: CONGRATULATIONS", "stage")
-                    accept_congratulations()
+                    accept_congratulations(self.device_ip, self.device_port)
                     detection_group = "POST_GAME"
                     last_stage = None
 
                 elif stage == "LEVEL_UP":
                     self.log("⬆️ Detected Stage: LEVEL_UP", "success")
-                    accept_level_up()
+                    accept_level_up(self.device_ip, self.device_port)
                     detection_group = "PRE_GAME"
 
                 elif stage == "DAILY_CHECKIN":
                     self.log("📅 Detected Stage: DAILY_CHECKIN", "stage")
-                    accept_daily_checkin()
+                    accept_daily_checkin(self.device_ip, self.device_port)
                     detection_group = "PRE_GAME"
 
                 elif stage == "DAILY_CHECKIN_BOOST_SET":
                     self.log("📅 Detected Stage: DAILY_CHECKIN_BOOST_SET", "stage")
-                    accept_daily_checkin_boost_set()
+                    accept_daily_checkin_boost_set(self.device_ip, self.device_port)
                     detection_group = "PRE_GAME"
 
                 elif stage == "DAILY_TREASURE":
                     self.log("💎 Detected Stage: DAILY_TREASURE", "stage")
-                    accept_daily_treasure()
+                    accept_daily_treasure(self.device_ip, self.device_port)
                     detection_group = "PRE_GAME"
 
                 elif stage == "DAILY_NEW":
                     self.log("📰 Detected Stage: DAILY_NEW", "stage")
-                    accept_daily_new()
+                    accept_daily_new(self.device_ip, self.device_port)
                     detection_group = "PRE_GAME"
 
                 elif stage == "ENTER_LEAGUE":
                     self.log("🏆 Detected Stage: ENTER_LEAGUE", "stage")
-                    accept_enter_league()
+                    accept_enter_league(self.device_ip, self.device_port)
                     detection_group = "PRE_GAME"
 
                 elif stage == "LEAGUE_RESULTS":
                     self.log("🏆 Detected Stage: LEAGUE_RESULTS", "stage")
-                    accept_league_results()
+                    accept_league_results(self.device_ip, self.device_port)
                     detection_group = "PRE_GAME"
 
                 elif stage == "PREVIOUS_RANK_RESULTS":
                     self.log("🏆 Detected Stage: PREVIOUS_RANK_RESULTS", "stage")
-                    accept_previous_rank_results()
+                    accept_previous_rank_results(self.device_ip, self.device_port)
                     detection_group = "PRE_GAME"
 
                 elif stage == "OVERTAKE_BREAK_SCORE":
                     self.log("🏆 Detected Stage: OVERTAKE_BREAK_SCORE", "stage")
-                    accept_overtake_break_score()
+                    accept_overtake_break_score(self.device_ip, self.device_port)
                     detection_group = "POST_GAME"
                     last_stage = None
 
                 elif stage == "TOO_MANY_TREASURES":
                     self.log("💎 Detected Stage: TOO_MANY_TREASURES", "warning")
-                    accept_too_many_treasures()
+                    accept_too_many_treasures(self.device_ip, self.device_port)
                     detection_group = "PRE_GAME"
 
                 elif stage == "RELIC_COMPLETE":
                     self.log("🏺 Detected Stage: RELIC_COMPLETE", "stage")
-                    open_relic_complete()
+                    open_relic_complete(self.device_ip, self.device_port)
                     detection_group = "PRE_GAME"
 
                 elif stage == "RELIC_CLAIM":
                     self.log("🏺 Detected Stage: RELIC_CLAIM", "stage")
-                    accept_relic_claim()
+                    accept_relic_claim(self.device_ip, self.device_port)
                     detection_group = "PRE_GAME"
 
                 elif stage == "ANTI_BOT":
                     self.log("⚠️ Detected Stage: ANTI_BOT — solving captcha automatically...", "warning")
                     discord_notifier.send_anti_bot_alert("ANTI_BOT", screen_img=device_screen)
-                    handle_anti_bot(device_screen)
+                    handle_anti_bot(device_screen, self.device_ip, self.device_port)
                     last_stage = None
 
                 elif stage == "CONNECTION_LOST":
@@ -870,7 +1157,7 @@ class BotEngine:
                     device_reset_app(self.device_ip, self.device_port)
                     if self.interruptible_sleep(random.uniform(4.5, 5.8)):
                         break
-                    close_announcement_dialog()
+                    close_announcement_dialog(self.device_ip, self.device_port)
                     session_start_time = time.time()
                     session_reset_interval = random.uniform(*SESSION_RESET_INTERVAL)
                     last_lives_time = time.time()
@@ -881,17 +1168,16 @@ class BotEngine:
 
                 elif stage == "EMU_HOME":
                     self.log("🏠 Detected Stage: EMU_HOME — tapping CookieRun Classic at (537,235)...", "warning")
-                    handle_emu_home()
+                    handle_emu_home(self.device_ip, self.device_port)
                     detection_group = "PRE_GAME"
                     last_stage = None
                     is_first_game = True
 
                 elif stage == "INACTIVE":
                     self.log("💤 Detected Stage: INACTIVE — reconnecting...", "warning")
-                    handle_inactive()
+                    handle_inactive(self.device_ip, self.device_port)
                     last_stage = None
 
-                # IN_GAME วนลูปถี่ขึ้น + สุ่ม human-like
                 loop_sleep = random.uniform(0.10, 0.16) if detection_group == "IN_GAME" else random.uniform(0.20, 0.32)
                 if self.interruptible_sleep(loop_sleep):
                     break
@@ -905,5 +1191,11 @@ class BotEngine:
             self.log("⏹️ Bot execution ended", "info")
 
 
-# Global Singleton Instance
-bot_engine = BotEngine()
+# Global singleton for backward compatibility (legacy single-instance code)
+# New code should use BotEngine(instances dict) via web_server.bot_instances
+bot_engine = BotEngine(
+    instance_id="device_1",
+    device_ip=config.DEVICE_IP,
+    device_port=config.DEVICE_PORT,
+    device_name="จอ 1",
+)

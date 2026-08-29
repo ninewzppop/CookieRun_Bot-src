@@ -2,8 +2,17 @@
 # CONFIG
 # -------------------
 import os as _os
+# Legacy single-device fallback (kept for backward compatibility — prefer DEVICES list)
 DEVICE_IP = "127.0.0.1"      # Change to your adb device's IP address
 DEVICE_PORT = 5595           # Change to your adb device's port number
+
+# Multi-instance device list — primary source for web_server / BotEngine
+# User can add/remove via API without code change; kept in memory + optionally persisted via web_server
+DEVICES = [
+    {"id": "device_1", "name": "จอ 1", "host": "127.0.0.1", "port": 5595},
+    {"id": "device_2", "name": "จอ 2", "host": "127.0.0.1", "port": 5555},
+]
+
 TEMPLATE_DIR = _os.path.join(_os.path.dirname(__file__), "templates")
 MATCH_THRESHOLD = 0.8
 STAGE_THRESHOLDS = {
@@ -11,6 +20,9 @@ STAGE_THRESHOLDS = {
     "EMU_HOME": 0.60,
     "GAME_COMPLETE": 0.62,
     "MYSTERY_BOX": 0.65,
+    "GAME_START": 0.58,
+    "GAME_RELAY": 0.58,
+    "PURCHASE_ITEM": 0.70,
 }
 SESSION_RESET_INTERVAL = (5400, 10800)  # 1.5-3 hours
 GAME_PACKAGE = "com.devsisters.crg"
