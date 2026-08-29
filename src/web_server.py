@@ -231,11 +231,11 @@ def test_discord_webhook(req: DiscordTestRequest):
 
 def generate_placeholder_frame(text: str = "CookieRun Bot Idle") -> bytes:
     img = np.zeros((480, 854, 3), dtype=np.uint8)
-    img[:] = (20, 24, 35)  # Dark slate background
-    # Add title text
-    cv2.putText(img, "CookieRun Classic Bot", (240, 210), cv2.FONT_HERSHEY_SIMPLEX, 1.1, (255, 200, 100), 2, cv2.LINE_AA)
-    cv2.putText(img, text, (270, 260), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (180, 180, 190), 1, cv2.LINE_AA)
-    cv2.putText(img, "Resolution: 1280x720 | Click Start to stream live screen", (190, 310), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (120, 120, 130), 1, cv2.LINE_AA)
+    img[:] = (10, 10, 10)  # #0a0a0a - dark near-black background
+    # Add title text - cream gold accent #d4c4a8 => BGR (168,196,212)
+    cv2.putText(img, "CookieRun Classic Bot", (240, 210), cv2.FONT_HERSHEY_SIMPLEX, 1.1, (168, 196, 212), 2, cv2.LINE_AA)
+    cv2.putText(img, text, (270, 260), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (200, 220, 232), 1, cv2.LINE_AA)  # #e8dcc8
+    cv2.putText(img, "Resolution: 1280x720 | Click Start to stream live screen", (190, 310), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (140, 150, 160), 1, cv2.LINE_AA)
     _, buffer = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 80])
     return buffer.tobytes()
 
@@ -286,10 +286,10 @@ def get_round_screenshot(round_num: int):
     jpeg_bytes = bot_engine.round_screenshots.get(round_num)
     if jpeg_bytes is not None:
         return Response(content=jpeg_bytes, media_type="image/jpeg")
-    # Return fallback placeholder
+    # Return fallback placeholder - #0a0a0a background with cream text
     blank = np.zeros((480, 854, 3), dtype=np.uint8)
-    blank[:] = (20, 24, 35)
-    cv2.putText(blank, f"No screenshot for Round #{round_num}", (220, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (180, 180, 190), 2, cv2.LINE_AA)
+    blank[:] = (10, 10, 10)
+    cv2.putText(blank, f"No screenshot for Round #{round_num}", (220, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 220, 232), 2, cv2.LINE_AA)
     _, buf = cv2.imencode(".jpg", blank)
     return Response(content=buf.tobytes(), media_type="image/jpeg")
 

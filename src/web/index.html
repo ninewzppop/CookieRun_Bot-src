@@ -17,17 +17,24 @@
           },
           colors: {
             brand: {
-              50: '#fff7ed',
-              100: '#ffedd5',
-              400: '#fb923c',
-              500: '#f97316',
-              600: '#ea580c',
+              50: '#f5f0e8',
+              100: '#e8dcc8',
+              400: '#d4c4a8',
+              500: '#c9b896',
+              600: '#b8a690',
             },
             dark: {
-              bg: '#0f172a',
-              card: '#1e293b',
-              border: '#334155',
-              hover: '#334155'
+              bg: '#0a0a0a',
+              card: '#1a1a1a',
+              card2: '#1c1c1c',
+              border: '#2a2a2a',
+              hover: '#2a2a2a'
+            },
+            cream: {
+              50: '#f5f0e8',
+              100: '#e8dcc8',
+              200: '#d4c4a8',
+              300: '#c9b896',
             }
           }
         }
@@ -36,7 +43,7 @@
   </script>
   <style>
     body {
-      background: radial-gradient(circle at top right, #1e1b4b 0%, #0f172a 50%, #020617 100%);
+      background: transparent;
       min-height: 100vh;
     }
     .custom-scrollbar::-webkit-scrollbar {
@@ -44,21 +51,21 @@
       height: 6px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
-      background: #0f172a;
+      background: #0a0a0a;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #334155;
+      background: #2a2a2a;
       border-radius: 9999px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #475569;
+      background: #3a3a3a;
     }
     .tap-ripple {
       position: absolute;
       width: 24px;
       height: 24px;
       border-radius: 50%;
-      background: rgba(249, 115, 22, 0.6);
+      background: rgba(212, 196, 168, 0.6);
       transform: translate(-50%, -50%) scale(0);
       animation: ripple 0.5s ease-out forwards;
       pointer-events: none;
@@ -72,35 +79,210 @@
     .rainbow-gradient {
       background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc, #f472b6, #fbbf24);
     }
+    .gold-dot {
+      background: linear-gradient(135deg, #f4e4bc 0%, #b8860b 100%);
+      box-shadow: 0 0 6px rgba(212, 175, 55, 0.6);
+    }
+    .gold-pulse {
+      animation: goldPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes goldPulse {
+      0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 6px rgba(212, 175, 55, 0.6); }
+      50% { opacity: 0.85; transform: scale(1.18); box-shadow: 0 0 10px rgba(244, 228, 188, 0.9); }
+    }
+    .stage-badge-searching {
+      background: rgba(212, 196, 168, 0.12);
+      border-color: rgba(212, 196, 168, 0.35);
+      color: #d4c4a8;
+    }
+    .stage-badge-active {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+    }
+    .pulse-glow-red {
+      animation: pulse-glow-red 2s ease-in-out infinite;
+    }
+    .pulse-glow-green {
+      animation: pulse-glow-green 2s ease-in-out infinite;
+    }
+    .pulse-glow-gold {
+      animation: pulse-glow-gold 2s ease-in-out infinite;
+    }
+    @keyframes pulse-glow-red {
+      0%, 100% { box-shadow: 0 0 12px 2px rgba(153, 27, 27, 0.5); }
+      50% { box-shadow: 0 0 24px 6px rgba(153, 27, 27, 0.8); }
+    }
+    @keyframes pulse-glow-green {
+      0%, 100% { box-shadow: 0 0 12px 2px rgba(6, 95, 70, 0.5), 0 0 8px 1px rgba(212, 175, 55, 0.2); }
+      50% { box-shadow: 0 0 24px 6px rgba(6, 95, 70, 0.8), 0 0 16px 4px rgba(212, 175, 55, 0.35); }
+    }
+    @keyframes pulse-glow-gold {
+      0%, 100% { box-shadow: 0 0 12px 2px rgba(212, 175, 55, 0.4); }
+      50% { box-shadow: 0 0 24px 6px rgba(212, 175, 55, 0.7); }
+    }
+    /* Settings gold theme */
+    .preset-btn {
+      background: linear-gradient(to bottom, #272727, #171717);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      color: #e8dcc8;
+    }
+    .preset-btn:hover {
+      border-color: rgba(212, 175, 55, 0.45);
+      background: linear-gradient(to bottom, #2f2f2f, #1e1e1e);
+    }
+    .preset-btn.active {
+      background: linear-gradient(to bottom, #1a1a1a, #0f0f0f);
+      border-color: #d4af37;
+      color: #f5f0e8;
+      box-shadow: 0 0 8px rgba(212,175,55,0.25), inset 0 1px 0 rgba(212,175,55,0.15);
+    }
+    .gold-toggle-track {
+      background: #262626;
+      border: 1px solid rgba(212,175,55,0.18);
+      transition: all 0.28s ease;
+    }
+    .gold-toggle-track.peer-checked {
+      background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
+      border-color: #d4af37;
+      box-shadow: 0 0 8px rgba(212,175,55,0.4);
+    }
+    .gold-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 1rem;
+      height: 1rem;
+      border-radius: 0.375rem;
+      border: 1.5px solid rgba(212,175,55,0.35);
+      background: transparent;
+      display: inline-grid;
+      place-content: center;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .gold-checkbox:checked {
+      background: linear-gradient(135deg, #f4e4bc 0%, #d4af37 50%, #b8860b 100%);
+      border-color: #d4af37;
+      box-shadow: 0 0 6px rgba(212,175,55,0.35);
+    }
+    .gold-checkbox:checked::after {
+      content: "";
+      width: 3px;
+      height: 7px;
+      border: solid #0a0a0a;
+      border-width: 0 1.7px 1.7px 0;
+      transform: rotate(45deg) translate(0px, -0.5px);
+      display: block;
+    }
+    .gold-checkbox-lg {
+      width: 1.25rem;
+      height: 1.25rem;
+      border-radius: 0.375rem;
+    }
+    .gold-checkbox-lg:checked::after {
+      width: 4px;
+      height: 8px;
+      border-width: 0 2px 2px 0;
+    }
+    .gold-select {
+      background: linear-gradient(to bottom, #1e1e1e, #121212);
+      border: 1px solid rgba(212,175,55,0.25);
+      color: #e8dcc8;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23d4af37' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9 L12 15 L18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+      transition: all 0.2s ease;
+    }
+    .gold-select:focus {
+      border-color: #d4af37;
+      box-shadow: 0 0 0 2px rgba(212,175,55,0.15);
+      outline: none;
+    }
+    .gold-number {
+      background: linear-gradient(to bottom, #1e1e1e, #141414);
+      border: 1px solid rgba(212,175,55,0.25);
+      color: #e8dcc8;
+      transition: all 0.2s ease;
+    }
+    .gold-number:focus {
+      border-color: #d4af37;
+      box-shadow: 0 0 0 2px rgba(212,175,55,0.12);
+      outline: none;
+    }
+    .gold-number::-webkit-inner-spin-button, .gold-number::-webkit-outer-spin-button {
+      opacity: 1;
+      height: 2em;
+      cursor: pointer;
+      filter: sepia(1) hue-rotate(18deg) saturate(1.2) brightness(1.1);
+    }
+    .gold-number::-webkit-inner-spin-button:hover {
+      filter: sepia(1) hue-rotate(18deg) saturate(1.6) brightness(1.25);
+    }
+    .lightning-flicker {
+      animation: lightning-flicker 10s ease-in-out infinite;
+    }
+    @keyframes lightning-flicker {
+      0%, 92%, 100% { opacity: 0.05; }
+      93%, 96% { opacity: 0.35; filter: drop-shadow(0 0 6px rgba(212,175,55,0.6)); }
+    }
   </style>
 </head>
-<body class="text-slate-100 font-sans antialiased selection:bg-brand-500 selection:text-white">
+<body class="text-[#f5f0e8] font-sans antialiased selection:bg-[#d4c4a8] selection:text-[#0a0a0a]">
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"><defs><linearGradient id="goldLineGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs></svg>
+  <!-- Gold Lightning Background Layer -->
+  <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="absolute inset-0 bg-gradient-to-br from-[#0a0a0a] via-[#121212] to-[#0a0a0a]"></div>
+    <svg class="absolute inset-0 w-full h-full opacity-[0.07]" preserveAspectRatio="none" viewBox="0 0 1200 800" aria-hidden="true">
+      <defs>
+        <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f4e4bc"/>
+          <stop offset="100%" stop-color="#b8860b"/>
+        </linearGradient>
+      </defs>
+      <path d="M180 0 L130 220 L200 220 L80 480 L150 480 L60 760" stroke="url(#boltGrad)" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="lightning-flicker" style="animation-delay:0s"/>
+      <path d="M860 0 L800 190 L860 190 L740 400 L800 400 L690 730" stroke="url(#boltGrad)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="lightning-flicker" style="animation-delay:3.2s"/>
+      <path d="M520 0 L480 160 L530 160 L430 360 L480 360 L410 620" stroke="url(#boltGrad)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" class="lightning-flicker" style="animation-delay:6.1s"/>
+      <path d="M1020 10 L980 140 L1020 140 L950 300 L990 300 L930 480" stroke="url(#boltGrad)" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" class="lightning-flicker" style="animation-delay:8.7s"/>
+    </svg>
+  </div>
 
   <!-- Top Navbar -->
-  <header class="sticky top-0 z-40 backdrop-blur-md bg-slate-900/80 border-b border-slate-800">
+  <header class="sticky top-0 z-40 backdrop-blur-md bg-[#0a0a0a]/80 border-b border-[#2a2a2a]">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20 text-2xl">
-          🍪
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-neutral-900 to-black border border-[#3a3020] flex items-center justify-center shadow-lg shadow-black/50">
+            <svg width="22" height="22" viewBox="0 0 24 24">
+                <defs>
+                    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#f4e4bc"/>
+                        <stop offset="50%" stop-color="#d4af37"/>
+                        <stop offset="100%" stop-color="#b8860b"/>
+                    </linearGradient>
+                </defs>
+                <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="url(#goldGrad)"/>
+            </svg>
         </div>
         <div>
-          <h1 class="text-lg font-bold tracking-wide text-white flex items-center gap-2">
-            CookieRun Classic <span class="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Bot Dashboard</span>
+          <h1 class="text-lg font-bold tracking-wide text-[#f5f0e8] flex items-center gap-2">
+            NiNeWz<span class="bg-gradient-to-r from-[#d4c4a8] to-[#c9b896] bg-clip-text text-transparent">DASHBOARD</span>
           </h1>
-          <p class="text-xs text-slate-400">ระบบควบคุม สตรีมมิ่ง และตรวจจับกล่องปริศนาแยกเกรด</p>
+          <p class="text-xs text-[#e8dcc8]/70">บอทสุดโหด</p>
         </div>
       </div>
 
       <div class="flex items-center gap-4">
         <!-- Status Indicator -->
-        <div id="status-pill" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-xs font-medium">
-          <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
-          <span id="status-text" class="text-slate-300">Idle (ไม่ได้เริ่ม)</span>
+        <div id="status-pill" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-xs font-medium">
+          <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-[#3a3a3a]"></span>
+          <span id="status-text" class="text-[#e8dcc8]">Idle (ไม่ได้เริ่ม)</span>
         </div>
 
         <!-- Uptime Badge -->
-        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-xs font-mono text-slate-300">
-          ⏱️ <span id="uptime-display">00:00:00</span>
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-xs font-mono text-[#e8dcc8]">
+          <span class="w-4 h-4 flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon54)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon54" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="12" r="7.5"/><path d="M12 7 V12 L14.5 14.5"/></svg></span> <span id="uptime-display">00:00:00</span>
         </div>
       </div>
     </div>
@@ -111,169 +293,173 @@
 
     <!-- Primary Stats Bar -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="bg-slate-800/80 backdrop-blur border border-slate-700/70 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-        <div>
-          <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">สถานะปัจจุบัน</p>
-          <h3 id="stat-stage" class="text-base sm:text-lg font-bold text-orange-400 mt-1 truncate max-w-[150px]">IDLE</h3>
+      <div class="bg-[#1a1a1a]/90 backdrop-blur border border-[#2a2a2a] rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-medium text-[#e8dcc8]/70 uppercase tracking-wider">สถานะปัจจุบัน</p>
+          <h3 id="stat-stage" class="text-base sm:text-lg font-bold text-[#d4c4a8] mt-1 break-words whitespace-normal leading-tight">IDLE</h3>
+          <div id="stat-stage-badge" class="hidden mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider border stage-badge-searching">
+            <span id="stage-badge-dot" class="w-2 h-2 rounded-full gold-dot gold-pulse"></span>
+            <span id="stage-badge-text">Searching</span>
+          </div>
         </div>
-        <div class="w-11 h-11 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-xl text-orange-400">
-          🎯
-        </div>
-      </div>
-
-      <div class="bg-slate-800/80 backdrop-blur border border-slate-700/70 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-        <div>
-          <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">รอบที่เล่น (Rounds)</p>
-          <h3 id="stat-rounds" class="text-2xl font-bold text-white mt-1">0</h3>
-        </div>
-        <div class="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xl text-emerald-400">
-          🏃
+        <div class="w-11 h-11 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center shrink-0 ml-3">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="url(#goldLineGrad1)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldLineGrad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r="1.3"/><path d="M15.8 8.2 L19 5 M19 5 H16.2 M19 5 V7.8"/></svg>
         </div>
       </div>
 
-      <div class="bg-slate-800/80 backdrop-blur border border-slate-700/70 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+      <div class="bg-[#1a1a1a]/90 backdrop-blur border border-[#2a2a2a] rounded-2xl p-4 flex items-center justify-between shadow-sm">
         <div>
-          <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">กล่องรวมทั้งหมด</p>
-          <h3 id="stat-boxes" class="text-2xl font-bold text-amber-400 mt-1">0</h3>
+          <p class="text-xs font-medium text-[#e8dcc8]/70 uppercase tracking-wider">รอบที่เล่น (Rounds)</p>
+          <h3 id="stat-rounds" class="text-2xl font-bold text-[#f5f0e8] mt-1">0</h3>
         </div>
-        <div class="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-xl text-amber-400">
-          🎁
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-neutral-900 to-black border border-[#3a3020]/60 flex items-center justify-center shadow-inner">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="url(#goldLineGrad2)" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldLineGrad2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="10" cy="4.8" r="2"/><path d="M10 6.8 L10 12"/><path d="M10 8.5 L13.5 10"/><path d="M10 8.5 L7.2 10.2"/><path d="M10 12 L13 16.5"/><path d="M10 12 L7 16.8"/><path d="M15 6 L17.5 6.8 L16.2 9"/></svg>
         </div>
       </div>
 
-      <div class="bg-slate-800/80 backdrop-blur border border-slate-700/70 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+      <div class="bg-[#1a1a1a]/90 backdrop-blur border border-[#2a2a2a] rounded-2xl p-4 flex items-center justify-between shadow-sm">
         <div>
-          <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">เวลาทำงาน (Uptime)</p>
+          <p class="text-xs font-medium text-[#e8dcc8]/70 uppercase tracking-wider">กล่องรวมทั้งหมด</p>
+          <h3 id="stat-boxes" class="text-2xl font-bold text-[#d4c4a8] mt-1">0</h3>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-neutral-900 to-black border border-[#3a3020]/60 flex items-center justify-center shadow-inner">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="url(#goldLineGrad3)" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldLineGrad3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><rect x="4" y="9.5" width="16" height="9.5" rx="1.2"/><path d="M4 9.5 H20"/><path d="M12 9.5 V19"/><path d="M8.5 9.5 C8 7 10 6.2 12 8.2 C14 6.2 16 7 15.5 9.5"/><rect x="3.2" y="7.2" width="17.6" height="2.3" rx="1"/></svg>
+        </div>
+      </div>
+
+      <div class="bg-[#1a1a1a]/90 backdrop-blur border border-[#2a2a2a] rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div>
+          <p class="text-xs font-medium text-[#e8dcc8]/70 uppercase tracking-wider">เวลาทำงาน (Uptime)</p>
           <h3 id="stat-uptime" class="text-2xl font-bold text-sky-400 mt-1 font-mono">00:00:00</h3>
         </div>
-        <div class="w-11 h-11 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-xl text-sky-400">
-          ⏳
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-neutral-900 to-black border border-[#3a3020]/60 flex items-center justify-center shadow-inner">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="url(#goldLineGrad4)" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldLineGrad4" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M7 3 H17"/><path d="M7 21 H17"/><path d="M8 3 L16 12 L8 21"/><path d="M16 3 L8 12 L16 21"/><rect x="6.5" y="2.2" width="11" height="1.4" rx="0.7"/><rect x="6.5" y="20.4" width="11" height="1.4" rx="0.7"/></svg>
         </div>
       </div>
     </div>
 
     <!-- Real-time Accumulated Coin & EXP Tracking Card -->
-    <div class="bg-gradient-to-r from-amber-950/50 via-slate-800/90 to-sky-950/50 border border-amber-500/40 rounded-2xl p-5 shadow-xl space-y-4">
-      <div class="flex items-center justify-between border-b border-amber-500/20 pb-3">
+    <div class="bg-gradient-to-r from-[#1c1c1c] via-[#1a1a1a] to-[#121212] border border-[#d4c4a8]/30 rounded-2xl p-5 shadow-xl space-y-4">
+      <div class="flex items-center justify-between border-b border-[#d4c4a8]/20 pb-3">
         <div class="flex items-center gap-2.5">
-          <span class="text-2xl">💰</span>
+          <span class="w-7 h-7 flex items-center justify-center bg-gradient-to-br from-neutral-900 to-black border border-[#3a3020]/40 rounded-lg"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="url(#goldLineGrad5)" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldLineGrad5" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><ellipse cx="12" cy="6.5" rx="6" ry="3"/><path d="M6 6.5 V10.2 C6 11.9 8.7 13.3 12 13.3 C15.3 13.3 18 11.9 18 10.2 V6.5"/><path d="M6 10.2 V14.2 C6 15.9 8.7 17.3 12 17.3 C15.3 17.3 18 15.9 18 14.2 V10.2"/><path d="M12 13.3 V17.3"/></svg></span>
           <div>
-            <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <h2 class="text-base font-bold text-[#f5f0e8] flex items-center gap-2">
               สถิติเหรียญ & EXP สะสม (Accumulated Coins & EXP)
-              <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-normal">Real-time</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#d4c4a8]/20 text-[#d4c4a8] border border-[#d4c4a8]/30 font-normal">Real-time</span>
             </h2>
-            <p class="text-xs text-slate-400">บวกสะสมยอดเหรียญและ EXP จริงต่อเนื่องตลอดการปล่อยบอท</p>
+            <p class="text-xs text-[#e8dcc8]/70">บวกสะสมยอดเหรียญและ EXP</p>
           </div>
         </div>
-        <span id="stat-coins-badge" class="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full font-mono font-bold">
+        <span id="stat-coins-badge" class="text-xs text-[#d4c4a8] bg-[#d4c4a8]/10 border border-[#d4c4a8]/30 px-3 py-1 rounded-full font-mono font-bold">
           Active Session
         </span>
       </div>
 
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <!-- Total Session Coins Earned -->
-        <div class="bg-slate-900/70 border border-amber-500/30 rounded-xl p-3.5 flex items-center justify-between">
+        <div class="bg-[#121212]/70 border border-[#d4c4a8]/30 rounded-xl p-3.5 flex items-center justify-between">
           <div>
-            <p class="text-[11px] font-semibold text-amber-300/80 uppercase tracking-wider">📈 เหรียญสะสมทั้งหมด</p>
-            <h3 id="stat-coins-earned" class="text-xl sm:text-2xl font-bold text-amber-300 font-mono mt-1">+0 🪙</h3>
+            <p class="text-[11px] font-semibold text-[#d4c4a8]/80 uppercase tracking-wider flex items-center gap-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon55)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon55" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M4 16 L9 11 L12 14 L20 7"/><path d="M14 7 H20 V11"/><path d="M4 20 H20"/></svg> เหรียญสะสมทั้งหมด</p>
+            <h3 id="stat-coins-earned" class="text-xl sm:text-2xl font-bold text-[#d4c4a8] font-mono mt-1 flex items-center gap-1">+0 <span class="inline-flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="url(#goldCoin101)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldCoin101" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="12" r="7"/><path d="M9 9 H15"/><path d="M9 12 H15"/><path d="M9 15 H15"/></svg></span></h3>
           </div>
-          <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-xl text-amber-400 shrink-0">
-            ✨
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-neutral-900 to-black border border-[#3a3020]/60 flex items-center justify-center shrink-0 shadow-inner">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="url(#goldLineGrad6)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldLineGrad6" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M12 2.5 L13 8.5 L19 10.2 L13 12 L12 18 L11 12 L5 10.2 L11 8.5 Z"/><path d="M18.2 4 L18.8 5.5 L20.3 6.1 L18.8 6.7 L18.2 8.2 L17.6 6.7 L16.1 6.1 L17.6 5.5 Z"/><path d="M6.2 13.5 L6.7 14.8 L8 15.3 L6.7 15.8 L6.2 17.1 L5.7 15.8 L4.4 15.3 L5.7 14.8 Z"/></svg>
           </div>
         </div>
 
         <!-- Total Session EXP Earned -->
-        <div class="bg-slate-900/70 border border-sky-500/30 rounded-xl p-3.5 flex items-center justify-between">
+        <div class="bg-[#121212]/70 border border-sky-500/30 rounded-xl p-3.5 flex items-center justify-between">
           <div>
             <p class="text-[11px] font-semibold text-sky-300/80 uppercase tracking-wider">⭐ EXP สะสมทั้งหมด</p>
             <h3 id="stat-xp-earned" class="text-xl sm:text-2xl font-bold text-sky-300 font-mono mt-1">+0 EXP</h3>
           </div>
-          <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-xl text-sky-400 shrink-0">
-            🌟
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-neutral-900 to-black border border-[#3a3020]/60 flex items-center justify-center shrink-0 shadow-inner">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="url(#goldLineGrad7)" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldLineGrad7" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M12 3.5 L13.9 8.7 H19.3 L14.9 11.9 L16.3 17.1 L12 14.2 L7.7 17.1 L9.1 11.9 L4.7 8.7 H10.1 Z"/></svg>
           </div>
         </div>
 
         <!-- Last Round Coins -->
-        <div class="bg-slate-900/70 border border-slate-700/70 rounded-xl p-3.5 flex items-center justify-between">
+        <div class="bg-[#121212]/70 border border-[#2a2a2a] rounded-xl p-3.5 flex items-center justify-between">
           <div>
-            <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">🏁 เหรียญรอบล่าสุด</p>
-            <h3 id="stat-coins-last" class="text-xl sm:text-2xl font-bold text-white font-mono mt-1">0 🪙</h3>
+            <p class="text-[11px] font-semibold text-[#e8dcc8]/70 uppercase tracking-wider flex items-center gap-1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="url(#goldLineGrad8)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldLineGrad8" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M5.5 3.2 V20.8"/><path d="M5.5 3.5 H15.2 C18 3.5 18 7 15.2 7 H5.5"/><path d="M5.5 7 H15.2 C18 7 18 10.5 15.2 10.5 H5.5"/><path d="M5.5 10.5 H15.2 C18 10.5 18 14 15.2 14 H5.5"/><path d="M5.5 7 H18"/><path d="M5.5 10.5 H16"/><path d="M9.5 3.5 V10.5"/><path d="M13.2 3.5 V10.5"/></svg> เหรียญรอบล่าสุด</p>
+            <h3 id="stat-coins-last" class="text-xl sm:text-2xl font-bold text-[#f5f0e8] font-mono mt-1 flex items-center gap-1">0 <span class="inline-flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="url(#goldCoin101)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldCoin101" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="12" r="7"/><path d="M9 9 H15"/><path d="M9 12 H15"/><path d="M9 15 H15"/></svg></span></h3>
           </div>
-          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xl text-emerald-400 shrink-0">
-            🍪
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-neutral-900 to-black border border-[#3a3020]/60 flex items-center justify-center shrink-0 shadow-inner">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="url(#goldLineGrad9)" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldLineGrad9" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="12" r="7"/><circle cx="9" cy="10.2" r="1.1"/><circle cx="13.8" cy="9.5" r="0.9"/><circle cx="11.2" cy="14.3" r="1"/><circle cx="14.5" cy="13.2" r="0.7"/><circle cx="8.8" cy="13.8" r="0.6"/></svg>
           </div>
         </div>
 
         <!-- Last Round EXP -->
-        <div class="bg-slate-900/70 border border-slate-700/70 rounded-xl p-3.5 flex items-center justify-between">
+        <div class="bg-[#121212]/70 border border-[#2a2a2a] rounded-xl p-3.5 flex items-center justify-between">
           <div>
-            <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">🎯 EXP รอบล่าสุด</p>
+            <p class="text-[11px] font-semibold text-[#e8dcc8]/70 uppercase tracking-wider flex items-center gap-1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="url(#goldLineGrad10)" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldLineGrad10" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="9.5" r="5"/><circle cx="12" cy="9.5" r="2.3"/><path d="M8.8 13.8 L6.5 20.5 L12 17.2 L17.5 20.5 L15.2 13.8"/><path d="M8.2 5.2 L10 7"/><path d="M15.8 5.2 L14 7"/></svg> EXP รอบล่าสุด</p>
             <h3 id="stat-xp-last" class="text-xl sm:text-2xl font-bold text-sky-200 font-mono mt-1">0 EXP</h3>
           </div>
-          <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-xl text-indigo-400 shrink-0">
-            🎖️
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-neutral-900 to-black border border-[#3a3020]/60 flex items-center justify-center shrink-0 shadow-inner">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="url(#goldLineGrad11)" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldLineGrad11" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="9.5" r="5"/><circle cx="12" cy="9.5" r="2.3"/><path d="M8.8 13.8 L6.5 20.5 L12 17.2 L17.5 20.5 L15.2 13.8"/><path d="M8.2 5.2 L10 7"/><path d="M15.8 5.2 L14 7"/></svg>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Mystery Box Tier Breakdown (4 Boxes) -->
-    <div class="bg-slate-800/90 backdrop-blur border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-700/80 pb-3">
-        <div class="flex items-center gap-2">
-          <span class="text-lg">📦</span>
-          <h2 class="text-sm sm:text-base font-bold text-white">สถิติจำนวนกล่องปริศนา (Mystery Boxes Breakdown)</h2>
+    <div class="bg-[#1a1a1a]/90 backdrop-blur border border-[#2a2a2a] rounded-2xl p-4 sm:p-5 shadow-xl space-y-4 overflow-hidden max-w-full">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#2a2a2a] pb-3">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="w-6 h-6 rounded-lg bg-gradient-to-br from-neutral-900 to-black border border-[#3a3020]/50 flex items-center justify-center shadow-sm shrink-0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon31)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon31" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><rect x="4" y="8" width="16" height="10" rx="1.5"/><path d="M4 8 L12 4 L20 8"/><path d="M12 4 V8"/><path d="M12 8 V18"/><path d="M4 12 H20"/></svg></span>
+          <h2 class="text-sm sm:text-base font-bold text-[#f5f0e8] leading-tight">จำนวนกล่องปริศนา <span class="hidden sm:inline">(Mystery Boxes Breakdown)</span><span class="sm:hidden"> (Boxes)</span></h2>
         </div>
-        <span class="text-xs text-slate-400 font-mono">ตรวจจับภาพอัตโนมัติ 4 ระดับ</span>
+        <span class="text-[11px] sm:text-xs text-[#e8dcc8]/70 font-mono whitespace-nowrap">ตรวจจับภาพอัตโนมัติ 4 ระดับ</span>
       </div>
 
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-1">
         <!-- Wood Box -->
-        <div class="bg-gradient-to-b from-amber-950/40 to-slate-900/80 border border-amber-800/40 rounded-xl p-3.5 flex items-center gap-3 relative overflow-hidden group hover:border-amber-700/60 transition">
-          <div class="w-12 h-12 rounded-lg bg-amber-900/30 border border-amber-700/40 flex items-center justify-center shrink-0 shadow-inner p-1">
-            <img src="/templates/BOX_WOOD.png" alt="Wood Box" class="w-full h-full object-contain drop-shadow" onerror="this.outerHTML='🟤'">
+        <div class="bg-gradient-to-b from-[#2a1f0f]/40 to-[#121212]/80 border border-amber-900/30 rounded-xl p-3 sm:p-3.5 flex items-center gap-2 sm:gap-3 relative overflow-hidden group hover:border-amber-800/50 transition">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-[#2a1f0f]/30 border border-amber-800/30 flex items-center justify-center shrink-0 shadow-inner p-1">
+            <img src="/templates/BOX_WOOD.png" alt="Wood Box" class="w-full h-full object-contain drop-shadow" onerror="this.outerHTML='<svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;url(#goldCoin103)&quot; stroke-width=&quot;1.4&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><defs><linearGradient id=&quot;goldCoin103&quot; x1=&quot;0%&quot; y1=&quot;0%&quot; x2=&quot;100%&quot; y2=&quot;100%&quot;><stop offset=&quot;0%&quot; stop-color=&quot;#f4e4bc&quot;/><stop offset=&quot;50%&quot; stop-color=&quot;#d4af37&quot;/><stop offset=&quot;100%&quot; stop-color=&quot;#b8860b&quot;/></linearGradient></defs><rect x=&quot;4&quot; y=&quot;9&quot; width=&quot;16&quot; height=&quot;9&quot; rx=&quot;1&quot;/><path d=&quot;M4 9 H20&quot;/><path d=&quot;M12 9 V18&quot;/></svg>'">
           </div>
-          <div>
-            <p class="text-[11px] font-semibold text-amber-300 uppercase tracking-wider">กล่องไม้ (Wood)</p>
-            <h4 id="box-count-wood" class="text-2xl font-bold text-amber-100 font-mono mt-0.5">0</h4>
+          <div class="flex-1 min-w-0 pr-12">
+            <p class="text-[10px] sm:text-[11px] font-semibold text-[#d4c4a8] uppercase tracking-wider leading-tight truncate">กล่องไม้</p>
+            <h4 id="box-count-wood" class="text-xl sm:text-2xl font-bold text-[#f5f0e8] font-mono mt-0.5 leading-none">0</h4>
           </div>
-          <div class="absolute right-2 top-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-900/50 text-amber-300 font-mono">Common</div>
+          <div class="absolute right-1.5 top-1.5 text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-[#1a1a1a] text-[#d4c4a8] font-mono whitespace-nowrap leading-none border border-amber-900/20">Common</div>
         </div>
 
         <!-- Silver Box -->
-        <div class="bg-gradient-to-b from-slate-700/30 to-slate-900/80 border border-slate-600/50 rounded-xl p-3.5 flex items-center gap-3 relative overflow-hidden group hover:border-slate-500/70 transition">
-          <div class="w-12 h-12 rounded-lg bg-slate-700/40 border border-slate-500/40 flex items-center justify-center shrink-0 shadow-inner p-1">
-            <img src="/templates/BOX_SILVER.png" alt="Silver Box" class="w-full h-full object-contain drop-shadow" onerror="this.outerHTML='⚪'">
+        <div class="bg-gradient-to-b from-[#1c1c1c]/30 to-[#121212]/80 border border-slate-400/30 rounded-xl p-3 sm:p-3.5 flex items-center gap-2 sm:gap-3 relative overflow-hidden group hover:border-slate-300/40 transition">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-[#1c1c1c] border border-slate-500/30 flex items-center justify-center shrink-0 shadow-inner p-1">
+            <img src="/templates/BOX_SILVER.png" alt="Silver Box" class="w-full h-full object-contain drop-shadow" onerror="this.outerHTML='<svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;url(#goldCoin104)&quot; stroke-width=&quot;1.4&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><defs><linearGradient id=&quot;goldCoin104&quot; x1=&quot;0%&quot; y1=&quot;0%&quot; x2=&quot;100%&quot; y2=&quot;100%&quot;><stop offset=&quot;0%&quot; stop-color=&quot;#f4e4bc&quot;/><stop offset=&quot;50%&quot; stop-color=&quot;#d4af37&quot;/><stop offset=&quot;100%&quot; stop-color=&quot;#b8860b&quot;/></linearGradient></defs><rect x=&quot;4&quot; y=&quot;8&quot; width=&quot;16&quot; height=&quot;10&quot; rx=&quot;1&quot;/><path d=&quot;M4 12 H20&quot;/><path d=&quot;M12 8 V18&quot;/></svg>'">
           </div>
-          <div>
-            <p class="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">กล่องเงิน (Silver)</p>
-            <h4 id="box-count-silver" class="text-2xl font-bold text-white font-mono mt-0.5">0</h4>
+          <div class="flex-1 min-w-0 pr-12">
+            <p class="text-[10px] sm:text-[11px] font-semibold text-[#e8dcc8] uppercase tracking-wider leading-tight truncate">กล่องเงิน</p>
+            <h4 id="box-count-silver" class="text-2xl font-bold text-[#f5f0e8] font-mono mt-0.5 leading-none">0</h4>
           </div>
-          <div class="absolute right-2 top-2 text-[10px] px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-300 font-mono">Rare</div>
+          <div class="absolute right-1.5 top-1.5 text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-[#1c1c1c] text-[#e8dcc8] font-mono whitespace-nowrap leading-none border border-slate-400/20">Rare</div>
         </div>
 
         <!-- Gold Box -->
-        <div class="bg-gradient-to-b from-yellow-950/40 to-slate-900/80 border border-yellow-600/40 rounded-xl p-3.5 flex items-center gap-3 relative overflow-hidden group hover:border-yellow-500/60 transition">
-          <div class="w-12 h-12 rounded-lg bg-yellow-900/30 border border-yellow-500/40 flex items-center justify-center shrink-0 shadow-inner p-1">
-            <img src="/templates/BOX_GOLD.png" alt="Gold Box" class="w-full h-full object-contain drop-shadow" onerror="this.outerHTML='🟡'">
+        <div class="bg-gradient-to-b from-yellow-950/40 to-[#121212]/80 border border-amber-500/30 rounded-xl p-3 sm:p-3.5 flex items-center gap-2 sm:gap-3 relative overflow-hidden group hover:border-amber-400/50 transition">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-yellow-900/30 border border-amber-500/40 flex items-center justify-center shrink-0 shadow-inner p-1">
+            <img src="/templates/BOX_GOLD.png" alt="Gold Box" class="w-full h-full object-contain drop-shadow" onerror="this.outerHTML='<svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;url(#goldCoin105)&quot; stroke-width=&quot;1.4&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><defs><linearGradient id=&quot;goldCoin105&quot; x1=&quot;0%&quot; y1=&quot;0%&quot; x2=&quot;100%&quot; y2=&quot;100%&quot;><stop offset=&quot;0%&quot; stop-color=&quot;#f4e4bc&quot;/><stop offset=&quot;50%&quot; stop-color=&quot;#d4af37&quot;/><stop offset=&quot;100%&quot; stop-color=&quot;#b8860b&quot;/></linearGradient></defs><rect x=&quot;5&quot; y=&quot;8&quot; width=&quot;14&quot; height=&quot;10&quot; rx=&quot;1&quot;/><path d=&quot;M4 8 L12 4 L20 8&quot;/><circle cx=&quot;12&quot; cy=&quot;13&quot; r=&quot;1.5&quot;/></svg>'">
           </div>
-          <div>
-            <p class="text-[11px] font-semibold text-yellow-300 uppercase tracking-wider">กล่องทอง (Gold)</p>
-            <h4 id="box-count-gold" class="text-2xl font-bold text-yellow-100 font-mono mt-0.5">0</h4>
+          <div class="flex-1 min-w-0 pr-12">
+            <p class="text-[10px] sm:text-[11px] font-semibold text-[#d4c4a8] uppercase tracking-wider leading-tight truncate">กล่องทอง</p>
+            <h4 id="box-count-gold" class="text-2xl font-bold text-[#f5f0e8] font-mono mt-0.5 leading-none">0</h4>
           </div>
-          <div class="absolute right-2 top-2 text-[10px] px-1.5 py-0.5 rounded bg-yellow-900/50 text-yellow-300 font-mono">Epic</div>
+          <div class="absolute right-1.5 top-1.5 text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-yellow-900/50 text-[#d4c4a8] font-mono whitespace-nowrap leading-none border border-amber-500/30">Epic</div>
         </div>
 
         <!-- Rainbow Box -->
-        <div class="bg-gradient-to-b from-indigo-950/40 to-slate-900/80 border border-purple-500/40 rounded-xl p-3.5 flex items-center gap-3 relative overflow-hidden group hover:border-purple-400/70 transition">
-          <div class="w-12 h-12 rounded-lg bg-purple-900/40 border border-purple-400/50 flex items-center justify-center shrink-0 shadow-inner shadow-purple-500/10 p-1">
-            <img src="/templates/BOX_RAINBOW.png" alt="Rainbow Box" class="w-full h-full object-contain drop-shadow" onerror="this.outerHTML='🌈'">
+        <div class="bg-gradient-to-b from-indigo-950/40 to-[#121212]/80 border border-purple-500/40 rounded-xl p-3 sm:p-3.5 flex items-center gap-2 sm:gap-3 relative overflow-hidden group hover:border-purple-400/70 transition shadow-[0_0_12px_rgba(168,85,247,0.15)]">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-purple-900/40 border border-purple-400/50 flex items-center justify-center shrink-0 shadow-inner shadow-purple-500/10 p-1">
+            <img src="/templates/BOX_RAINBOW.png" alt="Rainbow Box" class="w-full h-full object-contain drop-shadow" onerror="this.outerHTML='<svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;url(#goldCoin106)&quot; stroke-width=&quot;1.4&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><defs><linearGradient id=&quot;goldCoin106&quot; x1=&quot;0%&quot; y1=&quot;0%&quot; x2=&quot;100%&quot; y2=&quot;100%&quot;><stop offset=&quot;0%&quot; stop-color=&quot;#f4e4bc&quot;/><stop offset=&quot;50%&quot; stop-color=&quot;#d4af37&quot;/><stop offset=&quot;100%&quot; stop-color=&quot;#b8860b&quot;/></linearGradient></defs><rect x=&quot;4&quot; y=&quot;8&quot; width=&quot;16&quot; height=&quot;10&quot; rx=&quot;1.5&quot;/><path d=&quot;M4 12 H20&quot;/><path d=&quot;M12 8 V18&quot;/><path d=&quot;M6 14 L8 16 L10 14 L12 16 L14 14 L16 16 L18 14&quot;/></svg>'">
           </div>
-          <div>
-            <p class="text-[11px] font-semibold bg-gradient-to-r from-cyan-300 via-pink-300 to-amber-300 bg-clip-text text-transparent uppercase tracking-wider">กล่องรุ้ง (Rainbow)</p>
-            <h4 id="box-count-rainbow" class="text-2xl font-bold text-pink-100 font-mono mt-0.5">0</h4>
+          <div class="flex-1 min-w-0 pr-14">
+            <p class="text-[10px] sm:text-[11px] font-semibold text-pink-200 uppercase tracking-wider leading-tight">กล่องรุ้ง</p>
+            <h4 id="box-count-rainbow" class="text-xl sm:text-2xl font-bold text-pink-100 font-mono mt-1 leading-none">0</h4>
           </div>
-          <div class="absolute right-2 top-2 text-[10px] px-1.5 py-0.5 rounded rainbow-gradient text-slate-900 font-bold font-mono">Legendary</div>
+          <div class="absolute right-1.5 top-1.5 text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded rainbow-gradient text-[#0a0a0a] font-bold font-mono whitespace-nowrap leading-none shadow-md">Legendary</div>
         </div>
       </div>
     </div>
@@ -285,76 +471,76 @@
       <div class="lg:col-span-7 space-y-6">
 
         <!-- Live Emulator Screen Card -->
-        <div class="bg-slate-800/90 backdrop-blur border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
-          <div class="px-5 py-3.5 border-b border-slate-700/80 flex items-center justify-between bg-slate-900/50">
+        <div class="bg-[#1a1a1a]/90 backdrop-blur border border-[#2a2a2a] rounded-2xl overflow-hidden shadow-xl">
+          <div class="px-5 py-3.5 border-b border-[#2a2a2a] flex items-center justify-between bg-[#121212]/60">
             <div class="flex items-center gap-2">
               <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
-              <h2 class="text-sm font-semibold text-white">Live Screen (แตะบนจอเพื่อคลิก)</h2>
+              <h2 class="text-sm font-semibold text-[#f5f0e8]">Live Screen (แตะบนจอเพื่อคลิก)</h2>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-xs text-slate-400 bg-slate-800 px-2.5 py-1 rounded-md border border-slate-700 font-mono">1280×720</span>
-              <button onclick="reloadStream()" title="รีเฟรชสตรีม" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition">
-                🔄
+              <span class="text-xs text-[#e8dcc8] bg-black/60 backdrop-blur-md bg-gradient-to-br from-neutral-900/70 to-black/60 border border-[#d4af37]/20 px-2.5 py-1 rounded-md font-mono shadow-sm">1280×720</span>
+              <button onclick="reloadStream()" title="รีเฟรชสตรีม" class="w-7 h-7 rounded-lg bg-gradient-to-br from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 text-[#e8dcc8] hover:text-[#f4e4bc] transition-all duration-200 border border-[#d4af37]/25 hover:border-[#d4af37]/40 shadow-sm hover:shadow-md hover:shadow-[#d4af37]/10 flex items-center justify-center group">
+                <span class="w-4 h-4 flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIconRefreshLive)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIconRefreshLive" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M17 3 A8 8 0 1 0 20 8"/><path d="M20 3 V8 H15"/></svg></span>
               </button>
-              <a href="/api/screenshot" target="_blank" title="ดูภาพหน้าจอเต็ม" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition">
-                📸
+              <a href="/api/screenshot" target="_blank" title="ดูภาพหน้าจอเต็ม" class="w-7 h-7 rounded-lg bg-gradient-to-br from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 text-[#e8dcc8] hover:text-[#f4e4bc] transition-all duration-200 border border-[#d4af37]/25 hover:border-[#d4af37]/40 shadow-sm hover:shadow-md hover:shadow-[#d4af37]/10 flex items-center justify-center group">
+                <span class="w-4 h-4 flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIconCameraLive)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIconCameraLive" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><rect x="4" y="7" width="16" height="10" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M8 7 L10 5 H14 L16 7"/></svg></span>
               </a>
             </div>
           </div>
 
           <!-- Video Stream Container -->
-          <div class="relative bg-black aspect-video flex items-center justify-center overflow-hidden group cursor-crosshair select-none" id="stream-container">
+          <div class="relative bg-black aspect-video flex items-center justify-center overflow-hidden group cursor-crosshair select-none border border-[#d4af37]/20 rounded-xl shadow-inner shadow-black/50 m-1" id="stream-container">
             <img id="stream-img" src="/api/stream" alt="Live Screen Stream" class="w-full h-full object-contain pointer-events-auto" />
-            <div id="stream-overlay" class="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg border border-white/10 text-xs font-mono text-orange-300">
+            <div id="stream-overlay" class="absolute top-3 left-3 bg-black/60 backdrop-blur-md bg-gradient-to-br from-neutral-900/70 to-black/70 px-3 py-1 rounded-lg border border-[#d4af37]/20 text-xs font-mono text-[#f4e4bc] shadow-md">
               Stage: <span id="overlay-stage">IDLE</span>
             </div>
           </div>
-          <div class="px-4 py-2 bg-slate-900/60 text-[11px] text-slate-400 flex items-center justify-between border-t border-slate-800">
-            <span>💡 คลิกตำแหน่งใดก็ได้บนหน้าจอเพื่อจำลองการแตะ (Tap) บน Emulator</span>
-            <span id="tap-feedback" class="text-orange-400 font-mono"></span>
+          <div class="px-4 py-2 bg-[#121212]/60 text-[11px] text-[#e8dcc8]/70 flex items-center justify-between border-t border-[#2a2a2a]">
+            <span class="flex items-center gap-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon39)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon39" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M9 18 H15"/><path d="M10 21 H14"/><path d="M12 7 C9.2 7 7 9.2 7 11.8 C7 13.8 8.6 15 9.6 16 C10.3 16.7 10.5 17.2 10.5 18 H13.5 C13.5 17.2 13.7 16.7 14.4 16 C15.4 15 17 13.8 17 11.8 C17 9.2 14.8 7 12 7Z"/></svg> คลิกตำแหน่งใดก็ได้บนหน้าจอเพื่อจำลองการแตะ (Tap) บน Emulator</span>
+            <span id="tap-feedback" class="text-[#d4c4a8] font-mono"></span>
           </div>
         </div>
 
         <!-- 50-Round Detailed History Card -->
-        <div class="bg-slate-800/90 backdrop-blur border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
-          <div class="px-5 py-3.5 border-b border-slate-700/80 flex items-center justify-between bg-slate-900/50">
+        <div class="bg-[#1a1a1a]/90 backdrop-blur border border-[#2a2a2a] rounded-2xl overflow-hidden shadow-xl">
+          <div class="px-5 py-3.5 border-b border-[#2a2a2a] flex items-center justify-between bg-[#121212]/60">
             <div class="flex items-center gap-2">
-              <span class="text-lg">📜</span>
+              <span class="w-6 h-6 rounded-lg bg-gradient-to-br from-neutral-900 to-black border border-[#3a3020]/50 flex items-center justify-center shadow-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon32)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon32" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M8 3 H16 C17 3 18 4 18 5 V19 C18 20 17 21 16 21 H8 C7 21 6 20 6 19 V5 C6 4 7 3 8 3Z"/><path d="M9.5 9 H14.5"/><path d="M9.5 13 H14.5"/><path d="M9.5 17 H13"/></svg></span>
               <div>
-                <h3 class="text-sm font-bold text-white">ประวัติการเล่นย้อนหลัง 50 รอบ</h3>
-                <p class="text-[11px] text-slate-400">คลิกที่แต่ละรอบเพื่อดูภาพผลลัพธ์จบเกม (เงิน / EXP / กล่อง)</p>
+                <h3 class="text-sm font-bold text-[#f5f0e8]">ประวัติการเล่นย้อนหลัง 50 รอบ</h3>
+                <p class="text-[11px] text-[#e8dcc8]/70">คลิกที่แต่ละรอบเพื่อดูภาพผลลัพธ์จบเกม (เงิน / EXP / กล่อง)</p>
               </div>
             </div>
-            <span id="history-total-badge" class="text-xs text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2.5 py-1 rounded-full font-mono font-semibold">0 รอบ</span>
+            <span id="history-total-badge" class="text-xs bg-gradient-to-br from-neutral-800 to-neutral-900 border border-[#d4af37]/30 px-2.5 py-1 rounded-full font-mono font-bold shadow-sm flex items-center gap-1"><span class="text-[#f4e4bc]">0</span> <span class="text-[#e8dcc8]/80">รอบ</span></span>
           </div>
 
           <div class="p-3.5 max-h-[320px] overflow-y-auto custom-scrollbar">
             <div id="round-history-container" class="space-y-2">
-              <div class="text-xs text-slate-500 italic p-4 text-center">[ยังไม่มีประวัติการเล่นในเซสชันนี้ — เมื่อจบเกมจะบันทึกที่นี่อัตโนมัติ]</div>
+              <div class="text-xs text-[#e8dcc8]/50 italic p-4 text-center">[ยังไม่มีประวัติการเล่นในเซสชันนี้ — เมื่อจบเกมจะบันทึกที่นี่อัตโนมัติ]</div>
             </div>
           </div>
         </div>
 
         <!-- Real-time Logs Card -->
-        <div class="bg-slate-800/90 backdrop-blur border border-slate-700 rounded-2xl overflow-hidden shadow-xl flex flex-col h-[280px]">
-          <div class="px-5 py-3 border-b border-slate-700/80 flex items-center justify-between bg-slate-900/50">
+        <div class="bg-[#1a1a1a]/90 backdrop-blur border border-[#2a2a2a] rounded-2xl overflow-hidden shadow-xl flex flex-col h-[280px]">
+          <div class="px-5 py-3 border-b border-[#2a2a2a] flex items-center justify-between bg-[#121212]/60">
             <div class="flex items-center gap-2">
-              <span class="text-sm font-semibold text-white">💻 Live Console Logs</span>
+              <span class="text-sm font-semibold text-[#f5f0e8] flex items-center gap-1.5"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon33)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon33" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><rect x="4" y="5" width="16" height="10" rx="1.5"/><path d="M2 18 H22"/><path d="M8 15 L12 18 L16 15"/></svg> Live Console Logs</span>
               <span id="ws-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono">WebSocket Connected</span>
             </div>
             <div class="flex items-center gap-2">
-              <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer">
-                <input type="checkbox" id="autoscroll-toggle" checked class="rounded border-slate-700 text-orange-500 focus:ring-0">
+              <label class="flex items-center gap-1.5 text-xs text-[#e8dcc8]/70 cursor-pointer">
+                <input type="checkbox" id="autoscroll-toggle" checked class="rounded border-[#2a2a2a] text-[#c9b896] focus:ring-0">
                 Auto-scroll
               </label>
-              <button onclick="clearLogs()" class="text-xs text-slate-400 hover:text-slate-200 px-2 py-1 rounded bg-slate-800 border border-slate-700">
+              <button onclick="clearLogs()" class="text-xs bg-gradient-to-br from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 text-[#e8dcc8] hover:text-[#f5f0e8] font-medium px-2.5 py-1 rounded-lg border border-[#d4af37]/25 hover:border-[#d4af37]/40 transition-all duration-200 shadow-sm">
                 Clear
               </button>
             </div>
           </div>
 
-          <div id="logs-container" class="flex-1 p-4 overflow-y-auto font-mono text-xs space-y-1.5 custom-scrollbar bg-slate-950/70">
-            <div class="text-slate-500 italic">[Waiting for logs...]</div>
+          <div id="logs-container" class="flex-1 p-4 overflow-y-auto font-mono text-xs space-y-1.5 custom-scrollbar bg-[#0a0a0a]/70">
+            <div class="text-[#e8dcc8]/50 italic">[Waiting for logs...]</div>
           </div>
         </div>
 
@@ -364,24 +550,24 @@
       <div class="lg:col-span-5 space-y-6">
 
         <!-- Master Bot Controls Card -->
-        <div class="bg-slate-800/90 backdrop-blur border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
-          <h2 class="text-base font-bold text-white flex items-center gap-2">
-            🎮 ควบคุมการทำงาน
+        <div class="bg-[#1a1a1a]/90 backdrop-blur border border-[#2a2a2a] rounded-2xl p-5 shadow-xl space-y-4">
+          <h2 class="text-base font-bold text-[#f5f0e8] flex items-center gap-3">
+            <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-neutral-900 to-black border border-[#3a3020]/60 flex items-center justify-center shadow-md shadow-black/30"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon34)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon34" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><rect x="6" y="9" width="12" height="7" rx="3"/><path d="M9 12.5 H11"/><path d="M10 11.5 V13.5"/><circle cx="14.5" cy="11.5" r="0.7"/><circle cx="16" cy="13" r="0.7"/></svg></span> ควบคุมการทำงาน
           </h2>
 
           <!-- Main Start/Stop Button -->
-          <button id="btn-toggle-bot" onclick="toggleBot()" class="w-full py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-200 shadow-lg bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white shadow-emerald-500/25">
-            <span class="text-2xl">▶</span>
+          <button id="btn-toggle-bot" onclick="toggleBot()" class="w-full py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-200 shadow-lg bg-gradient-to-br from-emerald-800 via-emerald-700 to-[#064e3b] hover:from-emerald-700 hover:via-emerald-600 hover:to-emerald-800 active:scale-[0.98] text-[#f5f0e8] shadow-emerald-900/40 border border-[#d4af37]/30 hover:border-[#d4af37]/50 pulse-glow-green">
+            <span class="text-xl drop-shadow">▶</span>
             <span>เริ่มทำงานบอท (Start Bot)</span>
           </button>
 
           <!-- Secondary Action Buttons -->
           <div class="grid grid-cols-2 gap-3 pt-1">
-            <button onclick="testConnection()" class="py-2.5 px-3 rounded-xl bg-slate-700/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition border border-slate-600">
-              🔌 ทดสอบเชื่อมต่อ ADB
+            <button onclick="testConnection()" class="py-2.5 px-3 rounded-xl bg-gradient-to-br from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 text-[#e8dcc8] hover:text-[#f5f0e8] text-xs font-semibold flex items-center justify-center gap-2 transition-all duration-200 border border-[#d4af37]/30 hover:border-[#d4af37]/50 shadow-sm hover:shadow-md">
+              <span class="w-4 h-4 flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIconPlug)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIconPlug" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M9 2 V7"/><path d="M15 2 V7"/><rect x="8" y="7" width="8" height="5" rx="1.2"/><path d="M11 12 V16"/><path d="M13 12 V16"/><path d="M9.5 16 H14.5"/></svg></span> ทดสอบเชื่อมต่อ ADB
             </button>
-            <button onclick="resetGameApp()" class="py-2.5 px-3 rounded-xl bg-slate-700/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition border border-slate-600">
-              🔄 รีสตาร์ทแอปเกม
+            <button onclick="resetGameApp()" class="py-2.5 px-3 rounded-xl bg-gradient-to-br from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 text-[#e8dcc8] hover:text-[#f5f0e8] text-xs font-semibold flex items-center justify-center gap-2 transition-all duration-200 border border-[#d4af37]/30 hover:border-[#d4af37]/50 shadow-sm hover:shadow-md">
+              <span class="w-4 h-4 flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIconRefresh)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIconRefresh" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M17 3 A8 8 0 1 0 20 8"/><path d="M20 3 V8 H15"/></svg></span> รีสตาร์ทแอปเกม
             </button>
           </div>
 
@@ -389,14 +575,14 @@
         </div>
 
         <!-- Configuration Settings Card -->
-        <div class="bg-slate-800/90 backdrop-blur border border-slate-700 rounded-2xl p-5 shadow-xl space-y-5">
-          <div class="flex items-center justify-between border-b border-slate-700/80 pb-3">
-            <h2 class="text-base font-bold text-white flex items-center gap-2">
-              ⚙️ ตั้งค่าการเล่น (Bot Settings)
+        <div class="bg-[#1a1a1a]/90 backdrop-blur border border-[#2a2a2a] rounded-2xl p-5 shadow-xl space-y-5">
+          <div class="flex items-center justify-between border-b border-[#2a2a2a] pb-3">
+            <h2 class="text-base font-bold text-[#f5f0e8] flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-gradient-to-br from-neutral-900 to-black border border-[#3a3020]/50 flex items-center justify-center shadow-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon40)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon40" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="12" r="3.2"/><path d="M12 8 V10"/><path d="M12 14 V16"/><path d="M8 12 H10"/><path d="M14 12 H16"/><path d="M8.8 8.8 L10.1 10.1"/><path d="M13.9 13.9 L15.2 15.2"/><path d="M15.2 8.8 L13.9 10.1"/><path d="M10.1 13.9 L8.8 15.2"/></svg></span> ตั้งค่าการเล่น (Bot Settings)
             </h2>
             <div class="flex items-center gap-2">
-              <span id="settings-save-badge" class="text-[11px] text-emerald-400 font-medium hidden">💾 จำค่าแล้ว</span>
-              <button onclick="resetStats()" class="text-xs text-orange-400 hover:text-orange-300">
+              <span id="settings-save-badge" class="text-[11px] text-emerald-400 font-medium hidden flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="url(#goldThird7391)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldThird7391" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><rect x='5' y='4' width='14' height='16' rx='1.5'/><rect x='7' y='4' width='10' height='4'/><rect x='8' y='14' width='8' height='4'/></svg> จำค่าแล้ว</span>
+              <button onclick="resetStats()" class="text-xs text-[#d4c4a8] hover:text-[#f5f0e8] font-semibold underline decoration-[#d4c4a8]/50">
                 รีเซ็ตสถิติ
               </button>
             </div>
@@ -404,69 +590,69 @@
 
           <!-- Connection Config -->
           <div class="space-y-3">
-            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+            <label class="block text-xs font-semibold text-[#e8dcc8] uppercase tracking-wider">
               ADB Connection (Emulator)
             </label>
             <div class="grid grid-cols-3 gap-2">
               <div class="col-span-2">
-                <input type="text" id="cfg-ip" value="127.0.0.1" oninput="saveBotSettingsAuto()" placeholder="IP" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500 font-mono">
+                <input type="text" id="cfg-ip" value="127.0.0.1" oninput="saveBotSettingsAuto()" placeholder="IP" class="w-full bg-gradient-to-br from-neutral-900 to-[#121212] border border-[#d4af37]/20 rounded-xl px-3 py-2 text-sm text-[#f5f0e8] focus:outline-none focus:border-[#d4af37] focus:shadow-[0_0_0_2px_rgba(212,175,55,0.12)] font-mono transition-all duration-200">
               </div>
               <div>
-                <input type="number" id="cfg-port" value="5595" oninput="saveBotSettingsAuto()" placeholder="Port" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500 font-mono">
+                <input type="number" id="cfg-port" value="5595" oninput="saveBotSettingsAuto()" placeholder="Port" class="w-full bg-gradient-to-br from-neutral-900 to-[#121212] border border-[#d4af37]/20 rounded-xl px-3 py-2 text-sm text-[#f5f0e8] focus:outline-none focus:border-[#d4af37] focus:shadow-[0_0_0_2px_rgba(212,175,55,0.12)] font-mono transition-all duration-200">
               </div>
             </div>
 
             <!-- Quick Presets -->
             <div class="flex flex-wrap gap-1.5 pt-1">
-              <span class="text-[11px] text-slate-400 self-center mr-1">Presets:</span>
-              <button onclick="setPreset('127.0.0.1', 5595)" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 hover:border-orange-500 text-slate-300 transition">
+              <span class="text-[11px] text-[#e8dcc8]/70 self-center mr-1">Presets:</span>
+              <button data-port="5595" onclick="setPreset('127.0.0.1', 5595)" class="preset-btn text-[11px] px-2.5 py-1 rounded-lg font-semibold transition-all duration-200 shadow-sm">
                 MuMu (5595)
               </button>
-              <button onclick="setPreset('127.0.0.1', 16384)" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 hover:border-orange-500 text-slate-300 transition">
+              <button data-port="16384" onclick="setPreset('127.0.0.1', 16384)" class="preset-btn text-[11px] px-2.5 py-1 rounded-lg font-semibold transition-all duration-200 shadow-sm">
                 MuMu / LD2 (16384)
               </button>
-              <button onclick="setPreset('127.0.0.1', 5555)" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 hover:border-orange-500 text-slate-300 transition">
+              <button data-port="5555" onclick="setPreset('127.0.0.1', 5555)" class="preset-btn text-[11px] px-2.5 py-1 rounded-lg font-semibold transition-all duration-200 shadow-sm">
                 LD / BS (5555)
               </button>
-              <button onclick="setPreset('127.0.0.1', 62001)" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 hover:border-orange-500 text-slate-300 transition">
+              <button data-port="62001" onclick="setPreset('127.0.0.1', 62001)" class="preset-btn text-[11px] px-2.5 py-1 rounded-lg font-semibold transition-all duration-200 shadow-sm">
                 Nox (62001)
               </button>
             </div>
           </div>
 
-          <div class="border-t border-slate-700/60 pt-4 space-y-4">
+          <div class="border-t border-[#2a2a2a] pt-4 space-y-4">
             <!-- Fast Start Section -->
-            <div class="space-y-2.5 bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/60">
+            <div class="space-y-2.5 bg-[#121212]/60 p-3.5 rounded-xl border border-[#2a2a2a]">
               <label class="flex items-center justify-between cursor-pointer group">
                 <div>
-                  <span class="text-sm font-semibold text-white group-hover:text-orange-300 transition">⚡ ใช้งาน Fast Start (ออกตัวเร็ว)</span>
-                  <p class="text-xs text-slate-400">กดใช้ไอเทมออกตัวเร็วเมื่อเริ่มเกม</p>
+                  <span class="text-sm font-semibold text-[#f5f0e8] group-hover:text-[#d4c4a8] transition flex items-center gap-1.5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon42)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon42" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M13 2 L6 12 H11 L9 22 L18 11 H12 L13 2Z"/></svg> ใช้งาน Fast Start (ออกตัวเร็ว)</span>
+                  <p class="text-xs text-[#e8dcc8]/70">กดใช้ไอเทมออกตัวเร็วเมื่อเริ่มเกม</p>
                 </div>
-                <input type="checkbox" id="cfg-fast-start" onchange="saveBotSettingsAuto()" class="w-5 h-5 rounded bg-slate-900 border-slate-700 text-orange-500 focus:ring-0">
+                <input type="checkbox" id="cfg-fast-start" onchange="saveBotSettingsAuto()" class="gold-checkbox gold-checkbox-lg focus:ring-0 focus:ring-offset-0">
               </label>
-              <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-800">
-                <span class="text-slate-400 flex items-center gap-1">🛒 ซื้อเพิ่มเมื่อเหลือน้อยกว่าหรือเท่ากับ:</span>
+              <div class="flex items-center justify-between text-xs pt-2 border-t border-[#2a2a2a]">
+                <span class="text-[#e8dcc8]/70 flex items-center gap-1"><span class="w-3.5 h-3.5 flex items-center justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon58)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon58" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span> ซื้อเพิ่มเมื่อเหลือน้อยกว่าหรือเท่ากับ:</span>
                 <div class="flex items-center gap-1.5">
-                  <input type="number" id="cfg-fast-start-min" value="10" min="0" max="999" oninput="saveBotSettingsAuto()" class="w-16 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-center text-xs text-amber-300 font-bold focus:outline-none focus:border-orange-500 font-mono">
-                  <span class="text-slate-400">ชิ้น</span>
+                  <input type="number" id="cfg-fast-start-min" value="10" min="0" max="999" oninput="saveBotSettingsAuto()" class="gold-number w-16 rounded-lg px-2 py-1 text-center text-xs font-bold font-mono">
+                  <span class="text-[#e8dcc8]/70">ชิ้น</span>
                 </div>
               </div>
             </div>
 
             <!-- Cookie Relay Section -->
-            <div class="space-y-2.5 bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/60">
+            <div class="space-y-2.5 bg-[#121212]/60 p-3.5 rounded-xl border border-[#2a2a2a]">
               <label class="flex items-center justify-between cursor-pointer group">
                 <div>
-                  <span class="text-sm font-semibold text-white group-hover:text-orange-300 transition">🍪 ใช้งาน Cookie Relay (ผลัดคุกกี้)</span>
-                  <p class="text-xs text-slate-400">กดใช้ตัวผลัดคุกกี้เมื่อตัวหลักหมดพลัง</p>
+                  <span class="text-sm font-semibold text-[#f5f0e8] group-hover:text-[#d4c4a8] transition flex items-center gap-1.5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon44)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon44" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="12" r="7"/><circle cx="9" cy="10.2" r="1"/><circle cx="13.8" cy="9.5" r="0.9"/><circle cx="11.2" cy="14.3" r="1"/><circle cx="14.5" cy="13.2" r="0.7"/></svg> ใช้งาน Cookie Relay (ผลัดคุกกี้)</span>
+                  <p class="text-xs text-[#e8dcc8]/70">กดใช้ตัวผลัดคุกกี้เมื่อตัวหลักหมดพลัง</p>
                 </div>
-                <input type="checkbox" id="cfg-cookie-relay" onchange="saveBotSettingsAuto()" class="w-5 h-5 rounded bg-slate-900 border-slate-700 text-orange-500 focus:ring-0">
+                <input type="checkbox" id="cfg-cookie-relay" onchange="saveBotSettingsAuto()" class="gold-checkbox gold-checkbox-lg focus:ring-0 focus:ring-offset-0">
               </label>
-              <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-800">
-                <span class="text-slate-400 flex items-center gap-1">🛒 ซื้อเพิ่มเมื่อเหลือน้อยกว่าหรือเท่ากับ:</span>
+              <div class="flex items-center justify-between text-xs pt-2 border-t border-[#2a2a2a]">
+                <span class="text-[#e8dcc8]/70 flex items-center gap-1"><span class="w-3.5 h-3.5 inline-flex items-center justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon63)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon63" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span> ซื้อเพิ่มเมื่อเหลือน้อยกว่าหรือเท่ากับ:</span>
                 <div class="flex items-center gap-1.5">
-                  <input type="number" id="cfg-cookie-relay-min" value="10" min="0" max="999" oninput="saveBotSettingsAuto()" class="w-16 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-center text-xs text-amber-300 font-bold focus:outline-none focus:border-orange-500 font-mono">
-                  <span class="text-slate-400">ชิ้น</span>
+                  <input type="number" id="cfg-cookie-relay-min" value="10" min="0" max="999" oninput="saveBotSettingsAuto()" class="gold-number w-16 rounded-lg px-2 py-1 text-center text-xs font-bold font-mono">
+                  <span class="text-[#e8dcc8]/70">ชิ้น</span>
                 </div>
               </div>
             </div>
@@ -475,14 +661,14 @@
             <div class="space-y-2">
               <label class="flex items-center justify-between cursor-pointer group">
                 <div>
-                  <span class="text-sm font-semibold text-white group-hover:text-orange-300 transition">🎲 สุ่ม Random Boost ที่ต้องการ</span>
-                  <p class="text-xs text-slate-400">สุ่มซื้อจนกว่าจะได้บัฟที่เลือกไว้</p>
+                  <span class="text-sm font-semibold text-[#f5f0e8] group-hover:text-[#d4c4a8] transition flex items-center gap-1.5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon45)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon45" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><rect x="5" y="5" width="14" height="14" rx="2"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="9" r="1"/><circle cx="9" cy="15" r="1"/><circle cx="15" cy="15" r="1"/><circle cx="12" cy="12" r="1.2"/></svg> สุ่ม Random Boost ที่ต้องการ</span>
+                  <p class="text-xs text-[#e8dcc8]/70">สุ่มซื้อจนกว่าจะได้บัฟที่เลือกไว้</p>
                 </div>
-                <input type="checkbox" id="cfg-random-boost" onchange="toggleBoostSelect(); saveBotSettingsAuto();" class="w-5 h-5 rounded bg-slate-900 border-slate-700 text-orange-500 focus:ring-0">
+                <input type="checkbox" id="cfg-random-boost" onchange="toggleBoostSelect(); saveBotSettingsAuto();" class="gold-checkbox gold-checkbox-lg focus:ring-0 focus:ring-offset-0">
               </label>
 
               <div id="boost-select-wrap" class="hidden pl-2">
-                <select id="cfg-boost-id" onchange="saveBotSettingsAuto()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500">
+                <select id="cfg-boost-id" onchange="saveBotSettingsAuto()" class="gold-select w-full rounded-xl px-3 py-2 text-sm focus:outline-none">
                   <option value="double_coins">Double Coins (เหรียญ x2)</option>
                   <option value="score_15">+15% Score Bonus (คะแนน +15%)</option>
                   <option value="hp_drain_15">-15% HP Drain (พลังลดช้าลง 15%)</option>
@@ -501,49 +687,49 @@
             <!-- Relic Detect Toggle -->
             <label class="flex items-center justify-between cursor-pointer group">
               <div>
-                <span class="text-sm font-semibold text-white group-hover:text-orange-300 transition">🏺 เปิดกล่อง Relic อัตโนมัติ</span>
-                <p class="text-xs text-slate-400">ตรวจจับและกดรับชิ้นส่วนสมบัติโบราณ</p>
+                <span class="text-sm font-semibold text-[#f5f0e8] group-hover:text-[#d4c4a8] transition flex items-center gap-1.5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon46)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon46" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M10 4 H14"/><path d="M12 4 V7"/><path d="M9 7 H15 C16 7 17 8 17 9.5 C17 11 15 12.5 12 14.5 C9 12.5 7 11 7 9.5 C7 8 8 7 9 7Z"/><path d="M10 14.5 H14 V16 H10 Z"/><path d="M8.5 16 H15.5"/></svg> เปิดกล่อง Relic อัตโนมัติ</span>
+                <p class="text-xs text-[#e8dcc8]/70">ตรวจจับและกดรับชิ้นส่วนสมบัติโบราณ</p>
               </div>
-              <input type="checkbox" id="cfg-detect-relic" checked onchange="saveBotSettingsAuto()" class="w-5 h-5 rounded bg-slate-900 border-slate-700 text-orange-500 focus:ring-0">
+              <input type="checkbox" id="cfg-detect-relic" checked onchange="saveBotSettingsAuto()" class="gold-checkbox gold-checkbox-lg focus:ring-0 focus:ring-offset-0">
             </label>
 
             <!-- Send Friend Lives -->
             <label class="flex items-center justify-between cursor-pointer group">
               <div>
-                <span class="text-sm font-semibold text-white group-hover:text-orange-300 transition">💌 ส่งหัวใจให้เพื่อน</span>
-                <p class="text-xs text-slate-400">กดรับและส่งหัวใจให้เพื่อนทุก ~30 นาที</p>
+                <span class="text-sm font-semibold text-[#f5f0e8] group-hover:text-[#d4c4a8] transition flex items-center gap-1.5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon47)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon47" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><rect x="4" y="8" width="16" height="9" rx="1.2"/><path d="M4 8 L12 13 L20 8"/><path d="M12 11.5 C11.1 10.7 9.7 11 9.7 12.3 C9.7 13.6 12 15.2 12 15.2 C12 15.2 14.3 13.6 14.3 12.3 C14.3 11 12.9 10.7 12 11.5Z"/></svg> ส่งหัวใจให้เพื่อน</span>
+                <p class="text-xs text-[#e8dcc8]/70">กดรับและส่งหัวใจให้เพื่อนทุก ~30 นาที</p>
               </div>
-              <input type="checkbox" id="cfg-send-lives" checked onchange="saveBotSettingsAuto()" class="w-5 h-5 rounded bg-slate-900 border-slate-700 text-orange-500 focus:ring-0">
+              <input type="checkbox" id="cfg-send-lives" checked onchange="saveBotSettingsAuto()" class="gold-checkbox gold-checkbox-lg focus:ring-0 focus:ring-offset-0">
             </label>
 
             <!-- Auto-Stop Goals Section -->
-            <div class="border-t border-slate-700/60 pt-3.5 space-y-3">
+            <div class="border-t border-[#2a2a2a] pt-3.5 space-y-3">
               <div class="flex items-center gap-2">
-                <span class="text-base">🎯</span>
-                <span class="text-sm font-bold text-amber-300">ตั้งเป้าหมายหยุดบอทอัตโนมัติ (Auto-Stop Goals)</span>
+                <span class="w-6 h-6 rounded-lg bg-gradient-to-br from-neutral-900 to-black border border-[#3a3020]/50 flex items-center justify-center shadow-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon56)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon56" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1.2"/></svg></span>
+                <span class="text-sm font-bold text-[#d4c4a8]">ตั้งเป้าหมายหยุดบอทอัตโนมัติ (Auto-Stop Goals)</span>
               </div>
 
               <!-- Goal 1: Max Rounds -->
-              <div class="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-slate-700/60">
+              <div class="flex items-center justify-between bg-[#121212]/60 p-3 rounded-xl border border-[#2a2a2a]">
                 <label class="flex items-center gap-2.5 cursor-pointer">
-                  <input type="checkbox" id="cfg-goal-rounds-enabled" onchange="saveBotSettingsAuto()" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-orange-500 focus:ring-0">
-                  <span class="text-xs text-white font-semibold">🔄 หยุดเมื่อวิ่งครบ:</span>
+                  <input type="checkbox" id="cfg-goal-rounds-enabled" onchange="saveBotSettingsAuto()" class="gold-checkbox focus:ring-0 focus:ring-offset-0">
+                  <span class="text-xs text-[#f5f0e8] font-semibold flex items-center gap-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon36)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon36" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M17 3 A8 8 0 1 0 20 8"/><path d="M20 3 V8 H15"/></svg> หยุดเมื่อวิ่งครบ:</span>
                 </label>
                 <div class="flex items-center gap-1.5">
-                  <input type="number" id="cfg-goal-rounds-target" value="50" min="1" max="9999" oninput="saveBotSettingsAuto()" class="w-20 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-center text-xs text-amber-300 font-bold focus:outline-none focus:border-orange-500 font-mono">
-                  <span class="text-xs text-slate-400">รอบ</span>
+                  <input type="number" id="cfg-goal-rounds-target" value="50" min="1" max="9999" oninput="saveBotSettingsAuto()" class="gold-number w-20 rounded-lg px-2.5 py-1 text-center text-xs font-bold font-mono">
+                  <span class="text-xs text-[#e8dcc8]/70">รอบ</span>
                 </div>
               </div>
 
               <!-- Goal 2: Max Time (Hours) -->
-              <div class="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-slate-700/60">
+              <div class="flex items-center justify-between bg-[#121212]/60 p-3 rounded-xl border border-[#2a2a2a]">
                 <label class="flex items-center gap-2.5 cursor-pointer">
-                  <input type="checkbox" id="cfg-goal-time-enabled" onchange="saveBotSettingsAuto()" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-orange-500 focus:ring-0">
-                  <span class="text-xs text-white font-semibold">⏳ หยุดเมื่อปล่อยครบ:</span>
+                  <input type="checkbox" id="cfg-goal-time-enabled" onchange="saveBotSettingsAuto()" class="gold-checkbox focus:ring-0 focus:ring-offset-0">
+                  <span class="text-xs text-[#f5f0e8] font-semibold flex items-center gap-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon57)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon57" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M7 3 H17"/><path d="M7 21 H17"/><path d="M8 3 L16 12 L8 21"/><path d="M16 3 L8 12 L16 21"/><rect x="6.5" y="2.2" width="11" height="1.4" rx="0.7"/><rect x="6.5" y="20.4" width="11" height="1.4" rx="0.7"/></svg> หยุดเมื่อปล่อยครบ:</span>
                 </label>
                 <div class="flex items-center gap-1.5">
-                  <input type="number" id="cfg-goal-time-hours" value="2" min="0.1" step="0.5" max="72" oninput="saveBotSettingsAuto()" class="w-20 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-center text-xs text-amber-300 font-bold focus:outline-none focus:border-orange-500 font-mono">
-                  <span class="text-xs text-slate-400">ชั่วโมง</span>
+                  <input type="number" id="cfg-goal-time-hours" value="2" min="0.1" step="0.5" max="72" oninput="saveBotSettingsAuto()" class="gold-number w-20 rounded-lg px-2.5 py-1 text-center text-xs font-bold font-mono">
+                  <span class="text-xs text-[#e8dcc8]/70">ชั่วโมง</span>
                 </div>
               </div>
             </div>
@@ -551,61 +737,61 @@
         </div>
 
         <!-- Discord Notification Card -->
-        <div class="bg-slate-800/90 backdrop-blur border border-indigo-500/30 rounded-2xl p-5 shadow-xl space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-700/80 pb-3">
+        <div class="bg-[#1a1a1a]/90 backdrop-blur border border-indigo-500/30 rounded-2xl p-5 shadow-xl space-y-4">
+          <div class="flex items-center justify-between border-b border-[#2a2a2a] pb-3">
             <div class="flex items-center gap-2">
-              <span class="text-lg">📢</span>
-              <h2 class="text-base font-bold text-white">แจ้งเตือนผ่าน Discord</h2>
+              <span class="w-6 h-6 rounded-lg bg-gradient-to-br from-neutral-900 to-black border border-[#3a3020]/50 flex items-center justify-center shadow-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon48)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon48" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M5 10 H10 L14 6 V18 L10 14 H5 Z"/><path d="M14 9 C16 10.2 16 13.8 14 15"/><path d="M16.5 7 C19 9 19 15 16.5 17"/></svg></span>
+              <h2 class="text-base font-bold text-[#f5f0e8]">แจ้งเตือนผ่าน Discord</h2>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" id="discord-enabled" class="sr-only peer" onchange="saveDiscordSettings()">
-              <div class="w-11 h-6 bg-slate-900 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              <div class="w-11 h-6 bg-neutral-800 border border-[#d4af37]/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#e8dcc8] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-br peer-checked:from-[#d4af37] peer-checked:to-[#b8860b] peer-checked:border-[#d4af37] peer-checked:shadow-[0_0_8px_rgba(212,175,55,0.4)]"></div>
             </label>
           </div>
 
           <div class="space-y-3 text-xs">
             <div>
-              <label class="block font-semibold text-slate-300 mb-1">Discord Webhook URL</label>
-              <input type="text" id="discord-webhook-url" placeholder="https://discord.com/api/webhooks/..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono">
+              <label class="block font-semibold text-[#e8dcc8] mb-1">Discord Webhook URL</label>
+              <input type="text" id="discord-webhook-url" placeholder="https://discord.com/api/webhooks/..." class="w-full bg-[#121212] border border-[#2a2a2a] rounded-xl px-3 py-2 text-xs text-[#f5f0e8] focus:outline-none focus:border-[#d4c4a8] font-mono">
             </div>
 
             <div class="grid grid-cols-2 gap-2 pt-1">
-              <button onclick="saveDiscordSettings(true)" class="py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center justify-center gap-1.5 transition">
-                💾 บันทึก
+              <button onclick="saveDiscordSettings(true)" class="py-2 px-3 rounded-xl bg-gradient-to-br from-[#d4af37] via-[#c9a84c] to-[#8b6914] hover:from-[#e8c55a] hover:via-[#d4af37] hover:to-[#a67c1a] text-[#0a0a0a] font-bold flex items-center justify-center gap-1.5 transition-all duration-200 border border-[#d4af37]/50 shadow-md hover:shadow-lg">
+                <span class="w-4 h-4 flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="16" rx="1.5"/><rect x="7" y="4" width="10" height="4"/><rect x="8" y="14" width="8" height="4"/></svg></span> บันทึก
               </button>
-              <button onclick="testDiscordWebhook()" class="py-2 px-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold flex items-center justify-center gap-1.5 transition border border-slate-600">
-                🧪 ทดสอบส่ง
+              <button onclick="testDiscordWebhook()" class="py-2 px-3 rounded-xl bg-gradient-to-br from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 text-[#e8dcc8] hover:text-[#f5f0e8] font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 border border-[#d4af37]/30 hover:border-[#d4af37]/50 shadow-sm hover:shadow-md">
+                <span class="w-4 h-4 flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIconFlask)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIconFlask" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M9 3 H15"/><path d="M10 3 V11 C10 15 12 18 12 18 C12 18 14 15 14 11 V3"/><path d="M8 18 H16"/></svg></span> ทดสอบส่ง
               </button>
             </div>
 
             <div id="discord-test-result" class="hidden p-2.5 rounded-xl border text-[11px]"></div>
 
-            <div class="border-t border-slate-700/60 pt-3 space-y-2.5">
+            <div class="border-t border-[#2a2a2a] pt-3 space-y-2.5">
               <label class="flex items-center justify-between cursor-pointer">
-                <span class="text-slate-300">🏁 แจ้งเตือนผลลัพธ์ทุกรอบ (เงิน & EXP ต่อรอบ/สะสม)</span>
-                <input type="checkbox" id="discord-notify-rounds" checked onchange="saveDiscordSettings()" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-500">
+                <span class="text-[#e8dcc8] flex items-center gap-1.5"><span class="w-4 h-4 flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon59)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon59" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M5.5 3.2 V20.8"/><path d="M5.5 3.5 H15.2 C18 3.5 18 7 15.2 7 H5.5"/><path d="M5.5 7 H15.2 C18 7 18 10.5 15.2 10.5 H5.5"/><path d="M5.5 10.5 H15.2 C18 10.5 18 14 15.2 14 H5.5"/><path d="M5.5 7 H18"/><path d="M5.5 10.5 H16"/><path d="M9.5 3.5 V10.5"/><path d="M13.2 3.5 V10.5"/></svg></span> แจ้งเตือนผลลัพธ์ทุกรอบ (เงิน & EXP ต่อรอบ/สะสม)</span>
+                <input type="checkbox" id="discord-notify-rounds" checked onchange="saveDiscordSettings()" class="gold-checkbox focus:ring-0 focus:ring-offset-0">
               </label>
               <label class="flex items-center justify-between cursor-pointer">
-                <span class="text-slate-300">🎁 แจ้งเตือนเมื่อได้กล่องปริศนา (แนบรูป)</span>
-                <input type="checkbox" id="discord-notify-boxes" checked onchange="saveDiscordSettings()" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-500">
+                <span class="text-[#e8dcc8] flex items-center gap-1.5"><span class="w-4 h-4 flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon60)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon60" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><rect x="4" y="9.5" width="16" height="9.5" rx="1.2"/><path d="M4 9.5 H20"/><path d="M12 9.5 V19"/><path d="M8.5 9.5 C8 7 10 6.2 12 8.2 C14 6.2 16 7 15.5 9.5"/><rect x="3.2" y="7.2" width="17.6" height="2.3" rx="1"/></svg></span> แจ้งเตือนเมื่อได้กล่องปริศนา (แนบรูป)</span>
+                <input type="checkbox" id="discord-notify-boxes" checked onchange="saveDiscordSettings()" class="gold-checkbox focus:ring-0 focus:ring-offset-0">
               </label>
               <label class="flex items-center justify-between cursor-pointer">
-                <span class="text-slate-300">⚠️ แจ้งเตือนเมื่อเจอ Anti-Bot</span>
-                <input type="checkbox" id="discord-notify-antibot" checked onchange="saveDiscordSettings()" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-500">
+                <span class="text-[#e8dcc8] flex items-center gap-1.5"><span class="w-4 h-4 flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon50)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon50" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M12 5 L19.5 18 H4.5 Z"/><path d="M12 9.5 V13.5"/><path d="M12 16.5 V17.5"/></svg></span> แจ้งเตือนเมื่อเจอ Anti-Bot</span>
+                <input type="checkbox" id="discord-notify-antibot" checked onchange="saveDiscordSettings()" class="gold-checkbox focus:ring-0 focus:ring-offset-0">
               </label>
               <label class="flex items-center justify-between cursor-pointer">
-                <span class="text-slate-300">🚀 แจ้งเตือนสถานะเริ่ม/หยุด/หลุด</span>
-                <input type="checkbox" id="discord-notify-status" checked onchange="saveDiscordSettings()" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-500">
+                <span class="text-[#e8dcc8] flex items-center gap-1.5"><span class="w-4 h-4 flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon51)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon51" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M12 3 C14.2 3 17 5.2 17 9 C17 11.2 16 13 14.2 15 L12 18 L9.8 15 C8 13 7 11.2 7 9 C7 5.2 9.8 3 12 3Z"/><circle cx="12" cy="9.5" r="1.8"/><path d="M10 14.5 L7.5 19.5 L10.2 17.2"/><path d="M14 14.5 L16.5 19.5 L13.8 17.2"/></svg></span> แจ้งเตือนสถานะเริ่ม/หยุด/หลุด</span>
+                <input type="checkbox" id="discord-notify-status" checked onchange="saveDiscordSettings()" class="gold-checkbox focus:ring-0 focus:ring-offset-0">
               </label>
             </div>
           </div>
         </div>
 
         <!-- Info Card -->
-        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 text-xs text-slate-400 space-y-1.5">
-          <p class="font-semibold text-slate-300">📌 ข้อมูลระบบ:</p>
+        <div class="bg-[#121212]/60 border border-[#2a2a2a] rounded-2xl p-4 text-xs text-[#e8dcc8]/70 space-y-1.5">
+          <p class="font-semibold text-[#e8dcc8] flex items-center gap-1.5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon52)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon52" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M12 4 C13.8 4 15 5.2 15 6.8 C15 8.5 12 11.5 12 11.5 C12 11.5 9 8.5 9 6.8 C9 5.2 10.2 4 12 4Z"/><path d="M12 11.5 V16"/><path d="M9 16 H15"/></svg> ข้อมูลระบบ:</p>
           <p id="info-adb" class="font-mono text-[11px] truncate">ADB Path: Loading...</p>
-          <p>⚠️ ความละเอียดหน้าจอต้องตั้งเป็น <strong>1280 × 720 (DPI 240)</strong> เสมอ</p>
+          <p class="flex items-center gap-1.5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon50)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon50" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M12 5 L19.5 18 H4.5 Z"/><path d="M12 9.5 V13.5"/><path d="M12 16.5 V17.5"/></svg> ความละเอียดหน้าจอต้องตั้งเป็น <strong>1280 × 720 (DPI 240)</strong> เสมอ</p>
         </div>
 
       </div>
@@ -615,41 +801,41 @@
 
   <!-- Round Detail Modal -->
   <div id="round-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl space-y-4 p-5 custom-scrollbar">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+    <div class="bg-[#121212] border border-[#2a2a2a] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl space-y-4 p-5 custom-scrollbar">
+      <div class="flex items-center justify-between border-b border-[#2a2a2a] pb-3">
         <div>
-          <h3 id="modal-round-title" class="text-lg font-bold text-white flex items-center gap-2">
-            🏁 ผลลัพธ์รอบที่ #0
+          <h3 id="modal-round-title" class="text-lg font-bold text-[#f5f0e8] flex items-center gap-2">
+            <span class="w-6 h-6 rounded-lg bg-gradient-to-br from-neutral-900 to-black border border-[#3a3020]/50 flex items-center justify-center shadow-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon62)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon62" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M5.5 3.2 V20.8"/><path d="M5.5 3.5 H15.2 C18 3.5 18 7 15.2 7 H5.5"/><path d="M5.5 7 H15.2 C18 7 18 10.5 15.2 10.5 H5.5"/><path d="M5.5 10.5 H15.2 C18 10.5 18 14 15.2 14 H5.5"/><path d="M5.5 7 H18"/><path d="M5.5 10.5 H16"/><path d="M9.5 3.5 V10.5"/><path d="M13.2 3.5 V10.5"/></svg></span> ผลลัพธ์รอบที่ #0
           </h3>
-          <p id="modal-round-meta" class="text-xs text-slate-400 font-mono mt-0.5">เวลา: 00:00:00 | ใช้เวลา: 0s</p>
+          <p id="modal-round-meta" class="text-xs text-[#e8dcc8]/70 font-mono mt-0.5">เวลา: 00:00:00 | ใช้เวลา: 0s</p>
         </div>
-        <button onclick="closeRoundModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-700">
-          ✕
+        <button onclick="closeRoundModal()" class="w-8 h-8 rounded-xl bg-[#d4c4a8] hover:bg-[#c9b896] text-[#0a0a0a] flex items-center justify-center transition border border-[#c9b896] font-bold">
+          <span class="w-4 h-4 flex items-center justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d='M8 8 L16 16'/><path d='M16 8 L8 16'/></svg></span>
         </button>
       </div>
 
       <!-- Box Rewards in that round -->
       <div class="space-y-2">
-        <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">📦 กล่องปริศนาที่ได้ในรอบนี้:</h4>
+        <h4 class="text-xs font-semibold text-[#e8dcc8] uppercase tracking-wider flex items-center gap-1.5"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon31)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon31" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><rect x="4" y="8" width="16" height="10" rx="1.5"/><path d="M4 8 L12 4 L20 8"/><path d="M12 4 V8"/><path d="M12 8 V18"/><path d="M4 12 H20"/></svg> กล่องปริศนาที่ได้ในรอบนี้:</h4>
         <div id="modal-boxes-list" class="flex flex-wrap gap-2"></div>
       </div>
 
       <!-- Result Screen Snapshot -->
       <div class="space-y-2">
         <div class="flex items-center justify-between">
-          <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">📸 ภาพหน้าจอผลลัพธ์จริง (เงิน, EXP, คะแนน):</h4>
-          <a id="modal-img-link" href="#" target="_blank" class="text-xs text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1 font-medium">
-            🔍 เปิดดูภาพขนาดเต็ม ↗
+          <h4 class="text-xs font-semibold text-[#e8dcc8] uppercase tracking-wider flex items-center gap-1.5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon38)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon38" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><rect x="4" y="7" width="16" height="10" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M8 7 L10 5 H14 L16 7"/></svg> ภาพหน้าจอผลลัพธ์จริง (เงิน, EXP, คะแนน):</h4>
+          <a id="modal-img-link" href="#" target="_blank" class="text-xs text-[#d4c4a8] hover:text-[#c9b896] hover:underline flex items-center gap-1 font-medium">
+            <span class="w-3.5 h-3.5 flex items-center justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon61)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon61" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="11" cy="11" r="6"/><path d="M15.5 15.5 L19 19"/></svg></span> เปิดดูภาพขนาดเต็ม ↗
           </a>
         </div>
-        <div class="bg-black rounded-xl overflow-hidden border border-slate-800 aspect-video flex items-center justify-center relative group">
+        <div class="bg-black rounded-xl overflow-hidden border border-[#2a2a2a] aspect-video flex items-center justify-center relative group">
           <img id="modal-screenshot-img" src="" alt="Round Result Screen" class="w-full h-full object-contain" onerror="this.src='/api/stream'">
         </div>
       </div>
 
-      <div class="pt-2 flex items-center justify-between border-t border-slate-800/80">
-        <span class="text-[11px] text-slate-400">💡 ภาพบันทึกจากหน้าจอ Emulator ขณะจบเกมรอบนี้</span>
-        <button onclick="closeRoundModal()" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition">
+      <div class="pt-2 flex items-center justify-between border-t border-[#2a2a2a]/80">
+        <span class="text-[11px] text-[#e8dcc8]/70 flex items-center gap-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#goldIcon39)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldIcon39" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M9 18 H15"/><path d="M10 21 H14"/><path d="M12 7 C9.2 7 7 9.2 7 11.8 C7 13.8 8.6 15 9.6 16 C10.3 16.7 10.5 17.2 10.5 18 H13.5 C13.5 17.2 13.7 16.7 14.4 16 C15.4 15 17 13.8 17 11.8 C17 9.2 14.8 7 12 7Z"/></svg> ภาพบันทึกจากหน้าจอ Emulator ขณะจบเกมรอบนี้</span>
+        <button onclick="closeRoundModal()" class="px-5 py-2 rounded-xl bg-[#d4c4a8] hover:bg-[#c9b896] text-[#0a0a0a] text-xs font-bold transition border border-[#c9b896] shadow-sm">
           ปิดหน้าต่าง
         </button>
       </div>
@@ -704,6 +890,7 @@
       if (!data) return;
       if (data.device_ip !== undefined) document.getElementById('cfg-ip').value = data.device_ip;
       if (data.device_port !== undefined) document.getElementById('cfg-port').value = data.device_port;
+      setTimeout(updatePresetActive, 0);
       if (data.use_fast_start !== undefined) document.getElementById('cfg-fast-start').checked = !!data.use_fast_start;
       if (data.fast_start_min_stock !== undefined) document.getElementById('cfg-fast-start-min').value = data.fast_start_min_stock;
       if (data.use_cookie_relay !== undefined) document.getElementById('cfg-cookie-relay').checked = !!data.use_cookie_relay;
@@ -755,10 +942,22 @@
       }
     }
 
+    function updatePresetActive() {
+      const port = document.getElementById('cfg-port').value.trim();
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        if (btn.dataset.port === port) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
     function setPreset(ip, port) {
       document.getElementById('cfg-ip').value = ip;
       document.getElementById('cfg-port').value = port;
       saveBotSettingsAuto();
+      updatePresetActive();
     }
 
     function toggleBoostSelect() {
@@ -802,7 +1001,7 @@
           const data = await res.json();
           if (!res.ok) throw new Error(data.detail || data.message);
         } catch (e) {
-          alert('❌ เริ่มต้นบอทไม่สำเร็จ: ' + e.message);
+          alert('เริ่มต้นบอทไม่สำเร็จ: ' + e.message);
         }
       } else {
         try {
@@ -810,7 +1009,7 @@
           const data = await res.json();
           if (!res.ok) throw new Error(data.detail || data.message);
         } catch (e) {
-          alert('❌ หยุดบอทไม่สำเร็จ: ' + e.message);
+          alert('หยุดบอทไม่สำเร็จ: ' + e.message);
         }
       }
 
@@ -821,7 +1020,7 @@
     async function testConnection() {
       const resultBox = document.getElementById('conn-test-result');
       resultBox.classList.remove('hidden', 'bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300', 'bg-rose-500/10', 'border-rose-500/30', 'text-rose-300');
-      resultBox.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700');
+      resultBox.classList.add('bg-[#1a1a1a]', 'text-[#e8dcc8]', 'border-[#2a2a2a]');
       resultBox.textContent = '⏳ กำลังทดสอบเชื่อมต่อ ADB...';
 
       try {
@@ -834,17 +1033,17 @@
           })
         });
         const data = await res.json();
-        resultBox.classList.remove('bg-slate-800', 'text-slate-300', 'border-slate-700');
+        resultBox.classList.remove('bg-[#1a1a1a]', 'text-[#e8dcc8]', 'border-[#2a2a2a]');
         if (data.success) {
           resultBox.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300');
-          resultBox.innerHTML = `✅ เชื่อมต่อสำเร็จ: <strong>${data.message}</strong>`;
+          resultBox.innerHTML = `<span class="inline-flex align-middle mr-1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="url(#goldThird4452)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldThird4452" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="12" r="7.5"/><path d="M8.5 12 L11.2 14.8 L15.8 9.5"/></svg></span> เชื่อมต่อสำเร็จ: <strong>${data.message}</strong>`;
         } else {
           resultBox.classList.add('bg-rose-500/10', 'border-rose-500/30', 'text-rose-300');
-          resultBox.innerHTML = `❌ ไม่สามารถเชื่อมต่อได้: ${data.message}`;
+          resultBox.innerHTML = `<span class="inline-flex align-middle mr-1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="url(#goldThird5594)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldThird5594" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="12" r="7.5"/><path d="M9 9 L15 15"/><path d="M15 9 L9 15"/></svg></span> ไม่สามารถเชื่อมต่อได้: ${data.message}`;
         }
       } catch (e) {
         resultBox.classList.add('bg-rose-500/10', 'border-rose-500/30', 'text-rose-300');
-        resultBox.textContent = `❌ เกิดข้อผิดพลาด: ${e.message}`;
+        resultBox.textContent = `เกิดข้อผิดพลาด: ${e.message}`;
       }
     }
 
@@ -873,50 +1072,50 @@
       const container = document.getElementById('round-history-container');
       const badge = document.getElementById('history-total-badge');
       if (!history || history.length === 0) {
-        container.innerHTML = '<div class="text-xs text-slate-500 italic p-4 text-center">[ยังไม่มีประวัติการเล่นในเซสชันนี้ — เมื่อจบเกมจะบันทึกที่นี่อัตโนมัติ]</div>';
-        badge.textContent = '0 รอบ';
+        container.innerHTML = '<div class="text-xs text-[#e8dcc8]/50 italic p-4 text-center">[ยังไม่มีประวัติการเล่นในเซสชันนี้ — เมื่อจบเกมจะบันทึกที่นี่อัตโนมัติ]</div>';
+        badge.innerHTML = '<span class="text-[#f4e4bc]">0</span> <span class="text-[#e8dcc8]/80">รอบ</span>';
         return;
       }
 
-      badge.textContent = `${history.length} รอบ (ล่าสุด)`;
+      badge.innerHTML = `<span class="text-[#f4e4bc]">${history.length}</span> <span class="text-[#e8dcc8]/80">รอบ (ล่าสุด)</span>`;
       container.innerHTML = '';
 
       const boxStyles = {
-        wood: { name: 'กล่องไม้', img: '/templates/BOX_WOOD.png', icon: '🟤', bg: 'bg-amber-950/60 text-amber-300 border-amber-800/60' },
-        silver: { name: 'กล่องเงิน', img: '/templates/BOX_SILVER.png', icon: '⚪', bg: 'bg-slate-700/60 text-slate-200 border-slate-600' },
-        gold: { name: 'กล่องทอง', img: '/templates/BOX_GOLD.png', icon: '🟡', bg: 'bg-yellow-950/60 text-yellow-300 border-yellow-600/60' },
-        rainbow: { name: 'กล่องรุ้ง', img: '/templates/BOX_RAINBOW.png', icon: '🌈', bg: 'bg-purple-950/60 text-pink-300 border-purple-500/60 font-semibold' },
+        wood: { name: 'กล่องไม้', img: '/templates/BOX_WOOD.png', icon: '<svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;url(#goldCoin103)&quot; stroke-width=&quot;1.4&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><defs><linearGradient id=&quot;goldCoin103&quot; x1=&quot;0%&quot; y1=&quot;0%&quot; x2=&quot;100%&quot; y2=&quot;100%&quot;><stop offset=&quot;0%&quot; stop-color=&quot;#f4e4bc&quot;/><stop offset=&quot;50%&quot; stop-color=&quot;#d4af37&quot;/><stop offset=&quot;100%&quot; stop-color=&quot;#b8860b&quot;/></linearGradient></defs><rect x=&quot;4&quot; y=&quot;9&quot; width=&quot;16&quot; height=&quot;9&quot; rx=&quot;1&quot;/><path d=&quot;M4 9 H20&quot;/><path d=&quot;M12 9 V18&quot;/></svg>', bg: 'bg-[#1a1a1a] text-[#d4c4a8] border-[#2a2a2a]' },
+        silver: { name: 'กล่องเงิน', img: '/templates/BOX_SILVER.png', icon: '<svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;url(#goldCoin104)&quot; stroke-width=&quot;1.4&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><defs><linearGradient id=&quot;goldCoin104&quot; x1=&quot;0%&quot; y1=&quot;0%&quot; x2=&quot;100%&quot; y2=&quot;100%&quot;><stop offset=&quot;0%&quot; stop-color=&quot;#f4e4bc&quot;/><stop offset=&quot;50%&quot; stop-color=&quot;#d4af37&quot;/><stop offset=&quot;100%&quot; stop-color=&quot;#b8860b&quot;/></linearGradient></defs><rect x=&quot;4&quot; y=&quot;8&quot; width=&quot;16&quot; height=&quot;10&quot; rx=&quot;1&quot;/><path d=&quot;M4 12 H20&quot;/><path d=&quot;M12 8 V18&quot;/></svg>', bg: 'bg-[#1c1c1c] text-[#e8dcc8] border-[#2a2a2a]' },
+        gold: { name: 'กล่องทอง', img: '/templates/BOX_GOLD.png', icon: '<svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;url(#goldCoin105)&quot; stroke-width=&quot;1.4&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><defs><linearGradient id=&quot;goldCoin105&quot; x1=&quot;0%&quot; y1=&quot;0%&quot; x2=&quot;100%&quot; y2=&quot;100%&quot;><stop offset=&quot;0%&quot; stop-color=&quot;#f4e4bc&quot;/><stop offset=&quot;50%&quot; stop-color=&quot;#d4af37&quot;/><stop offset=&quot;100%&quot; stop-color=&quot;#b8860b&quot;/></linearGradient></defs><rect x=&quot;5&quot; y=&quot;8&quot; width=&quot;14&quot; height=&quot;10&quot; rx=&quot;1&quot;/><path d=&quot;M4 8 L12 4 L20 8&quot;/><circle cx=&quot;12&quot; cy=&quot;13&quot; r=&quot;1.5&quot;/></svg>', bg: 'bg-yellow-950/60 text-[#d4c4a8] border-yellow-600/60' },
+        rainbow: { name: 'กล่องรุ้ง', img: '/templates/BOX_RAINBOW.png', icon: '<svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;url(#goldCoin106)&quot; stroke-width=&quot;1.4&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><defs><linearGradient id=&quot;goldCoin106&quot; x1=&quot;0%&quot; y1=&quot;0%&quot; x2=&quot;100%&quot; y2=&quot;100%&quot;><stop offset=&quot;0%&quot; stop-color=&quot;#f4e4bc&quot;/><stop offset=&quot;50%&quot; stop-color=&quot;#d4af37&quot;/><stop offset=&quot;100%&quot; stop-color=&quot;#b8860b&quot;/></linearGradient></defs><rect x=&quot;4&quot; y=&quot;8&quot; width=&quot;16&quot; height=&quot;10&quot; rx=&quot;1.5&quot;/><path d=&quot;M4 12 H20&quot;/><path d=&quot;M12 8 V18&quot;/><path d=&quot;M6 14 L8 16 L10 14 L12 16 L14 14 L16 16 L18 14&quot;/></svg>', bg: 'bg-purple-950/60 text-pink-300 border-purple-500/60 font-semibold' },
       };
 
       history.forEach(item => {
         const div = document.createElement('div');
-        div.className = 'flex items-center justify-between p-3 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-indigo-500/60 transition cursor-pointer group';
+        div.className = 'flex items-center justify-between p-3 rounded-xl bg-[#121212]/70 border border-[#2a2a2a] hover:border-[#d4c4a8]/60 transition cursor-pointer group';
         div.onclick = () => openRoundModal(item);
 
         let boxesHtml = '';
         if (item.boxes && item.boxes.length > 0) {
           boxesHtml = item.boxes.map(b => {
-            const s = boxStyles[b] || { name: b, img: '', icon: '📦', bg: 'bg-slate-800 text-slate-300 border-slate-700' };
+            const s = boxStyles[b] || { name: b, img: '', icon: '<svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;url(#goldCoin107)&quot; stroke-width=&quot;1.4&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><defs><linearGradient id=&quot;goldCoin107&quot; x1=&quot;0%&quot; y1=&quot;0%&quot; x2=&quot;100%&quot; y2=&quot;100%&quot;><stop offset=&quot;0%&quot; stop-color=&quot;#f4e4bc&quot;/><stop offset=&quot;50%&quot; stop-color=&quot;#d4af37&quot;/><stop offset=&quot;100%&quot; stop-color=&quot;#b8860b&quot;/></linearGradient></defs><rect x=&quot;4&quot; y=&quot;8&quot; width=&quot;16&quot; height=&quot;10&quot; rx=&quot;1.5&quot;/><path d=&quot;M4 8 L12 4 L20 8&quot;/></svg>', bg: 'bg-[#1a1a1a] text-[#e8dcc8] border-[#2a2a2a]' };
             const imgTag = s.img ? `<img src="${s.img}" class="w-3.5 h-3.5 object-contain inline-block" onerror="this.outerHTML='${s.icon}'">` : s.icon;
             return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] ${s.bg}">${imgTag} ${s.name}</span>`;
           }).join(' ');
         } else {
-          boxesHtml = '<span class="text-slate-500 text-[11px] italic">ไม่มีกล่องในรอบนี้</span>';
+          boxesHtml = '<span class="text-[#e8dcc8]/50 text-[11px] italic">ไม่มีกล่องในรอบนี้</span>';
         }
 
-        const coinsBadge = item.coins ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] bg-yellow-950/40 text-yellow-300 border-yellow-700/50 font-mono font-semibold">+${item.coins.toLocaleString()} 🪙</span>` : '';
+        const coinsBadge = item.coins ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] bg-yellow-950/40 text-[#d4c4a8] border-yellow-700/50 font-mono font-semibold">+${item.coins.toLocaleString()} <span class="inline-flex"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="url(#goldCoin102)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldCoin102" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="12" r="6"/><path d="M10 8 H14"/><path d="M10 12 H14"/><path d="M10 16 H14"/></svg></span></span>` : '';
         const xpBadge = item.xp ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] bg-sky-950/40 text-sky-300 border-sky-700/50 font-mono font-semibold">+${item.xp.toLocaleString()} EXP</span>` : '';
 
         div.innerHTML = `
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center font-mono font-bold text-orange-400 text-xs shrink-0">
+            <div class="w-9 h-9 rounded-xl bg-[#d4c4a8]/10 border border-[#d4c4a8]/20 flex items-center justify-center font-mono font-bold text-[#d4c4a8] text-xs shrink-0">
               #${item.round}
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <span class="text-white text-xs font-semibold">รอบที่ ${item.round}</span>
-                <span class="text-slate-500 text-[11px] font-mono">(${item.time})</span>
-                <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono">⏱️ ${item.duration || '0s'}</span>
+                <span class="text-[#f5f0e8] text-xs font-semibold">รอบที่ ${item.round}</span>
+                <span class="text-[#e8dcc8]/50 text-[11px] font-mono">(${item.time})</span>
+                <span class="text-[10px] px-1.5 py-0.2 rounded bg-[#1a1a1a] text-[#e8dcc8]/70 font-mono">⏱️ ${item.duration || '0s'}</span>
                 ${coinsBadge}
               </div>
               <div class="flex items-center gap-1.5 mt-1 flex-wrap">
@@ -924,8 +1123,8 @@
               </div>
             </div>
           </div>
-          <button class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white text-xs font-medium flex items-center gap-1.5 transition group-hover:bg-indigo-600 group-hover:text-white shrink-0">
-            <span>🔍 ดูผลลัพธ์</span>
+          <button class="px-3 py-1.5 rounded-lg bg-gradient-to-br from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 text-[#e8dcc8] hover:text-[#d4af37] text-xs font-semibold flex items-center gap-1.5 transition-all duration-200 border border-[#d4af37]/20 hover:border-[#d4af37]/40 shadow-sm group-hover:from-neutral-700 group-hover:to-neutral-800 shrink-0">
+            <span class="flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="url(#goldThird5909)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldThird5909" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx='11' cy='11' r='6'/><path d='M15.5 15.5 L19 19'/></svg> ดูผลลัพธ์</span>
           </button>
         `;
         container.appendChild(div);
@@ -933,29 +1132,29 @@
     }
 
     function openRoundModal(item) {
-      document.getElementById('modal-round-title').innerHTML = `🏁 รายละเอียดผลลัพธ์รอบที่ #${item.round}`;
+      document.getElementById('modal-round-title').innerHTML = `<span class="w-5 h-5 inline-flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#goldThird6822)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldThird6822" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M5.5 3.2 V20.8"/><path d="M5.5 3.5 H15.2 C18 3.5 18 7 15.2 7 H5.5"/><path d="M5.5 7 H15.2 C18 7 18 10.5 15.2 10.5 H5.5"/><path d="M5.5 10.5 H15.2 C18 10.5 18 14 15.2 14 H5.5"/><path d="M5.5 7 H18"/><path d="M5.5 10.5 H16"/><path d="M9.5 3.5 V10.5"/><path d="M13.2 3.5 V10.5"/></svg></span> รายละเอียดผลลัพธ์รอบที่ #${item.round}`;
       const earnedInfo = [];
-      if (item.coins) earnedInfo.push(`💰 ได้รับ: +${item.coins.toLocaleString()} 🪙`);
-      if (item.xp) earnedInfo.push(`⭐ EXP: +${item.xp.toLocaleString()}`);
+      if (item.coins) earnedInfo.push(`ได้รับ: +${item.coins.toLocaleString()} <span class="inline-flex align-middle ml-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="url(#goldCoin102)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldCoin102" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="12" r="6"/><path d="M10 8 H14"/><path d="M10 12 H14"/><path d="M10 16 H14"/></svg></span>`);
+      if (item.xp) earnedInfo.push(`<span class="inline-flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="url(#goldStarModal)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldStarModal" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M12 3.5 L13.9 8.7 H19.3 L14.9 11.9 L16.3 17.1 L12 14.2 L7.7 17.1 L9.1 11.9 L4.7 8.7 H10.1 Z"/></svg> EXP: +${item.xp.toLocaleString()}</span>`);
       const earnedStr = earnedInfo.length > 0 ? ` | ${earnedInfo.join(' | ')}` : '';
-      document.getElementById('modal-round-meta').textContent = `เวลาที่เล่น: ${item.time} | ใช้เวลา: ${item.duration || 'N/A'}${earnedStr}`;
+      document.getElementById('modal-round-meta').innerHTML = `เวลาที่เล่น: ${item.time} | ใช้เวลา: ${item.duration || 'N/A'}${earnedStr}`;
 
       const boxStyles = {
-        wood: { name: 'กล่องไม้ (Wood)', img: '/templates/BOX_WOOD.png', icon: '🟤', bg: 'bg-amber-950/60 text-amber-300 border-amber-800/60' },
-        silver: { name: 'กล่องเงิน (Silver)', img: '/templates/BOX_SILVER.png', icon: '⚪', bg: 'bg-slate-700/60 text-slate-200 border-slate-600' },
-        gold: { name: 'กล่องทอง (Gold)', img: '/templates/BOX_GOLD.png', icon: '🟡', bg: 'bg-yellow-950/60 text-yellow-300 border-yellow-600/60' },
-        rainbow: { name: 'กล่องรุ้ง (Rainbow)', img: '/templates/BOX_RAINBOW.png', icon: '🌈', bg: 'bg-purple-950/60 text-pink-300 border-purple-500/60 font-semibold' },
+        wood: { name: 'กล่องไม้ (Wood)', img: '/templates/BOX_WOOD.png', icon: '<svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;url(#goldCoin103)&quot; stroke-width=&quot;1.4&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><defs><linearGradient id=&quot;goldCoin103&quot; x1=&quot;0%&quot; y1=&quot;0%&quot; x2=&quot;100%&quot; y2=&quot;100%&quot;><stop offset=&quot;0%&quot; stop-color=&quot;#f4e4bc&quot;/><stop offset=&quot;50%&quot; stop-color=&quot;#d4af37&quot;/><stop offset=&quot;100%&quot; stop-color=&quot;#b8860b&quot;/></linearGradient></defs><rect x=&quot;4&quot; y=&quot;9&quot; width=&quot;16&quot; height=&quot;9&quot; rx=&quot;1&quot;/><path d=&quot;M4 9 H20&quot;/><path d=&quot;M12 9 V18&quot;/></svg>', bg: 'bg-[#1a1a1a] text-[#d4c4a8] border-[#2a2a2a]' },
+        silver: { name: 'กล่องเงิน (Silver)', img: '/templates/BOX_SILVER.png', icon: '<svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;url(#goldCoin104)&quot; stroke-width=&quot;1.4&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><defs><linearGradient id=&quot;goldCoin104&quot; x1=&quot;0%&quot; y1=&quot;0%&quot; x2=&quot;100%&quot; y2=&quot;100%&quot;><stop offset=&quot;0%&quot; stop-color=&quot;#f4e4bc&quot;/><stop offset=&quot;50%&quot; stop-color=&quot;#d4af37&quot;/><stop offset=&quot;100%&quot; stop-color=&quot;#b8860b&quot;/></linearGradient></defs><rect x=&quot;4&quot; y=&quot;8&quot; width=&quot;16&quot; height=&quot;10&quot; rx=&quot;1&quot;/><path d=&quot;M4 12 H20&quot;/><path d=&quot;M12 8 V18&quot;/></svg>', bg: 'bg-[#1c1c1c] text-[#e8dcc8] border-[#2a2a2a]' },
+        gold: { name: 'กล่องทอง (Gold)', img: '/templates/BOX_GOLD.png', icon: '<svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;url(#goldCoin105)&quot; stroke-width=&quot;1.4&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><defs><linearGradient id=&quot;goldCoin105&quot; x1=&quot;0%&quot; y1=&quot;0%&quot; x2=&quot;100%&quot; y2=&quot;100%&quot;><stop offset=&quot;0%&quot; stop-color=&quot;#f4e4bc&quot;/><stop offset=&quot;50%&quot; stop-color=&quot;#d4af37&quot;/><stop offset=&quot;100%&quot; stop-color=&quot;#b8860b&quot;/></linearGradient></defs><rect x=&quot;5&quot; y=&quot;8&quot; width=&quot;14&quot; height=&quot;10&quot; rx=&quot;1&quot;/><path d=&quot;M4 8 L12 4 L20 8&quot;/><circle cx=&quot;12&quot; cy=&quot;13&quot; r=&quot;1.5&quot;/></svg>', bg: 'bg-yellow-950/60 text-[#d4c4a8] border-yellow-600/60' },
+        rainbow: { name: 'กล่องรุ้ง (Rainbow)', img: '/templates/BOX_RAINBOW.png', icon: '<svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;url(#goldCoin106)&quot; stroke-width=&quot;1.4&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><defs><linearGradient id=&quot;goldCoin106&quot; x1=&quot;0%&quot; y1=&quot;0%&quot; x2=&quot;100%&quot; y2=&quot;100%&quot;><stop offset=&quot;0%&quot; stop-color=&quot;#f4e4bc&quot;/><stop offset=&quot;50%&quot; stop-color=&quot;#d4af37&quot;/><stop offset=&quot;100%&quot; stop-color=&quot;#b8860b&quot;/></linearGradient></defs><rect x=&quot;4&quot; y=&quot;8&quot; width=&quot;16&quot; height=&quot;10&quot; rx=&quot;1.5&quot;/><path d=&quot;M4 12 H20&quot;/><path d=&quot;M12 8 V18&quot;/><path d=&quot;M6 14 L8 16 L10 14 L12 16 L14 14 L16 16 L18 14&quot;/></svg>', bg: 'bg-purple-950/60 text-pink-300 border-purple-500/60 font-semibold' },
       };
 
       const boxesContainer = document.getElementById('modal-boxes-list');
       if (item.boxes && item.boxes.length > 0) {
         boxesContainer.innerHTML = item.boxes.map(b => {
-          const s = boxStyles[b] || { name: b, img: '', icon: '📦', bg: 'bg-slate-800 text-slate-300 border-slate-700' };
+          const s = boxStyles[b] || { name: b, img: '', icon: '<svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;url(#goldCoin107)&quot; stroke-width=&quot;1.4&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><defs><linearGradient id=&quot;goldCoin107&quot; x1=&quot;0%&quot; y1=&quot;0%&quot; x2=&quot;100%&quot; y2=&quot;100%&quot;><stop offset=&quot;0%&quot; stop-color=&quot;#f4e4bc&quot;/><stop offset=&quot;50%&quot; stop-color=&quot;#d4af37&quot;/><stop offset=&quot;100%&quot; stop-color=&quot;#b8860b&quot;/></linearGradient></defs><rect x=&quot;4&quot; y=&quot;8&quot; width=&quot;16&quot; height=&quot;10&quot; rx=&quot;1.5&quot;/><path d=&quot;M4 8 L12 4 L20 8&quot;/></svg>', bg: 'bg-[#1a1a1a] text-[#e8dcc8] border-[#2a2a2a]' };
           const imgTag = s.img ? `<img src="${s.img}" class="w-5 h-5 object-contain inline-block" onerror="this.outerHTML='${s.icon}'">` : s.icon;
           return `<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs ${s.bg}">${imgTag} <span class="font-semibold">${s.name}</span></div>`;
         }).join(' ');
       } else {
-        boxesContainer.innerHTML = '<span class="text-xs text-slate-500 italic">[รอบนี้ไม่ได้รับกล่องปริศนา]</span>';
+        boxesContainer.innerHTML = '<span class="text-xs text-[#e8dcc8]/50 italic">[รอบนี้ไม่ได้รับกล่องปริศนา]</span>';
       }
 
       const imgUrl = `/api/round-screenshot/${item.round}?t=${Date.now()}`;
@@ -986,23 +1185,60 @@
         const statusText = document.getElementById('status-text');
         const statusPill = document.getElementById('status-pill');
 
+        const _rawGlowStage = data.current_stage || 'IDLE';
+        const _isTransitional = _rawGlowStage === 'INITIALIZING' || _rawGlowStage === 'STOPPING';
         if (isRunning) {
-          btn.className = "w-full py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-200 shadow-lg bg-rose-500 hover:bg-rose-600 active:scale-[0.98] text-white shadow-rose-500/25";
+          if (_isTransitional) {
+            btn.className = "w-full py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-200 shadow-lg bg-gradient-to-br from-amber-800 via-[#b45309] to-amber-900 hover:from-amber-700 hover:via-amber-600 hover:to-amber-800 active:scale-[0.98] text-[#fef3c7] shadow-amber-900/40 border border-[#d4af37]/40 hover:border-[#f4e4bc]/50 pulse-glow-gold";
+          } else {
+            btn.className = "w-full py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-200 shadow-lg bg-gradient-to-br from-[#7f1d1d] via-[#991b1b] to-[#7f1d1d] hover:from-[#991b1b] hover:via-[#b91c1c] hover:to-[#991b1b] active:scale-[0.98] text-[#fef2f2] shadow-red-900/40 border border-[#d4af37]/30 hover:border-[#f4e4bc]/40 pulse-glow-red";
+          }
           btn.innerHTML = `<span class="text-2xl animate-pulse">⏹</span><span>หยุดทำงานบอท (Stop Bot)</span>`;
           statusDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
           statusText.textContent = "กำลังทำงาน (Running)";
           statusPill.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-xs font-medium text-emerald-300";
         } else {
-          btn.className = "w-full py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-200 shadow-lg bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white shadow-emerald-500/25";
-          btn.innerHTML = `<span class="text-2xl">▶</span><span>เริ่มทำงานบอท (Start Bot)</span>`;
-          statusDot.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
+          if (_isTransitional) {
+            btn.className = "w-full py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-200 shadow-lg bg-gradient-to-br from-amber-800 via-[#b45309] to-amber-900 hover:from-amber-700 hover:via-amber-600 hover:to-amber-800 active:scale-[0.98] text-[#fef3c7] shadow-amber-900/40 border border-[#d4af37]/40 hover:border-[#f4e4bc]/50 pulse-glow-gold";
+            btn.innerHTML = `<span class="text-xl animate-pulse">⏳</span><span>กำลังเปลี่ยนสถานะ...</span>`;
+          } else {
+            btn.className = "w-full py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-200 shadow-lg bg-gradient-to-br from-emerald-800 via-emerald-700 to-[#064e3b] hover:from-emerald-700 hover:via-emerald-600 hover:to-emerald-800 active:scale-[0.98] text-[#f5f0e8] shadow-emerald-900/40 border border-[#d4af37]/30 hover:border-[#d4af37]/50 pulse-glow-green";
+            btn.innerHTML = `<span class="text-2xl">▶</span><span>เริ่มทำงานบอท (Start Bot)</span>`;
+          }
+          statusDot.className = "w-2.5 h-2.5 rounded-full bg-[#3a3a3a]";
           statusText.textContent = "Idle (ไม่ได้เริ่ม)";
-          statusPill.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-xs font-medium text-slate-300";
+          statusPill.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-xs font-medium text-[#e8dcc8]";
         }
 
-        // Primary Stats
-        document.getElementById('stat-stage').textContent = data.current_stage || 'IDLE';
-        document.getElementById('overlay-stage').textContent = data.current_stage || 'IDLE';
+        // Primary Stats - no ellipsis, split badge
+        const rawStage = data.current_stage || 'IDLE';
+        const isSearching = rawStage.includes('(Searching');
+        const mainStage = isSearching ? rawStage.replace(/\s*\(Searching[^)]*\)\s*/, '').trim() : rawStage;
+        const stageEl = document.getElementById('stat-stage');
+        if (stageEl) stageEl.textContent = mainStage || 'IDLE';
+        const overlayEl = document.getElementById('overlay-stage');
+        if (overlayEl) {
+          overlayEl.textContent = mainStage || 'IDLE';
+          overlayEl.classList.remove('truncate');
+        }
+        const badge = document.getElementById('stat-stage-badge');
+        const badgeDot = document.getElementById('stage-badge-dot');
+        const badgeText = document.getElementById('stage-badge-text');
+        if (badge && badgeDot && badgeText) {
+          if (isSearching) {
+            badge.className = "mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider border stage-badge-searching";
+            badge.classList.remove('hidden');
+            badgeDot.className = "w-2 h-2 rounded-full gold-dot gold-pulse";
+            badgeText.textContent = "Searching";
+          } else if (mainStage && mainStage !== 'IDLE' && mainStage !== 'INITIALIZING' && mainStage !== 'STOPPING') {
+            badge.className = "mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider border stage-badge-active";
+            badge.classList.remove('hidden');
+            badgeDot.className = "w-2 h-2 rounded-full bg-emerald-500";
+            badgeText.textContent = "Active";
+          } else {
+            badge.classList.add('hidden');
+          }
+        }
         document.getElementById('stat-rounds').textContent = data.rounds_played;
         document.getElementById('stat-boxes').textContent = data.mystery_boxes;
         document.getElementById('stat-uptime').textContent = data.uptime;
@@ -1011,9 +1247,9 @@
 
         // Coin & EXP Stats
         if (data.coin_stats) {
-          document.getElementById('stat-coins-earned').textContent = `+${(data.coin_stats.session_earned || 0).toLocaleString()} 🪙`;
+          document.getElementById('stat-coins-earned').innerHTML = `+${ (data.coin_stats.session_earned || 0).toLocaleString() } <span class="inline-flex align-middle"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="url(#goldCoin102)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldCoin102" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="12" r="6"/><path d="M10 8 H14"/><path d="M10 12 H14"/><path d="M10 16 H14"/></svg></span>`;
           document.getElementById('stat-xp-earned').textContent = `+${(data.coin_stats.session_xp_earned || 0).toLocaleString()} EXP`;
-          document.getElementById('stat-coins-last').textContent = `+${(data.coin_stats.last_round || 0).toLocaleString()} 🪙`;
+          document.getElementById('stat-coins-last').innerHTML = `+${ (data.coin_stats.last_round || 0).toLocaleString() } <span class="inline-flex align-middle"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="url(#goldCoin102)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldCoin102" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="12" r="6"/><path d="M10 8 H14"/><path d="M10 12 H14"/><path d="M10 16 H14"/></svg></span>`;
           document.getElementById('stat-xp-last').textContent = `+${(data.coin_stats.last_round_xp || 0).toLocaleString()} EXP`;
         }
 
@@ -1104,22 +1340,22 @@
       const div = document.createElement('div');
       div.className = 'flex items-start gap-2 py-0.5 leading-relaxed';
 
-      let colorClass = 'text-slate-300';
+      let colorClass = 'text-[#e8dcc8]';
       let tag = 'INFO';
-      let tagBg = 'bg-slate-800 text-slate-400';
+      let tagBg = 'bg-[#1a1a1a] text-[#e8dcc8]/70';
 
       if (entry.level === 'stage') {
-        colorClass = 'text-orange-300 font-semibold';
+        colorClass = 'text-[#d4c4a8] font-semibold';
         tag = 'STAGE';
-        tagBg = 'bg-orange-500/20 text-orange-400';
+        tagBg = 'bg-[#d4c4a8]/20 text-[#d4c4a8]';
       } else if (entry.level === 'success') {
         colorClass = 'text-emerald-300 font-medium';
         tag = 'SUCCESS';
         tagBg = 'bg-emerald-500/20 text-emerald-400';
       } else if (entry.level === 'warning') {
-        colorClass = 'text-amber-300';
+        colorClass = 'text-[#d4c4a8]';
         tag = 'WARN';
-        tagBg = 'bg-amber-500/20 text-amber-400';
+        tagBg = 'bg-[#d4c4a8]/20 text-[#d4c4a8]';
       } else if (entry.level === 'error') {
         colorClass = 'text-rose-400 font-bold';
         tag = 'ERROR';
@@ -1127,7 +1363,7 @@
       }
 
       div.innerHTML = `
-        <span class="text-slate-500 shrink-0 select-none">[${entry.time}]</span>
+        <span class="text-[#e8dcc8]/50 shrink-0 select-none">[${entry.time}]</span>
         <span class="text-[10px] px-1.5 py-0.2 rounded font-bold shrink-0 ${tagBg}">${tag}</span>
         <span class="${colorClass} break-all">${escapeHtml(entry.message)}</span>
       `;
@@ -1185,9 +1421,9 @@
           body: JSON.stringify(payload)
         });
         const data = await res.json();
-        if (showAlert) alert('✅ บันทึกการตั้งค่า Discord สำเร็จ!');
+        if (showAlert) alert('บันทึกการตั้งค่า Discord สำเร็จ!');
       } catch (e) {
-        if (showAlert) alert('❌ บันทึกไม่สำเร็จ: ' + e.message);
+        if (showAlert) alert('บันทึกไม่สำเร็จ: ' + e.message);
       }
     }
 
@@ -1200,7 +1436,7 @@
       }
 
       resultBox.classList.remove('hidden', 'bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300', 'bg-rose-500/10', 'border-rose-500/30', 'text-rose-300');
-      resultBox.classList.add('bg-slate-900', 'text-slate-300', 'border-slate-700');
+      resultBox.classList.add('bg-[#121212]', 'text-[#e8dcc8]', 'border-[#2a2a2a]');
       resultBox.textContent = '⏳ กำลังส่งข้อความทดสอบเข้า Discord...';
 
       try {
@@ -1210,17 +1446,17 @@
           body: JSON.stringify({ webhook_url: url })
         });
         const data = await res.json();
-        resultBox.classList.remove('bg-slate-900', 'text-slate-300', 'border-slate-700');
+        resultBox.classList.remove('bg-[#121212]', 'text-[#e8dcc8]', 'border-[#2a2a2a]');
         if (res.ok && data.success) {
           resultBox.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300');
-          resultBox.innerHTML = `✅ <strong>${data.message}</strong>`;
+          resultBox.innerHTML = `<span class="inline-flex align-middle mr-1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="url(#goldThird4452)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldThird4452" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="12" r="7.5"/><path d="M8.5 12 L11.2 14.8 L15.8 9.5"/></svg></span> <strong>${data.message}</strong>`;
         } else {
           resultBox.classList.add('bg-rose-500/10', 'border-rose-500/30', 'text-rose-300');
-          resultBox.innerHTML = `❌ ${data.message || data.detail || 'เกิดข้อผิดพลาด กรุณารีสตาร์ทโปรแกรม run_web.bat ใหม่'}`;
+          resultBox.innerHTML = `<span class="inline-flex align-middle mr-1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="url(#goldThird5594)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="goldThird5594" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><circle cx="12" cy="12" r="7.5"/><path d="M9 9 L15 15"/><path d="M15 9 L9 15"/></svg></span> ${data.message || data.detail || 'เกิดข้อผิดพลาด กรุณารีสตาร์ทโปรแกรม run_web.bat ใหม่'}`;
         }
       } catch (e) {
         resultBox.classList.add('bg-rose-500/10', 'border-rose-500/30', 'text-rose-300');
-        resultBox.textContent = `❌ เกิดข้อผิดพลาด: ${e.message}`;
+        resultBox.textContent = `เกิดข้อผิดพลาด: ${e.message}`;
       }
     }
 
@@ -1231,6 +1467,17 @@
       connectWebSocket();
       fetchStatus();
       setInterval(fetchStatus, 2000);
+      // Preset active state
+      const portInput = document.getElementById('cfg-port');
+      if (portInput) {
+        portInput.addEventListener('input', updatePresetActive);
+        portInput.addEventListener('change', updatePresetActive);
+        setTimeout(updatePresetActive, 300);
+      }
+      const ipInput = document.getElementById('cfg-ip');
+      if (ipInput) {
+        ipInput.addEventListener('input', updatePresetActive);
+      }
     });
   </script>
 </body>
