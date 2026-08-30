@@ -97,7 +97,7 @@ STAGE_TOO_MANY_TREASURES_REGION = (353, 154, 931, 476)
 STAGE_OVERTAKE_BREAK_SCORE_REGION = (479, 64, 799, 132)
 STAGE_PARTY_RUN_REGION = (359, 44, 922, 138)
 STAGE_GAME_SETTINGS_REGION = (484, 62, 769, 122)
-STAGE_ANNOUNCEMENT_POPUP_REGION = (1090, 15, 1160, 95)
+STAGE_ANNOUNCEMENT_POPUP_REGION = (1090, 15, 1240, 115)  # ครอบปุ่ม X ทั้ง variant เก่า (1126,57) และใหม่ (1213,89)
 # Friend's Info popup header — full top bar from Send gift (left) to X (right)
 # Template cropped from real ADB capture debug_screenshots/current_screen.png (1280×720) → 1069×63 px
 # Region covers entire header; interior popup content ignored (varies per friend)
@@ -249,11 +249,16 @@ STAGE_REGIONS = {
 # DETECTION GROUPS
 # -------------------
 DETECTION_ALWAYS_STAGES = (
+    # popup ประกาศตรวจก่อนเสมอ — ต้องมาก่อน PARTY_RUN เพราะหัว popup ชน template PARTY_RUN ได้
+    "ANNOUNCEMENT_POPUP",
     "EMU_HOME",
     "CONNECTION_LOST",
     "INACTIVE",
     "FRIEND_INFO_POPUP",
     "ANR_DIALOG",
+    # CONFIRM_POPUP ไม่มี template — ตรวจผ่าน heuristic is_confirm_popup_visible() ใน loop
+    # ใส่ไว้ที่นี่เพื่อเอกสาร + เตรียมรองรับ template ในอนาคต (detect_stage ข้ามไปเองถ้ายังไม่มี)
+    "CONFIRM_POPUP",
 )
 
 DETECTION_GROUP_PRE_GAME = (
@@ -313,7 +318,7 @@ MULTI_PURCHASE_BUTTON = (1100, 195)
 MULTI_BUY_BUTTON = (640, 587)
 FAST_START_USE_BUTTON = (655, 340)
 COOKIE_RELAY_USE_BUTTON = (655, 340)
-COMPLETE_FINISH_BUTTON = (460, 625)
+COMPLETE_FINISH_BUTTON = (639, 641)  # ปุ่ม OK เขียว 315x98 — วัดจริงจาก ADB 1280×720 (2026-08-31) ภาพ GAME_COMPLETE 3 ภาพ
 ACCEPT_MYSTERY_BOX_BUTTON = (650, 645)
 ACCEPT_CONGRATULATIONS_BUTTON = (640, 565)
 ACCEPT_LEVEL_UP_BUTTON = (640, 640)
@@ -340,8 +345,12 @@ CONFIRM_SEND_LIFE_BUTTON = (797, 460)
 CLOSE_SEND_LIFE_DIALOG_BUTTON = (645, 463)
 LEADERBOARD_TOP_POSITION = (435, 260)
 LEADERBOARD_BOTTOM_POSITION = (435, 620)
-CLOSE_ANNOUNCEMENT_DIALOG_BUTTON = (1127, 66)
-ANNOUNCEMENT_CLOSE_BUTTON = (1126, 57)
+CLOSE_ANNOUNCEMENT_DIALOG_BUTTON = (1127, 66)  # fallback เท่านั้น — ปกติหา X แบบ dynamic (find_close_x_button)
+ANNOUNCEMENT_CLOSE_BUTTON = (1126, 57)  # fallback เท่านั้น — variant ใหม่ X อยู่ที่ (1213,89) ใช้ dynamic แทน
+# Confirm Popup — หน้าต่างยืนยันกลางจอ (ปุ่มเขียวใหญ่) วัดจริงจาก ADB 1280×720 (2026-08-31)
+# ปุ่มเขียว 288x98 ที่ center (635,454) — ตรวจด้วย is_confirm_popup_visible() + กดด้วย tap_confirm_popup()
+CONFIRM_POPUP_TAP = (635, 454)
+CONFIRM_POPUP_REGION = (380, 380, 900, 540)
 CLOSE_FRIEND_INFO_POPUP_BUTTON = (1090, 72)
 # ANR dialog — Wait button measured from real ADB 1280×720 /tmp/current.png → icon center 366,453 (button text "Wait")
 ANR_WAIT_BUTTON = (366, 453)

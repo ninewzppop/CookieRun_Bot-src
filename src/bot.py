@@ -20,6 +20,7 @@ from actions import (
     complete_finish,
     handle_anti_bot,
     handle_emu_home,
+    tap_confirm_popup,
     handle_inactive,
     handle_quick_receive_and_send_lives,
     handle_send_friend_life,
@@ -54,7 +55,7 @@ from config import (
     GAME_PACKAGE,
     SESSION_RESET_INTERVAL,
 )
-from detection import detect_stage, extract_result_coins, extract_result_xp, is_emu_home_visible, load_templates
+from detection import detect_stage, extract_result_coins, extract_result_xp, is_emu_home_visible, is_confirm_popup_visible, load_templates
 from debug import save_debug_screen
 
 # -------------------
@@ -181,11 +182,15 @@ def main():
             stage = detect_stage(device_screen, get_detection_stage_names(detection_group, exclude=relic_exclude))
             if stage is None and is_emu_home_visible(device_screen):
                 stage = "EMU_HOME"
+            if stage is None and is_confirm_popup_visible(device_screen):
+                stage = "CONFIRM_POPUP"
             if stage is None:
                 if time.time() - last_detected_time >= DETECTION_RECOVERY_SCAN_INTERVAL[detection_group]:
                     stage = detect_stage(device_screen, exclude=relic_exclude)
                     if stage is None and is_emu_home_visible(device_screen):
                         stage = "EMU_HOME"
+                    if stage is None and is_confirm_popup_visible(device_screen):
+                        stage = "CONFIRM_POPUP"
                     last_detected_time = time.time()
             else:
                 last_detected_time = time.time()
@@ -388,6 +393,14 @@ def main():
             elif stage == "INACTIVE":
                 print("💤 Detected Stage: INACTIVE")
                 handle_inactive()
+                last_stage = None
+            elif stage == "ANNOUNCEMENT_POPUP":
+                print("❌ Detected Stage: ANNOUNCEMENT_POPUP — closing popup...")
+                close_announcement_dialog()
+                last_stage = None
+            elif stage == "CONFIRM_POPUP":
+                print("✅ Detected Stage: CONFIRM_POPUP — tapping confirm...")
+                tap_confirm_popup()
                 last_stage = None
             time.sleep(random.uniform(0.10, 0.16) if detection_group == "IN_GAME" else random.uniform(0.20, 0.32))
     except KeyboardInterrupt:

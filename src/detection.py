@@ -121,6 +121,21 @@ def detect_templates(screen, template_files, region=None):
     return matches
 
 
+CLOSE_X_TEMPLATE = "CLOSE_X_1.png"
+
+
+def find_close_x_button(screen):
+    """
+    หาตำแหน่งปุ่ม X ปิด popup ด้วย template CLOSE_X_1.png ทั่วทั้งจอ (ทนต่อ popup variant
+    ที่ X อยู่คนละตำแหน่ง เช่น (1126,57) เก่า vs (1213,89) ใหม่) — คืน (cx, cy) หรือ None
+    """
+    matches = detect_templates(screen, [CLOSE_X_TEMPLATE], None)
+    if not matches:
+        return None
+    x, y, tw, th = matches[0]
+    return (x + tw // 2, y + th // 2)
+
+
 def detect_stage(screen, stage_names=None, exclude=None):
     screen_gray = _normalize_gray(screen)
     if screen_gray is None:
@@ -147,8 +162,54 @@ def detect_stage(screen, stage_names=None, exclude=None):
             result = cv2.matchTemplate(search_area, template, cv2.TM_CCOEFF_NORMED)
             _, max_val, _, _ = cv2.minMaxLoc(result)
             if max_val >= threshold:
+                if stage_name == "ANNOUNCEMENT_POPUP" and not _has_close_x(screen_gray):
+                    # กัน false positive (MAINMENU/เกมปกติ มุมขวาบนมีไอคอนคล้าย X ที่ threshold 0.42)
+                    # popup ประกาศจริงต้องมีปุ่ม X จริง (CLOSE_X_1.png match >= 0.8)
+                    continue
                 return stage_name
     return None
+
+
+def _has_close_x(screen_gray):
+    """ตรวจว่ามีปุ่ม X (CLOSE_X_1.png) จริงบนจอหรือไม่ — ใช้ยืนยัน ANNOUNCEMENT_POPUP"""
+    from config import STAGE_ANNOUNCEMENT_POPUP_REGION
+
+    search = _crop_region(screen_gray, STAGE_ANNOUNCEMENT_POPUP_REGION)
+    template = _get_template_gray(CLOSE_X_TEMPLATE)
+    if template is None or search is None:
+        return False
+    if search.shape[0] < template.shape[0] or search.shape[1] < template.shape[1]:
+        return False
+    result = cv2.matchTemplate(search, template, cv2.TM_CCOEFF_NORMED)
+    _, max_val, _, _ = cv2.minMaxLoc(result)
+    return max_val >= MATCH_THRESHOLD
+
+
+def is_confirm_popup_visible(screen) -> bool:
+    """
+    ตรวจหน้าต่างยืนยันกลางจอ (ปุ่มเขียวใหญ่ 288x98 ที่ (635,454) — วัดจาก ADB 1280×720)
+    เกณฑ์: มีปุ่มเขียวขนาดใหญ่ (w 180-380, h 60-140) ในโซนกลางล่างของ popup
+    กัน false positive: ปุ่มเมนูหลักเล็ก (~100x55), ปุ่ม dock ล่าง (~407x88 แต่อยู่นอกโซน y)
+    """
+    from config import CONFIRM_POPUP_REGION
+
+    screen_bgr = _normalize(screen)
+    if screen_bgr is None:
+        return False
+    x1, y1, x2, y2 = CONFIRM_POPUP_REGION
+    crop = screen_bgr[y1:y2, x1:x2]
+    if crop.size == 0:
+        return False
+    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+    green = cv2.inRange(hsv, (35, 60, 60), (85, 255, 255))
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))
+    green = cv2.morphologyEx(green, cv2.MORPH_CLOSE, kernel, iterations=2)
+    contours, _ = cv2.findContours(green, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    for c in contours:
+        x, y, w, h = cv2.boundingRect(c)
+        if 180 <= w <= 380 and 60 <= h <= 140:
+            return True
+    return False
 
 
 def detect_mystery_box_grades(screen) -> list:
@@ -445,11 +506,11 @@ def is_announcement_popup_visible(screen) -> bool:
     if screen_bgr is None:
         return False
     h, w = screen_bgr.shape[:2]
-    # region around 1126,57 -> 1090:1160, 15:95 (approx 70x80)
-    x1, y1, x2, y2 = 1090, 15, 1160, 95
+    # region รอบปุ่ม X — ครอบทั้งตำแหน่งเก่า (1126,57) และ variant ใหม่ (1213,89)
+    x1, y1, x2, y2 = 1090, 15, 1240, 115
     if w < x2 or h < y2:
         # scale coordinates if screen not 1280x720
-        x1, y1, x2, y2 = int(w*0.851), int(h*0.020), int(w*0.906), int(h*0.131)
+        x1, y1, x2, y2 = int(w*0.851), int(h*0.020), int(w*0.969), int(h*0.160)
     crop = screen_bgr[y1:y2, x1:x2]
     if crop.size == 0:
         return False

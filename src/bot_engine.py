@@ -31,6 +31,7 @@ from actions import (
     handle_anr,
     handle_anti_bot,
     handle_emu_home,
+    tap_confirm_popup,
     handle_inactive,
     handle_quick_receive_and_send_lives,
     handle_send_friend_life,
@@ -81,6 +82,7 @@ from detection import (
     extract_result_coins,
     extract_result_xp,
     is_emu_home_visible,
+    is_confirm_popup_visible,
     load_templates,
 )
 from discord_notifier import discord_notifier
@@ -751,11 +753,15 @@ class BotEngine:
                 stage = detect_stage(device_screen, get_detection_stage_names(detection_group, exclude=relic_exclude))
                 if stage is None and is_emu_home_visible(device_screen):
                     stage = "EMU_HOME"
+                if stage is None and is_confirm_popup_visible(device_screen):
+                    stage = "CONFIRM_POPUP"
                 if stage is None:
                     if time.time() - last_detected_time >= DETECTION_RECOVERY_SCAN_INTERVAL[detection_group]:
                         stage = detect_stage(device_screen, exclude=relic_exclude)
                         if stage is None and is_emu_home_visible(device_screen):
                             stage = "EMU_HOME"
+                        if stage is None and is_confirm_popup_visible(device_screen):
+                            stage = "CONFIRM_POPUP"
                         last_detected_time = time.time()
                 else:
                     last_detected_time = time.time()
@@ -1262,6 +1268,16 @@ class BotEngine:
                 elif stage == "ANR_DIALOG":
                     self.log("⚠️ Detected Stage: ANR_DIALOG — tapping Wait...", "warning")
                     handle_anr(self.device_ip, self.device_port)
+                    last_stage = None
+
+                elif stage == "ANNOUNCEMENT_POPUP":
+                    self.log("❌ Detected Stage: ANNOUNCEMENT_POPUP — closing popup...", "warning")
+                    close_announcement_dialog(self.device_ip, self.device_port)
+                    last_stage = None
+
+                elif stage == "CONFIRM_POPUP":
+                    self.log("✅ Detected Stage: CONFIRM_POPUP — tapping confirm...", "warning")
+                    tap_confirm_popup(self.device_ip, self.device_port)
                     last_stage = None
 
                 loop_sleep = random.uniform(0.10, 0.16) if detection_group == "IN_GAME" else random.uniform(0.20, 0.32)

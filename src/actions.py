@@ -80,7 +80,7 @@ from config import (
     START_BUTTON,
     CONNECTION_LOST_RELOAD_BUTTON,
 )
-from detection import detect_templates, detect_anti_bot_odd_cards, detect_stage
+from detection import detect_templates, detect_anti_bot_odd_cards, detect_stage, find_close_x_button
 from config import (
     ANTI_BOT_CARD_POS_1, ANTI_BOT_CARD_POS_2, ANTI_BOT_CARD_POS_3,
     ANTI_BOT_CARD_POS_4, ANTI_BOT_CARD_POS_5, ANTI_BOT_CARD_POS_6,
@@ -104,7 +104,8 @@ def play_game(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print(f"🎮 Playing the game on {ip}:{port}...")
     safe_device_tap(ip, port, PLAY_BUTTON[0], PLAY_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    # รอ screen โหลด (เข้าหน้าจอเริ่มเกม) ก่อนตรวจจับ GAME_START — กันกดเร็วเกินเกมไม่ทัน
+    _human_sleep(1.5, 2.5)
 
 
 def purchase_fast_start(device_ip=None, device_port=None):
@@ -145,20 +146,20 @@ def purchase_random_boost(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("🛒 Purchasing Random Boost...")
     safe_device_tap(ip, port, RANDOM_BOOST_ITEM[0], RANDOM_BOOST_ITEM[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(1.5, 2.5)
     safe_device_tap(ip, port, PURCHASE_BUTTON[0], PURCHASE_BUTTON[1])
-    time.sleep(random.uniform(1, 2))
+    time.sleep(random.uniform(2.0, 3.0))
 
 
 def purchase_desired_random_boost(desired_template, desired_name, device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("🛒 Purchasing Desired Random Boost...")
     safe_device_tap(ip, port, RANDOM_BOOST_ITEM[0], RANDOM_BOOST_ITEM[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(1.5, 2.5)  # รอ popup โผล่ก่อนกดปุ่มถัดไป
     safe_device_tap(ip, port, MULTI_PURCHASE_BUTTON[0], MULTI_PURCHASE_BUTTON[1])
-    time.sleep(random.uniform(1, 2))
+    time.sleep(random.uniform(2.0, 3.0))  # รอ popup ซื้อโหลดเสร็จ
     safe_device_tap(ip, port, MULTI_BUY_BUTTON[0], MULTI_BUY_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(1.5, 2.5)  # รอ animation ซื้อเสร็จ
     print(f"🔍 Waiting for desired boost to be detected: {desired_name}...")
     timeout = 30
     start_time = time.time()
@@ -171,25 +172,23 @@ def purchase_desired_random_boost(desired_template, desired_name, device_ip=None
         if detect_templates(screen, desired_template, RANDOM_BOOST_REGION):
             print(f"✅ Desired Boost detected: {desired_name}!")
             break
-        time.sleep(random.uniform(0.35, 0.65))
+        time.sleep(random.uniform(0.8, 1.2))
 
 
 def using_fast_start(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print(f"⚡ Using Fast Start at {FAST_START_USE_BUTTON} (jitter +-15) on {ip}:{port}...")
+    # กดครั้งเดียว — ถ้าไม่ติด loop ตรวจจับ GAME_START จะเรียกใหม่เอง (กันกดเบิ้ล)
     safe_device_tap(ip, port, FAST_START_USE_BUTTON[0], FAST_START_USE_BUTTON[1])
-    _human_sleep(0.5, 0.8)
-    safe_device_tap(ip, port, FAST_START_USE_BUTTON[0], FAST_START_USE_BUTTON[1])
-    _human_sleep(0.8, 1.2)
+    _human_sleep(1.2, 1.8)
 
 
 def using_cookie_relay(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print(f"🍪 Using Cookie Relay at {COOKIE_RELAY_USE_BUTTON} (jitter +-15) on {ip}:{port}...")
+    # กดครั้งเดียว — ถ้าไม่ติด loop ตรวจจับ GAME_RELAY จะเรียกใหม่เอง (กันกดเบิ้ล)
     safe_device_tap(ip, port, COOKIE_RELAY_USE_BUTTON[0], COOKIE_RELAY_USE_BUTTON[1])
-    _human_sleep(0.5, 0.8)
-    safe_device_tap(ip, port, COOKIE_RELAY_USE_BUTTON[0], COOKIE_RELAY_USE_BUTTON[1])
-    _human_sleep(0.8, 1.2)
+    _human_sleep(1.2, 1.8)
 
 
 def complete_finish(device_ip=None, device_port=None):
@@ -417,8 +416,9 @@ def handle_quick_receive_and_send_lives(device_ip=None, device_port=None):
 
 def close_announcement_popup(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
-    print(f"❌ Closing generic announcement popup at (1126,57) on {ip}:{port}...")
-    safe_device_tap(ip, port, ANNOUNCEMENT_CLOSE_BUTTON[0], ANNOUNCEMENT_CLOSE_BUTTON[1])
+    pos = _find_close_x_pos(ip, port) or ANNOUNCEMENT_CLOSE_BUTTON
+    print(f"❌ Closing generic announcement popup at {pos} on {ip}:{port}...")
+    safe_device_tap(ip, port, pos[0], pos[1])
     _human_sleep(0.8, 1.4)
 
 
@@ -439,23 +439,36 @@ def close_friend_info_popup(device_ip=None, device_port=None):
             break
 
 
+def _find_close_x_pos(ip, port):
+    """capture หน้าจอแล้วหา X close แบบ dynamic — คืน (x,y) หรือ None (fallback ให้ config)"""
+    try:
+        screen = device_capture_screen(ip, port)
+        return find_close_x_button(screen)
+    except Exception:
+        return None
+
+
 def close_announcement_dialog(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print(f"🖱️ Closing announcement dialog on {ip}:{port}...")
-    count = random.randint(4, 6)
-    for i in range(count):
-        print(f"🖱️ Tapping close announcement dialog button {i+1}/{count}")
-        safe_device_tap(ip, port, CLOSE_ANNOUNCEMENT_DIALOG_BUTTON[0], CLOSE_ANNOUNCEMENT_DIALOG_BUTTON[1])
-        time.sleep(random.uniform(0.75, 1.45))
-    safe_device_tap(ip, port, ANNOUNCEMENT_CLOSE_BUTTON[0], ANNOUNCEMENT_CLOSE_BUTTON[1])
+    # กด X แล้วตรวจว่า X หายแล้วไหม — หยุดทันทีที่ปิดได้ (ไม่กดรัวๆ 4-6 ครั้งแบบเดิม)
+    for attempt in range(3):
+        pos = _find_close_x_pos(ip, port)
+        if pos is None:
+            print("✅ ไม่พบปุ่ม X แล้ว — popup ปิดเรียบร้อย")
+            break
+        print(f"🖱️ Tapping close X at {pos} (attempt {attempt+1}/3)")
+        safe_device_tap(ip, port, pos[0], pos[1])
+        _human_sleep(0.8, 1.4)
     _human_sleep(0.8, 1.4)
     device_screen = device_capture_screen(ip, port)
-    if detect_stage(device_screen, ["PARTY_RUN"]) == "PARTY_RUN":
+    # ตรวจ popup ก่อนเสมอ — กัน PARTY_RUN/GAME_SETTINGS false positive ตอน popup ยังเปิดอยู่
+    if detect_stage(device_screen, ["ANNOUNCEMENT_POPUP"]) == "ANNOUNCEMENT_POPUP":
+        close_announcement_popup(ip, port)
+    elif detect_stage(device_screen, ["PARTY_RUN"]) == "PARTY_RUN":
         close_party_run_mode(ip, port)
     elif detect_stage(device_screen, ["GAME_SETTINGS"]) == "GAME_SETTINGS":
         close_game_settings(ip, port)
-    elif detect_stage(device_screen, ["ANNOUNCEMENT_POPUP"]) == "ANNOUNCEMENT_POPUP":
-        close_announcement_popup(ip, port)
 
 
 def close_party_run_mode(device_ip=None, device_port=None):
@@ -479,6 +492,16 @@ def handle_emu_home(device_ip=None, device_port=None):
     print(f"🏠 Detected EMU_HOME — tapping CookieRun Classic at {EMU_HOME_TAP} on {ip}:{port}...")
     safe_device_tap(ip, port, EMU_HOME_TAP[0], EMU_HOME_TAP[1])
     time.sleep(random.uniform(4, 6))
+
+
+def tap_confirm_popup(device_ip=None, device_port=None):
+    """กดปุ่ม Confirm เขียวใหญ่กลางหน้าต่างยืนยัน — กดครั้งเดียว + รอ (กันกดรัวๆ)"""
+    ip, port = _resolve_device(device_ip, device_port)
+    from config import CONFIRM_POPUP_TAP
+
+    print(f"✅ Tapping CONFIRM at {CONFIRM_POPUP_TAP} on {ip}:{port}...")
+    safe_device_tap(ip, port, CONFIRM_POPUP_TAP[0], CONFIRM_POPUP_TAP[1])
+    _human_sleep(1.2, 1.8)
 
 
 def handle_anr(device_ip=None, device_port=None):
@@ -565,7 +588,7 @@ def sync_boost_selection(desired_hp_ext, desired_power_jelly, desired_double_xp,
         if desired and not is_checked:
             print(f"✅ Enabling {name}... (is_checked={is_checked} src={src} desired=ON)")
             safe_device_tap(ip, port, tap_pos[0], tap_pos[1])
-            time.sleep(random.uniform(0.6, 1.0))
+            time.sleep(random.uniform(1.2, 1.8))
             try:
                 screen = device_capture_screen(ip, port)
             except Exception:
@@ -573,7 +596,7 @@ def sync_boost_selection(desired_hp_ext, desired_power_jelly, desired_double_xp,
         elif not desired and is_checked:
             print(f"❌ Disabling {name}... (is_checked={is_checked} src={src} desired=OFF)")
             safe_device_tap(ip, port, tap_pos[0], tap_pos[1])
-            time.sleep(random.uniform(0.6, 1.0))
+            time.sleep(random.uniform(1.2, 1.8))
             try:
                 screen = device_capture_screen(ip, port)
             except Exception:
