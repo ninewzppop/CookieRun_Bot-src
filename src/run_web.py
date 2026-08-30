@@ -14,7 +14,11 @@ if sys.stderr is not None:
     except Exception:
         pass
 
+import argparse
+import atexit
+import signal
 import socket
+import subprocess
 import threading
 import time
 import webbrowser
@@ -33,15 +37,121 @@ except ImportError:
     ui_console = None  # type: ignore
 
 
-def find_free_port(start_port=8000, max_attempts=30):
-    for port in range(start_port, start_port + max_attempts):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.bind(("0.0.0.0", port))
-                return port
-            except OSError:
-                continue
-    return start_port
+LOCK_FILE = "/tmp/cookierun_bot.lock"
+if os.name == "nt":
+    LOCK_FILE = os.path.join(os.environ.get("TEMP", "/tmp"), "cookierun_bot.lock")
+
+
+def _pid_alive(pid: int) -> bool:
+    """เช็คว่า PID ยังทำงานอยู่จริงไหม (cross-platform)"""
+    if pid <= 0:
+        return False
+    try:
+        if os.name == "nt":
+            import ctypes
+
+            PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+            h = ctypes.windll.kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+            if not h:
+                return False
+            ctypes.windll.kernel32.CloseHandle(h)
+            return True
+        os.kill(pid, 0)  # Unix: signal 0 = probe ว่ามี process อยู่ไหม
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except Exception:
+        return False
+
+
+def _port_owner(port: int) -> int | None:
+    """หา PID ของ process ที่กำลัง listen ที่ port นี้ (ถ้าเจอ)"""
+    try:
+        if os.name == "nt":
+            out = subprocess.run(["netstat", "-ano"], capture_output=True, text=True, timeout=10).stdout
+            for line in out.splitlines():
+                parts = line.split()
+                if len(parts) >= 5 and parts[0] in ("TCP", "TCP6") and "LISTENING" in parts:
+                    if parts[1].endswith(f":{port}"):
+                        return int(parts[4])
+        else:
+            out = subprocess.run(
+                ["lsof", "-tiTCP:" + str(port), "-sTCP:LISTEN"],
+                capture_output=True, text=True, timeout=10,
+            ).stdout
+            for line in out.splitlines():
+                line = line.strip()
+                if line.isdigit():
+                    return int(line)
+    except Exception:
+        pass
+    return None
+
+
+def check_port_available(port: int) -> None:
+    """เช็ค port ก่อนเริ่ม — ถ้าถูกใช้อยู่ error ชัดเจนทันที ไม่เลื่อน port เอง"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        # SO_REUSEADDR: ข้าม TIME_WAIT ค้างจาก server เก่า — แต่ยังตรวจจับ
+        # port ที่มี process อื่น LISTEN อยู่ได้จริง (บน macOS/Linux)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            s.bind(("0.0.0.0", port))
+            return  # port ว่าง ใช้ได้
+        except OSError:
+            pass
+    pid = _port_owner(port)
+    owner = f" โดย PID {pid}" if pid else ""
+    kill_hint = f" (kill {pid})" if pid else ""
+    print()
+    print(f"⚠️  Port {port} ถูกใช้งานอยู่แล้ว{owner} กรุณาปิด process เดิมก่อน{kill_hint} หรือระบุ port อื่นด้วย --port")
+    print(f"    เช่น:  python3 run_web.py --port {port + 1}")
+    sys.exit(1)
+
+
+def _acquire_lock(port: int) -> None:
+    """สร้าง lock file กันรันซ้ำ — ถ้ามี server ตัวอื่นค้างอยู่ ปฏิเสธทันที"""
+    if os.path.exists(LOCK_FILE):
+        old_pid = 0
+        old_port = 0
+        try:
+            with open(LOCK_FILE, "r", encoding="utf-8") as f:
+                parts = f.read().strip().split()
+            old_pid = int(parts[0]) if parts and parts[0].isdigit() else 0
+            old_port = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 0
+        except Exception:
+            pass
+        if _pid_alive(old_pid):
+            at_port = f" ที่ port {old_port}" if old_port else ""
+            print()
+            print(f"⚠️  มี Web Dashboard ตัวอื่นกำลังรันอยู่แล้ว (PID {old_pid}{at_port})")
+            print(f"    กรุณาปิดตัวเดิมก่อน:  kill {old_pid}   แล้วค่อยรันใหม่")
+            sys.exit(1)
+        try:
+            os.remove(LOCK_FILE)  # lock เก่าค้าง (process ตายแล้ว) — ลบได้
+        except OSError:
+            pass
+    with open(LOCK_FILE, "w", encoding="utf-8") as f:
+        f.write(f"{os.getpid()} {port}\n")
+
+
+def _release_lock() -> None:
+    """ลบ lock เฉพาะเมื่อเป็นของตัวเอง (ปิดปกติ Ctrl+C / SIGTERM / exit ใดๆ)"""
+    try:
+        if not os.path.exists(LOCK_FILE):
+            return
+        with open(LOCK_FILE, "r", encoding="utf-8") as f:
+            parts = f.read().strip().split()
+        if parts and parts[0].isdigit() and int(parts[0]) == os.getpid():
+            os.remove(LOCK_FILE)
+    except Exception:
+        pass
+
+
+def _handle_sigterm(signum, frame):
+    _release_lock()
+    sys.exit(0)
 
 
 def get_lan_ip() -> str:
@@ -108,6 +218,18 @@ def _check_required_packages() -> list[str]:
 
 
 if __name__ == "__main__":
+    # ---------- Parse args: port ----------
+    parser = argparse.ArgumentParser(description="CookieRun Bot Web Dashboard")
+    parser.add_argument("--port", type=int, default=8000, help="port ที่จะใช้รัน Dashboard (default: 8000)")
+    args = parser.parse_args()
+    port = args.port
+
+    # ---------- Port check + lock (กันรันซ้ำ / port ชน) ----------
+    check_port_available(port)
+    _acquire_lock(port)
+    atexit.register(_release_lock)
+    signal.signal(signal.SIGTERM, _handle_sigterm)
+
     # ---------- Banner ----------
     version = "v2.0"
     if HAS_UI and ui_console is not None:
@@ -164,9 +286,6 @@ if __name__ == "__main__":
         instances = []
 
     lan_ip = get_lan_ip()
-
-    # หา port ว่างก่อน เพื่อแสดงใน panel ให้ถูก
-    port = find_free_port(8000)
 
     # ---------- Pretty info panel ----------
     if HAS_UI and ui_console is not None:
@@ -235,7 +354,8 @@ if __name__ == "__main__":
         import uvicorn  # type: ignore
 
         # ใช้ log_level warning เพื่อไม่ให้ log รก — แต่ถ้าต้องการดู log ให้เปลี่ยนเป็น info
-        uvicorn.run("web_server:app", host="0.0.0.0", port=port, reload=False, log_level="warning")
+        # timeout_graceful_shutdown: กัน SIGTERM/ปิดแล้วค้าง (lock file จะถูกลบโดย atexit)
+        uvicorn.run("web_server:app", host="0.0.0.0", port=port, reload=False, log_level="warning", timeout_graceful_shutdown=5)
     except ImportError as e:
         detail = f"ไม่พบ package: {e}\nต้องติดตั้ง dependencies ก่อน"
         hint = "pip install -r requirements.txt  หรือรัน INSTALL.bat"
@@ -260,6 +380,7 @@ if __name__ == "__main__":
             print(f"[ERROR] {detail}")
         sys.exit(1)
     except KeyboardInterrupt:
+        _release_lock()
         if HAS_UI and ui_console is not None:
             try:
                 ui_console.print_warning("⏹ Stopped by user (Ctrl+C)")
