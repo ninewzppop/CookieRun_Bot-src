@@ -18,6 +18,7 @@ from adb import (
     device_check_connection,
     device_reset_app,
     device_tap,
+    safe_device_tap,
     get_adb_path,
 )
 from fastapi.staticfiles import StaticFiles
@@ -295,7 +296,7 @@ def manual_tap(req: TapRequest):
     ip = req.device_ip or eng.device_ip
     port = req.device_port or eng.device_port
     try:
-        device_tap(ip, port, req.x, req.y)
+        safe_device_tap(ip, port, req.x, req.y)
         return {"success": True, "x": req.x, "y": req.y}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -588,6 +589,9 @@ class InstanceSettingsRequest(BaseModel):
     fast_start_min_stock: Optional[int] = None
     use_cookie_relay: Optional[bool] = None
     cookie_relay_min_stock: Optional[int] = None
+    hp_extension_enabled: Optional[bool] = None
+    power_jelly_enabled: Optional[bool] = None
+    double_xp_enabled: Optional[bool] = None
     use_desired_random_boost: Optional[bool] = None
     desired_boost_id: Optional[str] = None
     detect_relic: Optional[bool] = None
@@ -617,7 +621,7 @@ def update_instance_settings(instance_id: str, req: InstanceSettingsRequest):
 def tap_instance(instance_id: str, req: TapRequest):
     eng = _get_instance_or_404(instance_id)
     try:
-        device_tap(eng.device_ip, eng.device_port, req.x, req.y)
+        safe_device_tap(eng.device_ip, eng.device_port, req.x, req.y)
         return {"success": True, "x": req.x, "y": req.y, "instance_id": instance_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -636,6 +640,29 @@ def reset_instance_app(instance_id: str):
         return {"success": True, "message": "App reset command executed", "instance_id": instance_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/instances/{instance_id}/send-hearts-now")
+def send_hearts_now(instance_id: str):
+    eng = _get_instance_or_404(instance_id)
+    # กันกดรัว — ถ้ากำลังส่งอยู่ให้บอกก่อน
+    if getattr(eng, "_sending_hearts", False):
+        return {"success": False, "message": "กำลังส่งหัวใจอยู่แล้ว กรุณารอสักครู่"}
+    import threading
+    def _do_send():
+        eng._sending_hearts = True
+        try:
+            eng.log("💖 [Manual] ผู้ใช้กดส่งหัวใจทันที — กำลังเปิดกล่องจดหมาย...", "info")
+            from actions import handle_quick_receive_and_send_lives
+            handle_quick_receive_and_send_lives(eng.device_ip, eng.device_port)
+            eng.log("✅ [Manual] ส่งหัวใจทันทีเสร็จแล้ว", "success")
+        except Exception as e:
+            eng.log(f"❌ [Manual] ส่งหัวใจล้มเหลว: {e}", "error")
+        finally:
+            eng._sending_hearts = False
+    eng._sending_hearts = False
+    t = threading.Thread(target=_do_send, daemon=True, name=f"SendHeartsNow-{instance_id}")
+    t.start()
+    return {"success": True, "message": "เริ่มส่งหัวใจทันทีแล้ว — ดู Logs ด้านล่าง", "instance_id": instance_id}
 
 @app.get("/api/instances/{instance_id}/stream")
 def instance_video_feed(instance_id: str):

@@ -563,7 +563,7 @@
           const local = instances.find(l => l.instance_id === serverInst.instance_id);
           if (local && local._pendingSave) {
             // preserve pending settings keys
-            const keepKeys = ["use_fast_start","fast_start_min_stock","use_cookie_relay","cookie_relay_min_stock","use_desired_random_boost","desired_boost_id","detect_relic","send_friend_lives","stop_goal_rounds_enabled","stop_goal_rounds_target","stop_goal_time_enabled","stop_goal_time_hours"];
+            const keepKeys = ["use_fast_start","fast_start_min_stock","use_cookie_relay","cookie_relay_min_stock","hp_extension_enabled","power_jelly_enabled","double_xp_enabled","use_desired_random_boost","desired_boost_id","detect_relic","send_friend_lives","stop_goal_rounds_enabled","stop_goal_rounds_target","stop_goal_time_enabled","stop_goal_time_hours"];
             keepKeys.forEach(k=>{ if(k in local) serverInst[k]=local[k]; });
             serverInst._pendingSave = true;
           }
@@ -699,7 +699,7 @@
             </div>
           </div>
           <div class="relative aspect-video bg-black flex items-center justify-center overflow-hidden cursor-crosshair" onclick="handleStreamClick(event, '${inst.instance_id}')" id="stream-wrap-${inst.instance_id}">
-            <img id="stream-img-${inst.instance_id}" src="/api/instances/${inst.instance_id}/stream" alt="Live Stream ${inst.instance_id}" class="w-full h-full object-contain pointer-events-none" onerror="handleStreamError('${inst.instance_id}')" onload="handleStreamLoad('${inst.instance_id}')" />
+            <img id="stream-img-${inst.instance_id}" src="/api/instances/${inst.instance_id}/screenshot?t=${Date.now()}" alt="Live Screen ${inst.instance_id}" class="w-full h-full object-contain pointer-events-none" onload="handleStreamLoad('${inst.instance_id}')" onerror="handleStreamError('${inst.instance_id}')" />
             <div class="absolute top-2 left-2 bg-black/60 px-2 py-1 rounded text-[11px] font-mono text-[#f4e4bc] border border-[#d4af37]/20">Stage: ${inst.current_stage}</div>
             <div id="disconnect-overlay-${inst.instance_id}" class="absolute inset-0 bg-black/80 backdrop-blur-[1px] hidden flex-col items-center justify-center gap-2 p-4 text-center">
               <p class="text-sm font-bold text-rose-300">⚠️ Disconnected</p>
@@ -985,6 +985,14 @@
                 <label class="flex items-center justify-between cursor-pointer"><div><span class="text-sm font-semibold text-[#f5f0e8]">🍪 Cookie Relay</span><p class="text-[11px] text-[#e8dcc8]/60">กดใช้ตัวผลัดคุกกี้</p></div><input type="checkbox" id="cfg-relay-${inst.instance_id}" ${inst.use_cookie_relay?'checked':''} onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-checkbox gold-checkbox-lg"></label>
                 <div class="flex items-center justify-between pt-2 border-t border-[#2a2a2a]"><span class="text-[#e8dcc8]/70">ซื้อเพิ่มเมื่อเหลือ ≤</span><div class="flex items-center gap-1.5"><input type="number" id="cfg-relay-min-${inst.instance_id}" value="${inst.cookie_relay_min_stock}" min="0" max="999" onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-number w-16 rounded-lg px-2 py-1 text-center text-xs font-bold font-mono"><span class="text-[#e8dcc8]/70">ชิ้น</span></div></div>
               </div>
+              <!-- Boost Selection (Buy some Boosts!) -->
+              <div class="space-y-2 bg-[#1a1a1a]/60 p-3 rounded-xl border border-[#2a2a2a]">
+                <p class="text-sm font-bold text-[#f5f0e8] flex items-center gap-2">✨ Boost Selection <span class="text-[11px] font-normal text-[#e8dcc8]/60">— Buy some Boosts!</span></p>
+                <p class="text-[11px] text-[#e8dcc8]/50">เลือกบูสต์ให้บอทติ๊กอัตโนมัติก่อนกด Play! (เหลือง=ติ๊กแล้ว)</p>
+                <label class="flex items-center justify-between cursor-pointer p-2 rounded-lg bg-[#0a0a0a]/40 border border-[#2a2a2a]"><div><span class="text-sm font-semibold text-[#f5f0e8]">💖 HP Extension</span><p class="text-[11px] text-[#e8dcc8]/60">หัวใจ+ (227,440)</p></div><input type="checkbox" id="cfg-boost-hp-${inst.instance_id}" ${inst.hp_extension_enabled?'checked':''} onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-checkbox gold-checkbox-lg"></label>
+                <label class="flex items-center justify-between cursor-pointer p-2 rounded-lg bg-[#0a0a0a]/40 border border-[#2a2a2a]"><div><span class="text-sm font-semibold text-[#f5f0e8]">⏱ Power Jelly Boost</span><p class="text-[11px] text-[#e8dcc8]/60">นาฬิกาพก (382,440)</p></div><input type="checkbox" id="cfg-boost-jelly-${inst.instance_id}" ${inst.power_jelly_enabled?'checked':''} onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-checkbox gold-checkbox-lg"></label>
+                <label class="flex items-center justify-between cursor-pointer p-2 rounded-lg bg-[#0a0a0a]/40 border border-[#2a2a2a]"><div><span class="text-sm font-semibold text-[#f5f0e8]">⭐ Double XP</span><p class="text-[11px] text-[#e8dcc8]/60">ดาว x2 (534,440)</p></div><input type="checkbox" id="cfg-boost-xp-${inst.instance_id}" ${inst.double_xp_enabled?'checked':''} onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-checkbox gold-checkbox-lg"></label>
+              </div>
               <!-- Random Boost -->
               <div class="space-y-2 bg-[#1a1a1a]/60 p-3 rounded-xl border border-[#2a2a2a]">
                 <label class="flex items-center justify-between cursor-pointer"><div><span class="text-sm font-semibold text-[#f5f0e8]">🎲 Random Boost</span><p class="text-[11px] text-[#e8dcc8]/60">สุ่มจนกว่าจะได้บัฟที่เลือก</p></div><input type="checkbox" id="cfg-boost-${inst.instance_id}" ${inst.use_desired_random_boost?'checked':''} onchange="saveInstanceSettings('${inst.instance_id}'); toggleBoostSelect('${inst.instance_id}')" class="gold-checkbox gold-checkbox-lg"></label>
@@ -992,7 +1000,11 @@
               </div>
               <!-- Other toggles -->
               <label class="flex items-center justify-between p-2 rounded-lg bg-[#1a1a1a]/40 border border-[#2a2a2a]"><div><span class="text-[#f5f0e8] font-semibold">🏺 เปิดกล่อง Relic อัตโนมัติ</span></div><input type="checkbox" id="cfg-relic-${inst.instance_id}" ${inst.detect_relic?'checked':''} onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-checkbox"></label>
-              <label class="flex items-center justify-between p-2 rounded-lg bg-[#1a1a1a]/40 border border-[#2a2a2a]"><div><span class="text-[#f5f0e8] font-semibold">💌 ส่งหัวใจให้เพื่อน (~30 นาที)</span></div><input type="checkbox" id="cfg-lives-${inst.instance_id}" ${inst.send_friend_lives?'checked':''} onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-checkbox"></label>
+              <label class="flex items-center justify-between p-2 rounded-lg bg-[#1a1a1a]/40 border border-[#2a2a2a]"><div><span class="text-[#f5f0e8] font-semibold">💌 ส่งหัวใจให้เพื่อน (~30 นาที ออโต้)</span><p class="text-[11px] text-[#e8dcc8]/60">บอทจะส่งอัตโนมัติทุก ~30 นาทีเมื่อเปิด</p></div><input type="checkbox" id="cfg-lives-${inst.instance_id}" ${inst.send_friend_lives?'checked':''} onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-checkbox"></label>
+              <div class="p-2 rounded-lg bg-[#1a1a1a]/40 border border-[#2a2a2a] space-y-2">
+                <label class="flex items-center justify-between cursor-pointer"><div><span class="text-[#f5f0e8] font-semibold">💖 ส่งหัวใจทันที</span><p class="text-[11px] text-[#e8dcc8]/60">เปิดแล้วบอทจะส่งทันที ไม่ต้องรอรอบ</p></div><input type="checkbox" id="cfg-lives-now-${inst.instance_id}" onchange="toggleSendNow('${inst.instance_id}')" class="gold-checkbox"></label>
+                <p id="send-now-feedback-${inst.instance_id}" class="text-[11px] text-center text-[#e8dcc8]/60 hidden"></p>
+              </div>
               <!-- Auto-Stop Goals -->
               <div class="border-t border-[#2a2a2a] pt-3 space-y-2">
                 <p class="text-xs font-bold text-[#d4c4a8]">🎯 Auto-Stop Goals (แยกต่อ instance)</p>
@@ -1112,6 +1124,9 @@
           fast_start_min_stock: parseInt(document.getElementById('cfg-fast-min-'+instanceId)?.value) || 10,
           use_cookie_relay: document.getElementById('cfg-relay-'+instanceId)?.checked || false,
           cookie_relay_min_stock: parseInt(document.getElementById('cfg-relay-min-'+instanceId)?.value) || 10,
+          hp_extension_enabled: document.getElementById('cfg-boost-hp-'+instanceId)?.checked || false,
+          power_jelly_enabled: document.getElementById('cfg-boost-jelly-'+instanceId)?.checked || false,
+          double_xp_enabled: document.getElementById('cfg-boost-xp-'+instanceId)?.checked || false,
           use_desired_random_boost: document.getElementById('cfg-boost-'+instanceId)?.checked || false,
           desired_boost_id: document.getElementById('cfg-boost-id-'+instanceId)?.value || 'double_coins',
           detect_relic: document.getElementById('cfg-relic-'+instanceId)?.checked ?? true,
@@ -1177,31 +1192,101 @@
       if (!found) console.warn('reloadStream: no img found for', instanceId);
     }
 
-    function handleStreamError(instanceId){
-      const st = adbStatus[instanceId];
-      if (st && st.connected===true){
-        st.connected = false;
-        st.message = 'Stream error / device disconnect';
-        const ov = document.getElementById(`disconnect-overlay-${instanceId}`);
-        if (ov) { ov.classList.remove('hidden'); ov.classList.add('flex'); }
-        renderTabs(); renderInstancesVertical();
+    const streamFallbackIntervals = {};
+    const livePollIntervals = {};
+    function startLivePolling(){
+      for (const inst of instances){
+        if (adbStatus[inst.instance_id]?.connected !== true) continue;
+        if (livePollIntervals[inst.instance_id]) continue;
+        const imgId = 'stream-img-'+inst.instance_id;
+        const img = document.getElementById(imgId);
+        if (!img) continue;
+        livePollIntervals[inst.instance_id] = setInterval(async ()=>{
+          const el = document.getElementById(imgId);
+          if (!el) return;
+          // กันกระพริบ: โหลดเสร็จแล้วค่อยสลับ + หน่วงเล็กน้อยให้ decode เสร็จ
+          try{
+            const res = await fetch(`/api/instances/${inst.instance_id}/screenshot?t=${Date.now()}`, {cache:'no-store'});
+            if (!res.ok) return;
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const old = el.src;
+            const tmp = new Image();
+            tmp.onload = ()=>{
+              // double-buffer: รอเฟรมถัดไปก่อนสลับเพื่อลดกระพริบ
+              requestAnimationFrame(()=>{
+                el.src = url;
+                if (old && old.startsWith('blob:')) URL.revokeObjectURL(old);
+              });
+            };
+            tmp.onerror = ()=> URL.revokeObjectURL(url);
+            tmp.src = url;
+          }catch(e){}
+        }, 1400);
+      }
+      // ล้างตัวที่หลุด
+      for (const id in livePollIntervals){
+        if (!instances.find(i=>i.instance_id===id) || adbStatus[id]?.connected!==true){
+          clearInterval(livePollIntervals[id]); delete livePollIntervals[id];
+        }
       }
     }
+    // เริ่ม polling หลัง render ทุกครั้ง
+    setInterval(startLivePolling, 1500);
+    function startScreenshotPolling(instanceId){
+      if (streamFallbackIntervals[instanceId]) return;
+      const img = document.getElementById('stream-img-'+instanceId) || document.getElementById('grid-stream-img-'+instanceId);
+      if (!img) return;
+      streamFallbackIntervals[instanceId] = setInterval(async ()=>{
+        try{
+          const res = await fetch(`/api/instances/${instanceId}/screenshot?t=${Date.now()}`, {cache:'no-store'});
+          if (!res.ok) throw new Error('screenshot fetch failed');
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const old = img.src;
+          img.src = url;
+          if (old && old.startsWith('blob:')) URL.revokeObjectURL(old);
+          const ov = document.getElementById(`disconnect-overlay-${instanceId}`);
+          if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
+        }catch(e){}
+      }, 800);
+    }
+    function stopScreenshotPolling(instanceId){
+      if (streamFallbackIntervals[instanceId]){
+        clearInterval(streamFallbackIntervals[instanceId]);
+        delete streamFallbackIntervals[instanceId];
+      }
+    }
+    function handleStreamError(instanceId){
+      startScreenshotPolling(instanceId);
+      const ov = document.getElementById(`disconnect-overlay-${instanceId}`);
+      if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
+    }
     function handleStreamLoad(instanceId){
+      stopScreenshotPolling(instanceId);
       const st = adbStatus[instanceId];
       if (st && st.connected===false){
         st.connected = true;
         const ov = document.getElementById(`disconnect-overlay-${instanceId}`);
         if (ov) { ov.classList.add('hidden'); ov.classList.remove('flex'); }
         renderTabs();
+      } else {
+        const ov2 = document.getElementById(`disconnect-overlay-${instanceId}`);
+        if (ov2) { ov2.classList.add('hidden'); ov2.classList.remove('flex'); }
       }
     }
 
+    const _toggleBusy = {};
     async function toggleInstanceBot(instanceId) {
+      if (_toggleBusy[instanceId]) return; // กันกดรัว
+      _toggleBusy[instanceId] = true;
+      // Disable ปุ่มชั่วคราว
+      const btnEl = document.querySelector(`button[onclick="toggleInstanceBot('${instanceId}')"]`);
+      if (btnEl) { btnEl.disabled = true; btnEl.style.opacity = '0.6'; btnEl.style.pointerEvents = 'none'; }
       const conn = adbStatus[instanceId];
-      if (!conn || conn.connected!==true){ alert('กรุณาทดสอบเชื่อมต่อ ADB ให้สำเร็จก่อนเริ่มบอท'); return; }
+      if (!conn || conn.connected!==true){ alert('กรุณาทดสอบเชื่อมต่อ ADB ให้สำเร็จก่อนเริ่มบอท'); _toggleBusy[instanceId]=false; if(btnEl){btnEl.disabled=false; btnEl.style.opacity=''; btnEl.style.pointerEvents='';} return; }
       const inst = instances.find(i=>i.instance_id===instanceId);
-      if (!inst) return;
+      if (!inst) { _toggleBusy[instanceId]=false; if(btnEl){btnEl.disabled=false; btnEl.style.opacity=''; btnEl.style.pointerEvents='';} return; }
       const isRunning = inst.is_running;
       // gather per-instance settings
       const payload = isRunning ? {} : {
@@ -1213,6 +1298,9 @@
         fast_start_min_stock: parseInt(document.getElementById('cfg-fast-min-'+instanceId)?.value) || 10,
         use_cookie_relay: document.getElementById('cfg-relay-'+instanceId)?.checked || false,
         cookie_relay_min_stock: parseInt(document.getElementById('cfg-relay-min-'+instanceId)?.value) || 10,
+        hp_extension_enabled: document.getElementById('cfg-boost-hp-'+instanceId)?.checked || false,
+        power_jelly_enabled: document.getElementById('cfg-boost-jelly-'+instanceId)?.checked || false,
+        double_xp_enabled: document.getElementById('cfg-boost-xp-'+instanceId)?.checked || false,
         use_desired_random_boost: document.getElementById('cfg-boost-'+instanceId)?.checked || false,
         desired_boost_id: document.getElementById('cfg-boost-id-'+instanceId)?.value || 'double_coins',
         detect_relic: document.getElementById('cfg-relic-'+instanceId)?.checked ?? true,
@@ -1227,26 +1315,67 @@
         const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || data.message);
-        // Immediate uptime handling: reset to 00:00:00 on Start, stop on Stop
+        // Immediate handling: Start → 00:00:00 ทันที, Stop → โชว์ STOPPING แล้วรอ server ยืนยัน (ไม่เดา is_running=false เอง)
         if (!isRunning){
           startUptimeTicker(instanceId, 0);
           const localInst = instances.find(i=>i.instance_id===instanceId);
-          if (localInst) { localInst.is_running = true; localInst.uptime = '00:00:00'; localInst.uptime_seconds = 0; }
+          if (localInst) { localInst.is_running = true; localInst.current_stage = 'STARTING'; localInst.uptime = '00:00:00'; localInst.uptime_seconds = 0; }
           renderTabs();
           renderInstancesVertical();
         } else {
-          stopUptimeTicker(instanceId, true);
           const localInst = instances.find(i=>i.instance_id===instanceId);
-          if (localInst) localInst.is_running = false;
+          if (localInst) { localInst.current_stage = 'STOPPING'; }
           renderTabs();
+          renderInstancesVertical();
+          // ให้ fetchInstances รอบถัดไปเป็นตัวตัดสิน is_running จริง (ไม่เดา false เอง)
         }
-      } catch(e){ alert('Error: '+e.message); }
-      fetchInstances();
+        fetchInstances();
+      } catch(e){ alert('Error: '+e.message); fetchInstances(); } finally {
+        _toggleBusy[instanceId]=false;
+        if (btnEl){ btnEl.disabled=false; btnEl.style.opacity=''; btnEl.style.pointerEvents=''; }
+      }
     }
     async function resetApp(instanceId){
       try{ await fetch(`/api/instances/${instanceId}/reset-app`, {method:'POST'}); alert('ส่งคำสั่งรีสตาร์ทแอปแล้ว'); }catch(e){ alert(e.message); }
     }
     async function testInstanceConnection(instanceId){ await checkConnection(instanceId, false); }
+    async function sendHeartsNow(instanceId){
+      const btn = document.getElementById('btn-send-now-'+instanceId);
+      const fb = document.getElementById('send-now-feedback-'+instanceId);
+      if (btn) { btn.disabled=true; btn.style.opacity='0.6'; btn.textContent='⏳ กำลังส่ง...'; }
+      if (fb){ fb.textContent='⏳ กำลังเปิดกล่องจดหมายและส่งหัวใจ...'; fb.classList.remove('hidden'); }
+      try{
+        const res = await fetch(`/api/instances/${instanceId}/send-hearts-now`, {method:'POST'});
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || data.message);
+        if (fb){ fb.textContent='✅ '+ (data.message || 'ส่งหัวใจเสร็จแล้ว'); fb.classList.remove('hidden'); fb.classList.add('text-emerald-300'); setTimeout(()=>{fb.classList.add('hidden'); fb.classList.remove('text-emerald-300');}, 4000); }
+      }catch(e){
+        if (fb){ fb.textContent='❌ '+e.message; fb.classList.remove('hidden'); }
+        alert('ส่งหัวใจล้มเหลว: '+e.message);
+      }finally{
+        if (btn){ btn.disabled=false; btn.style.opacity=''; btn.textContent='💖 ส่งหัวใจทันที (ไม่ต้องรอ 30 นาที)'; }
+      }
+    }
+    async function toggleSendNow(instanceId){
+      const chk = document.getElementById('cfg-lives-now-'+instanceId);
+      const fb = document.getElementById('send-now-feedback-'+instanceId);
+      if (!chk) return;
+      if (chk.checked){
+        if (fb){ fb.textContent='⏳ เปิดใช้งานทันที — กำลังส่ง...'; fb.classList.remove('hidden'); }
+        try{
+          const res = await fetch(`/api/instances/${instanceId}/send-hearts-now`, {method:'POST'});
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || data.message);
+          if (fb){ fb.textContent='✅ เปิดใช้งานแล้ว — '+ (data.message || 'ส่งหัวใจเสร็จแล้ว'); fb.classList.add('text-emerald-300'); setTimeout(()=>{fb.classList.add('hidden'); fb.classList.remove('text-emerald-300');}, 4000); }
+        }catch(e){
+          if (fb){ fb.textContent='❌ '+e.message; fb.classList.remove('hidden'); }
+          chk.checked = false;
+          alert('ส่งหัวใจล้มเหลว: '+e.message);
+        }
+      } else {
+        if (fb){ fb.textContent='⏸ ปิดส่งทันทีแล้ว'; fb.classList.remove('hidden'); setTimeout(()=>fb.classList.add('hidden'), 2000); }
+      }
+    }
     async function resetInstanceStats(instanceId){ await fetch(`/api/instances/${instanceId}/reset-stats`, {method:'POST'}); fetchInstances(); }
     async function deleteInstance(instanceId){
       if(!confirm(`ลบ Instance ${instanceId} ? (ต้องหยุดบอทก่อน)`)) return;
@@ -1298,7 +1427,7 @@
         const merged = data.map(serverInst => {
           const local = instances.find(l => l.instance_id === serverInst.instance_id);
           if (local && local._pendingSave) {
-            const keepKeys = ["use_fast_start","fast_start_min_stock","use_cookie_relay","cookie_relay_min_stock","use_desired_random_boost","desired_boost_id","detect_relic","send_friend_lives","stop_goal_rounds_enabled","stop_goal_rounds_target","stop_goal_time_enabled","stop_goal_time_hours"];
+            const keepKeys = ["use_fast_start","fast_start_min_stock","use_cookie_relay","cookie_relay_min_stock","hp_extension_enabled","power_jelly_enabled","double_xp_enabled","use_desired_random_boost","desired_boost_id","detect_relic","send_friend_lives","stop_goal_rounds_enabled","stop_goal_rounds_target","stop_goal_time_enabled","stop_goal_time_hours"];
             keepKeys.forEach(k=>{ if(k in local) serverInst[k]=local[k]; });
             serverInst._pendingSave = true;
           }

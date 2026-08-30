@@ -157,11 +157,13 @@ def main():
         lives_interval = random.uniform(25 * 60, 35 * 60)
         pending_send_friend_life = False
         last_emu_check_time = time.time()
+        emu_check_jitter = random.uniform(8, 12)
 
         while True:
-            # Watchdog: หลุดมาหน้า Emu Home (แอปไม่รัน) -> กดเข้าเกมที่ (537,235)
-            if time.time() - last_emu_check_time >= EMU_HOME_CHECK_INTERVAL:
+            # Watchdog: หลุดมาหน้า Emu Home (แอปไม่รัน) -> กดเข้าเกมที่ (537,235) แบบ jitter
+            if time.time() - last_emu_check_time >= emu_check_jitter:
                 last_emu_check_time = time.time()
+                emu_check_jitter = random.uniform(8, 12)
                 try:
                     running = device_is_app_running(DEVICE_IP, DEVICE_PORT, GAME_PACKAGE)
                 except Exception:
@@ -189,7 +191,7 @@ def main():
                 last_detected_time = time.time()
 
             if stage == last_stage:
-                time.sleep(random.uniform(0.04, 0.08) if detection_group == "IN_GAME" else random.uniform(0.08, 0.14))
+                time.sleep(random.uniform(0.09, 0.18) if detection_group == "IN_GAME" else random.uniform(0.11, 0.22))
                 continue
 
             last_stage = stage

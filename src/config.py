@@ -17,6 +17,8 @@ TEMPLATE_DIR = _os.path.join(_os.path.dirname(__file__), "templates")
 MATCH_THRESHOLD = 0.8
 STAGE_THRESHOLDS = {
     "ANNOUNCEMENT_POPUP": 0.42,
+    "FRIEND_INFO_POPUP": 0.55,
+    "ANR_DIALOG": 0.70,
     "EMU_HOME": 0.60,
     "GAME_COMPLETE": 0.62,
     "MYSTERY_BOX": 0.65,
@@ -27,9 +29,9 @@ STAGE_THRESHOLDS = {
 SESSION_RESET_INTERVAL = (5400, 10800)  # 1.5-3 hours
 GAME_PACKAGE = "com.devsisters.crg"
 
-# EMU HOME (หลุดมาหน้า Emu กดไอคอนเข้าเกมใหม่)
-EMU_HOME_TAP = (537, 235)
-EMU_HOME_CHECK_INTERVAL = 10  # วินาที เช็คแอปรันอยู่เป็นระยะ
+# EMU HOME (หลุดมาหน้า Emu กดไอคอนเข้าเกมใหม่) — วัดจริงจาก ADB 1280×720 ที่ /tmp/emu.png → center 628,341
+EMU_HOME_TAP = (628, 341)
+EMU_HOME_CHECK_INTERVAL = 10  # base — ใช้ jitter 8-12 วิใน bot_engine (กันจับ interval ตายตัว)
 
 # -------------------
 # STAGE DETECTION TEMPLATES
@@ -60,6 +62,8 @@ STAGE_OVERTAKE_BREAK_SCORE_TEMPLATE = ["OVERTAKE_BREAK_SCORE_1.png"]
 STAGE_PARTY_RUN_TEMPLATE = ["PARTY_RUN_1.png"]
 STAGE_GAME_SETTINGS_TEMPLATE = ["GAME_SETTINGS_1.png"]
 STAGE_ANNOUNCEMENT_POPUP_TEMPLATE = ["ANNOUNCEMENT_CLOSE_1.png"]
+STAGE_FRIEND_INFO_POPUP_TEMPLATE = ["FRIEND_INFO_POPUP_1.png"]
+STAGE_ANR_DIALOG_TEMPLATE = ["ANR_DIALOG_1.png"]
 
 # -------------------
 # STAGE DETECTION REGIONS
@@ -91,6 +95,13 @@ STAGE_OVERTAKE_BREAK_SCORE_REGION = (479, 64, 799, 132)
 STAGE_PARTY_RUN_REGION = (359, 44, 922, 138)
 STAGE_GAME_SETTINGS_REGION = (484, 62, 769, 122)
 STAGE_ANNOUNCEMENT_POPUP_REGION = (1090, 15, 1160, 95)
+# Friend's Info popup header — full top bar from Send gift (left) to X (right)
+# Template cropped from real ADB capture debug_screenshots/current_screen.png (1280×720) → 1069×63 px
+# Region covers entire header; interior popup content ignored (varies per friend)
+STAGE_FRIEND_INFO_POPUP_REGION = (100, 10, 1180, 78)
+# ANR dialog — cropped from real ADB capture /tmp/current.png (1280×720) → 655×247 px
+# Dialog at center, Wait button at bottom
+STAGE_ANR_DIALOG_REGION = (312, 254, 967, 501)
 
 # -------------------
 # DETECTION TEMPLATES
@@ -143,11 +154,36 @@ BOOST_TEMPLATES = (
 )
 
 # -------------------
+# BOOST SELECTION (Buy some Boosts! in Buy Upgrades!)
+# -------------------
+# Regions measured from real 1280×720 screenshot (Buy Upgrades! screen, Buy some Boosts! grid)
+# Template sizes from real crops: 144×142 (checked) / 145×144 (unchecked) — region must be >= template
+# Expanded to 150×150 with margin for search
+HP_EXTENSION_REGION = (160, 370, 310, 520)
+POWER_JELLY_REGION = (310, 370, 460, 520)
+DOUBLE_XP_REGION = (465, 370, 615, 520)
+
+# Tap positions = center of each region (matches spec 227,440 / 382,440 / 534,440)
+HP_EXTENSION_TAP_POS = (235, 445)
+POWER_JELLY_TAP_POS = (385, 445)
+DOUBLE_XP_TAP_POS = (540, 445)
+
+# Templates: checked (yellow + green tick) vs unchecked (green normal)
+BOOST_HP_EXTENSION_CHECKED_TEMPLATE = ["BOOST_HP_EXTENSION_CHECKED_1.png"]
+BOOST_HP_EXTENSION_UNCHECKED_TEMPLATE = ["BOOST_HP_EXTENSION_UNCHECKED_1.png"]
+BOOST_POWER_JELLY_CHECKED_TEMPLATE = ["BOOST_POWER_JELLY_CHECKED_1.png"]
+BOOST_POWER_JELLY_UNCHECKED_TEMPLATE = ["BOOST_POWER_JELLY_UNCHECKED_1.png"]
+BOOST_DOUBLE_XP_CHECKED_TEMPLATE = ["BOOST_DOUBLE_XP_CHECKED_1.png"]
+BOOST_DOUBLE_XP_UNCHECKED_TEMPLATE = ["BOOST_DOUBLE_XP_UNCHECKED_1.png"]
+
+# -------------------
 # STAGE MAP
 # -------------------
 STAGE_TEMPLATES = {
     # higher priority stages first
     "ANNOUNCEMENT_POPUP":      STAGE_ANNOUNCEMENT_POPUP_TEMPLATE,
+    "FRIEND_INFO_POPUP":       STAGE_FRIEND_INFO_POPUP_TEMPLATE,
+    "ANR_DIALOG":              STAGE_ANR_DIALOG_TEMPLATE,
     "EMU_HOME":                STAGE_EMU_HOME_TEMPLATE,
     "GAME_START":              STAGE_GAME_START_TEMPLATE,
     "GAME_RELAY":              STAGE_GAME_RELAY_TEMPLATE,
@@ -180,6 +216,8 @@ STAGE_REGIONS = {
     "PARTY_RUN":               STAGE_PARTY_RUN_REGION,
     "GAME_SETTINGS":           STAGE_GAME_SETTINGS_REGION,
     "ANNOUNCEMENT_POPUP":      STAGE_ANNOUNCEMENT_POPUP_REGION,
+    "FRIEND_INFO_POPUP":       STAGE_FRIEND_INFO_POPUP_REGION,
+    "ANR_DIALOG":              STAGE_ANR_DIALOG_REGION,
     "PURCHASE_ITEM":           STAGE_PURCHASE_ITEM_REGION,
     "GAME_START":              STAGE_GAME_START_REGION,
     "GAME_RELAY":              STAGE_GAME_RELAY_REGION,
@@ -211,6 +249,8 @@ DETECTION_ALWAYS_STAGES = (
     "EMU_HOME",
     "CONNECTION_LOST",
     "INACTIVE",
+    "FRIEND_INFO_POPUP",
+    "ANR_DIALOG",
 )
 
 DETECTION_GROUP_PRE_GAME = (
@@ -299,6 +339,10 @@ LEADERBOARD_TOP_POSITION = (435, 260)
 LEADERBOARD_BOTTOM_POSITION = (435, 620)
 CLOSE_ANNOUNCEMENT_DIALOG_BUTTON = (1127, 66)
 ANNOUNCEMENT_CLOSE_BUTTON = (1126, 57)
+CLOSE_FRIEND_INFO_POPUP_BUTTON = (1090, 72)
+# ANR dialog — Wait button measured from real ADB 1280×720 /tmp/current.png → icon center 366,453 (button text "Wait")
+ANR_WAIT_BUTTON = (366, 453)
+ANR_CLOSE_APP_BUTTON = (366, 381)
 EXIT_PARTY_RUN_MODE_BUTTON = (1214, 89)
 EXIT_GAME_SETTINGS_BUTTON = (1116, 98)
 

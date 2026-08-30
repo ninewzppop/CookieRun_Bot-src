@@ -26,7 +26,9 @@ from actions import (
     accept_relic_claim,
     accept_too_many_treasures,
     close_announcement_dialog,
+    close_friend_info_popup,
     complete_finish,
+    handle_anr,
     handle_anti_bot,
     handle_emu_home,
     handle_inactive,
@@ -38,6 +40,7 @@ from actions import (
     purchase_desired_random_boost,
     purchase_fast_start,
     start_game,
+    sync_boost_selection,
     using_cookie_relay,
     using_fast_start,
 )
@@ -170,6 +173,9 @@ class BotEngine:
         self.fast_start_min_stock = 10
         self.use_cookie_relay = False
         self.cookie_relay_min_stock = 10
+        self.hp_extension_enabled = False
+        self.power_jelly_enabled = False
+        self.double_xp_enabled = False
         self.use_desired_random_boost = False
         self.desired_boost_id = "double_coins"
         self.detect_relic = True
@@ -186,6 +192,9 @@ class BotEngine:
                 self.fast_start_min_stock = int(_saved.get("fast_start_min_stock", self.fast_start_min_stock))
                 self.use_cookie_relay = bool(_saved.get("use_cookie_relay", self.use_cookie_relay))
                 self.cookie_relay_min_stock = int(_saved.get("cookie_relay_min_stock", self.cookie_relay_min_stock))
+                self.hp_extension_enabled = bool(_saved.get("hp_extension_enabled", self.hp_extension_enabled))
+                self.power_jelly_enabled = bool(_saved.get("power_jelly_enabled", self.power_jelly_enabled))
+                self.double_xp_enabled = bool(_saved.get("double_xp_enabled", self.double_xp_enabled))
                 self.use_desired_random_boost = bool(_saved.get("use_desired_random_boost", self.use_desired_random_boost))
                 self.desired_boost_id = _saved.get("desired_boost_id", self.desired_boost_id)
                 self.detect_relic = bool(_saved.get("detect_relic", self.detect_relic))
@@ -284,7 +293,14 @@ class BotEngine:
     def start(self, user_config: Dict[str, Any]):
         with self.lock:
             if self.is_running:
-                return {"success": False, "message": f"[{self.instance_id}] Bot is already running"}
+                # ถ้า thread ตายไปแล้วแต่ flag ค้าง ให้ reset แทนที่จะ error ค้าง
+                if self.thread and self.thread.is_alive():
+                    return {"success": False, "message": f"[{self.instance_id}] Bot is already running"}
+                else:
+                    self.is_running = False
+                    self.should_stop = False
+                    self.current_stage = "IDLE"
+                    self.log("⚠️ is_running ค้างแต่ thread ตายแล้ว — reset แล้วเริ่มใหม่", "warning")
 
             # Device identity: defensive resolution — never allow None to overwrite
             # Priority: host > device_ip > existing; port > device_port > existing
@@ -336,6 +352,12 @@ class BotEngine:
             if "cookie_relay_min_stock" in user_config:
                 try: self.cookie_relay_min_stock = int(user_config["cookie_relay_min_stock"])
                 except: pass
+            if "hp_extension_enabled" in user_config:
+                self.hp_extension_enabled = bool(user_config["hp_extension_enabled"])
+            if "power_jelly_enabled" in user_config:
+                self.power_jelly_enabled = bool(user_config["power_jelly_enabled"])
+            if "double_xp_enabled" in user_config:
+                self.double_xp_enabled = bool(user_config["double_xp_enabled"])
             if "use_desired_random_boost" in user_config:
                 self.use_desired_random_boost = bool(user_config["use_desired_random_boost"])
             if "desired_boost_id" in user_config:
@@ -361,6 +383,9 @@ class BotEngine:
                     "fast_start_min_stock": self.fast_start_min_stock,
                     "use_cookie_relay": self.use_cookie_relay,
                     "cookie_relay_min_stock": self.cookie_relay_min_stock,
+                    "hp_extension_enabled": self.hp_extension_enabled,
+                    "power_jelly_enabled": self.power_jelly_enabled,
+                    "double_xp_enabled": self.double_xp_enabled,
                     "use_desired_random_boost": self.use_desired_random_boost,
                     "desired_boost_id": self.desired_boost_id,
                     "detect_relic": self.detect_relic,
@@ -394,6 +419,9 @@ class BotEngine:
                 "fast_start_min_stock": self.fast_start_min_stock,
                 "use_cookie_relay": self.use_cookie_relay,
                 "cookie_relay_min_stock": self.cookie_relay_min_stock,
+                "hp_extension_enabled": self.hp_extension_enabled,
+                "power_jelly_enabled": self.power_jelly_enabled,
+                "double_xp_enabled": self.double_xp_enabled,
                 "use_desired_random_boost": self.use_desired_random_boost,
                 "desired_boost_id": self.desired_boost_id,
                 "detect_relic": self.detect_relic,
@@ -420,6 +448,12 @@ class BotEngine:
                 try:
                     self.cookie_relay_min_stock = int(user_config["cookie_relay_min_stock"])
                 except: pass
+            if "hp_extension_enabled" in user_config:
+                self.hp_extension_enabled = bool(user_config["hp_extension_enabled"])
+            if "power_jelly_enabled" in user_config:
+                self.power_jelly_enabled = bool(user_config["power_jelly_enabled"])
+            if "double_xp_enabled" in user_config:
+                self.double_xp_enabled = bool(user_config["double_xp_enabled"])
             if "use_desired_random_boost" in user_config:
                 self.use_desired_random_boost = bool(user_config["use_desired_random_boost"])
             if "desired_boost_id" in user_config:
@@ -446,6 +480,9 @@ class BotEngine:
                 "fast_start_min_stock": self.fast_start_min_stock,
                 "use_cookie_relay": self.use_cookie_relay,
                 "cookie_relay_min_stock": self.cookie_relay_min_stock,
+                "hp_extension_enabled": self.hp_extension_enabled,
+                "power_jelly_enabled": self.power_jelly_enabled,
+                "double_xp_enabled": self.double_xp_enabled,
                 "use_desired_random_boost": self.use_desired_random_boost,
                 "desired_boost_id": self.desired_boost_id,
                 "detect_relic": self.detect_relic,
@@ -462,6 +499,9 @@ class BotEngine:
             self.log(
                 f"⚙️ บันทึกตั้งค่า [{self.instance_id}]: FastStart={'ON' if self.use_fast_start else 'OFF'}({self.fast_start_min_stock}) "
                 f"| Relay={'ON' if self.use_cookie_relay else 'OFF'}({self.cookie_relay_min_stock}) "
+                f"| HP={'ON' if self.hp_extension_enabled else 'OFF'} "
+                f"| Jelly={'ON' if self.power_jelly_enabled else 'OFF'} "
+                f"| DXP={'ON' if self.double_xp_enabled else 'OFF'} "
                 f"| Boost={'ON' if self.use_desired_random_boost else 'OFF'}({self.desired_boost_id})",
                 "info",
             )
@@ -484,6 +524,12 @@ class BotEngine:
                 self.use_cookie_relay = bool(user_config["use_cookie_relay"])
             if "cookie_relay_min_stock" in user_config:
                 self.cookie_relay_min_stock = int(user_config["cookie_relay_min_stock"])
+            if "hp_extension_enabled" in user_config:
+                self.hp_extension_enabled = bool(user_config["hp_extension_enabled"])
+            if "power_jelly_enabled" in user_config:
+                self.power_jelly_enabled = bool(user_config["power_jelly_enabled"])
+            if "double_xp_enabled" in user_config:
+                self.double_xp_enabled = bool(user_config["double_xp_enabled"])
             if "use_desired_random_boost" in user_config:
                 self.use_desired_random_boost = bool(user_config["use_desired_random_boost"])
             if "desired_boost_id" in user_config:
@@ -507,6 +553,9 @@ class BotEngine:
                     "fast_start_min_stock": self.fast_start_min_stock,
                     "use_cookie_relay": self.use_cookie_relay,
                     "cookie_relay_min_stock": self.cookie_relay_min_stock,
+                    "hp_extension_enabled": self.hp_extension_enabled,
+                    "power_jelly_enabled": self.power_jelly_enabled,
+                    "double_xp_enabled": self.double_xp_enabled,
                     "use_desired_random_boost": self.use_desired_random_boost,
                     "desired_boost_id": self.desired_boost_id,
                     "detect_relic": self.detect_relic,
@@ -534,26 +583,35 @@ class BotEngine:
             self.current_stage = "STOPPING"
             self.log("🛑 Stopping bot...", "warning")
 
-        if self.thread and self.thread.is_alive():
-            self.thread.join(timeout=3.0)
-
-        with self.lock:
-            self.is_running = False
-            self.current_stage = "IDLE"
-            self.log("⏹️ Bot stopped", "info")
-            uptime_sec = int(time.time() - self.start_time) if self.start_time else 0
-            hours, remainder = divmod(uptime_sec, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            uptime_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-            discord_notifier.send_bot_stop(
-                uptime=uptime_str,
-                rounds_played=self.rounds_played,
-                total_boxes=self.mystery_boxes,
-                coins_earned=self.session_coins_earned,
-                session_xp=self.session_xp_earned,
-            )
-
-        return {"success": True, "message": f"[{self.instance_id}] Bot stopped successfully"}
+        # ไม่ block API นาน — ให้ thread หยุดเองใน background (เช็ค should_stop ทุก 0.1วิ)
+        # UI จะเห็น STOPPING แล้วค่อย IDLE เมื่อ thread จบจริงใน _run_loop finally
+        def _wait_stop():
+            if self.thread and self.thread.is_alive():
+                self.thread.join(timeout=15.0)
+                if self.thread.is_alive():
+                    self.log("⚠️ Thread ยังไม่หยุดหลัง 15วิ — จะหยุดเมื่อจบ action ปัจจุบัน", "warning")
+            with self.lock:
+                if self.is_running: # ยังไม่ถูก _run_loop ปิดให้
+                    self.is_running = False
+                    self.current_stage = "IDLE"
+                    self.log("⏹️ Bot stopped (forced)", "info")
+                    uptime_sec = int(time.time() - self.start_time) if self.start_time else 0
+                    hours, remainder = divmod(uptime_sec, 3600)
+                    minutes, seconds = divmod(remainder, 60)
+                    uptime_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                    try:
+                        discord_notifier.send_bot_stop(
+                            uptime=uptime_str,
+                            rounds_played=self.rounds_played,
+                            total_boxes=self.mystery_boxes,
+                            coins_earned=self.session_coins_earned,
+                            session_xp=self.session_xp_earned,
+                        )
+                    except Exception:
+                        pass
+        import threading
+        threading.Thread(target=_wait_stop, daemon=True).start()
+        return {"success": True, "message": f"[{self.instance_id}] Stopping... (จะหยุดเมื่อจบ action ปัจจุบัน ไม่เกิน 15วิ)"}
 
     def reset_stats(self):
         self.rounds_played = 0
@@ -608,6 +666,9 @@ class BotEngine:
             "fast_start_min_stock": self.fast_start_min_stock,
             "use_cookie_relay": self.use_cookie_relay,
             "cookie_relay_min_stock": self.cookie_relay_min_stock,
+            "hp_extension_enabled": self.hp_extension_enabled,
+            "power_jelly_enabled": self.power_jelly_enabled,
+            "double_xp_enabled": self.double_xp_enabled,
             "use_desired_random_boost": self.use_desired_random_boost,
             "desired_boost_id": self.desired_boost_id,
             "detect_relic": self.detect_relic,
@@ -660,9 +721,11 @@ class BotEngine:
 
             self.log("🏁 Main loop started. Waiting for game screen...")
 
+            emu_check_jitter = random.uniform(8, 12)
             while not self.should_stop:
-                if time.time() - last_emu_check_time >= EMU_HOME_CHECK_INTERVAL:
+                if time.time() - last_emu_check_time >= emu_check_jitter:
                     last_emu_check_time = time.time()
+                    emu_check_jitter = random.uniform(8, 12)
                     try:
                         running = device_is_app_running(self.device_ip, self.device_port, GAME_PACKAGE)
                     except Exception:
@@ -703,7 +766,8 @@ class BotEngine:
                     self.current_stage = f"{detection_group} (Searching...)"
 
                 if stage == last_stage:
-                    fast_sleep = random.uniform(0.04, 0.08) if detection_group == "IN_GAME" else random.uniform(0.08, 0.14)
+                    # throttle polling 100ms+ กันโดนจับ adb ถี่
+                    fast_sleep = random.uniform(0.09, 0.18) if detection_group == "IN_GAME" else random.uniform(0.11, 0.22)
                     if self.interruptible_sleep(fast_sleep):
                         break
                     continue
@@ -831,6 +895,16 @@ class BotEngine:
                             self.log(f"🍪 Cookie Relay ในคลังมี {stock_cr} ชิ้น (มากกว่าเกณฑ์ {self.cookie_relay_min_stock}) -> ข้ามการซื้อเพื่อประหยัดเหรียญ", "info")
                     else:
                         self.log("🍪 Cookie Relay ปิดอยู่ (OFF) — ข้ามการเช็คซื้อในหน้า PURCHASE_ITEM", "info")
+
+                    # Boost Selection (Buy some Boosts!) — sync checked state to web settings
+                    self.log(f"✨ Boost Selection sync: HP={'ON' if self.hp_extension_enabled else 'OFF'} "
+                             f"| Jelly={'ON' if self.power_jelly_enabled else 'OFF'} "
+                             f"| DXP={'ON' if self.double_xp_enabled else 'OFF'}", "info")
+                    try:
+                        sync_boost_selection(self.hp_extension_enabled, self.power_jelly_enabled, self.double_xp_enabled,
+                                             self.device_ip, self.device_port)
+                    except Exception as e:
+                        self.log(f"⚠️ Boost Selection sync failed: {e}", "warning")
 
                     if self.use_desired_random_boost and desired_boost_template:
                         self.log(f"🎲 Rolling boost for: {desired_boost_name}...")
@@ -1167,7 +1241,8 @@ class BotEngine:
                     is_first_game = True
 
                 elif stage == "EMU_HOME":
-                    self.log("🏠 Detected Stage: EMU_HOME — tapping CookieRun Classic at (537,235)...", "warning")
+                    from config import EMU_HOME_TAP
+                    self.log(f"🏠 Detected Stage: EMU_HOME — tapping CookieRun Classic at {EMU_HOME_TAP}...", "warning")
                     handle_emu_home(self.device_ip, self.device_port)
                     detection_group = "PRE_GAME"
                     last_stage = None
@@ -1176,6 +1251,17 @@ class BotEngine:
                 elif stage == "INACTIVE":
                     self.log("💤 Detected Stage: INACTIVE — reconnecting...", "warning")
                     handle_inactive(self.device_ip, self.device_port)
+                    last_stage = None
+
+                elif stage == "FRIEND_INFO_POPUP":
+                    self.log("👥 Detected Stage: FRIEND_INFO_POPUP — closing popup...", "stage")
+                    close_friend_info_popup(self.device_ip, self.device_port)
+                    last_stage = None
+                    # ไม่เปลี่ยน detection_group — ให้วนกลับไปตรวจ stage เดิมต่อทันที
+
+                elif stage == "ANR_DIALOG":
+                    self.log("⚠️ Detected Stage: ANR_DIALOG — tapping Wait...", "warning")
+                    handle_anr(self.device_ip, self.device_port)
                     last_stage = None
 
                 loop_sleep = random.uniform(0.10, 0.16) if detection_group == "IN_GAME" else random.uniform(0.20, 0.32)

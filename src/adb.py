@@ -97,25 +97,38 @@ def device_tap(ip: str, port: int, x: int, y: int):
     )
 
 
-def safe_device_tap(ip: str, port: int, x: int, y: int):
-    # Human-like jitter: 70% จะอยู่ใกล้กลาง +-8px, 30% ออกห่าง +-15px, ยังกดโดนชัวร์ไม่เพี้ยน
-    # ใช้ Gaussian คร่าวๆ แบบ clamp เพื่อไม่ให้หลุดปุ่ม
-    dx = int(random.gauss(0, 5))
-    dy = int(random.gauss(0, 5))
-    dx = max(-15, min(15, dx))
-    dy = max(-15, min(15, dy))
-    # 5% มี outlier เล็กน้อยให้ดูเป็นคนจริง แต่ยัง clamp ไม่ให้หลุด
+def safe_device_tap(ip: str, port: int, x: int, y: int, duration: int = None):
+    # Human-like jitter: gauss(0,9) ±25px ทั่วปุ่ม (เดิม ±15 แคบไป) + 5% outlier ±30
+    dx = int(random.gauss(0, 9))
+    dy = int(random.gauss(0, 9))
+    dx = max(-25, min(25, dx))
+    dy = max(-25, min(25, dy))
     if random.random() < 0.05:
-        dx = random.randint(-18, 18)
-        dy = random.randint(-18, 18)
-        dx = max(-18, min(18, dx))
-        dy = max(-18, min(18, dy))
-    # clamp ให้อยู่ในจอ 1280x720 เสมอ กันเพี้ยนกดไม่โดน
+        dx = random.randint(-30, 30)
+        dy = random.randint(-30, 30)
+        dx = max(-30, min(30, dx))
+        dy = max(-30, min(30, dy))
+    # 2% miss-tap เล็กๆ ก่อนกดจริง (เหมือนคนจิ้มพลาดแล้วแก้)
+    if random.random() < 0.02:
+        miss_x = max(0, min(1280, x + random.randint(-45, 45)))
+        miss_y = max(0, min(720, y + random.randint(-45, 45)))
+        adb_miss = get_adb_path()
+        _dur_miss = random.randint(65, 120)
+        _run_cmd(
+            [adb_miss, "-s", f"{ip}:{port}", "shell", "input", "swipe",
+             str(miss_x), str(miss_y), str(miss_x), str(miss_y), str(_dur_miss)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        )
+        time.sleep(random.uniform(0.12, 0.28))
     jitter_x = max(0, min(1280, x + dx))
     jitter_y = max(0, min(720, y + dy))
+    # ใช้ swipe มี duration แทน tap 0ms — กันจับ synthetic 0ms
+    if duration is None:
+        duration = random.randint(70, 180)
     adb = get_adb_path()
     _run_cmd(
-        [adb, "-s", f"{ip}:{port}", "shell", "input", "tap", str(jitter_x), str(jitter_y)],
+        [adb, "-s", f"{ip}:{port}", "shell", "input", "swipe",
+         str(jitter_x), str(jitter_y), str(jitter_x), str(jitter_y), str(duration)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -123,8 +136,12 @@ def safe_device_tap(ip: str, port: int, x: int, y: int):
 
 
 def safe_device_scroll(ip: str, port: int, x: int, y: int, direction: str = "up", distance: int = 500, duration: int = 300):
-    jx = x + int(max(-15, min(15, random.gauss(0, 5))))
-    jy = y + int(max(-15, min(15, random.gauss(0, 5))))
+    # เพิ่ม Bezier-like jitter + duration variance
+    jx = x + int(max(-25, min(25, random.gauss(0, 9))))
+    jy = y + int(max(-25, min(25, random.gauss(0, 9))))
+    # duration แบบคน: ปัดให้ไม่ตายตัว
+    if duration in (300, 500):
+        duration = random.randint(220, 380)
     direction_map = {
         "up":    (jx, jy + distance, jx, jy - distance),
         "down":  (jx, jy - distance, jx, jy + distance),
