@@ -30,7 +30,7 @@
   "device_1": {
     "use_fast_start": false,
     "fast_start_min_stock": 10,
-    "use_cookie_relay": false,
+    "use_cookie_relay": true,
     "cookie_relay_min_stock": 10,
     "hp_extension_enabled": true,
     "power_jelly_enabled": true,

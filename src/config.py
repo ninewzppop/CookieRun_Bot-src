@@ -29,8 +29,11 @@ STAGE_THRESHOLDS = {
 SESSION_RESET_INTERVAL = (5400, 10800)  # 1.5-3 hours
 GAME_PACKAGE = "com.devsisters.crg"
 
-# EMU HOME (หลุดมาหน้า Emu กดไอคอนเข้าเกมใหม่) — วัดจริงจาก ADB 1280×720 ที่ /tmp/emu.png → center 628,341
-EMU_HOME_TAP = (628, 341)
+# EMU HOME (หลุดมาหน้า Emu กดไอคอนเข้าเกมใหม่) — วัดจริงจาก ADB 1280×720 เมื่อ 2026-08-31:
+#   /tmp/emu_live.png → ไอคอน CookieRun อยู่ที่ (538,233) (color-blob verify_emu_home.py ยืนยัน)
+#   ⚠️ ค่าเก่า (628,341) วัดผิดจาก /tmp/emu.png ซึ่งไม่ใช่หน้า launcher (เป็น splash โลโก้กลางจอ)
+#   ตรวจใหม่ได้ทุกเมื่อ: python3 verify_emu_home.py
+EMU_HOME_TAP = (538, 233)
 EMU_HOME_CHECK_INTERVAL = 10  # base — ใช้ jitter 8-12 วิใน bot_engine (กันจับ interval ตายตัว)
 
 # -------------------
