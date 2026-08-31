@@ -123,8 +123,9 @@ def safe_device_tap(ip: str, port: int, x: int, y: int, duration: int = None):
     jitter_x = max(0, min(1280, x + dx))
     jitter_y = max(0, min(720, y + dy))
     # ใช้ swipe มี duration แทน tap 0ms — กันจับ synthetic 0ms
+    # Jump/Skill: Hold 60-120ms ตามวิจัย CookieRun (Point-touch ซ้ายล่าง)
     if duration is None:
-        duration = random.randint(70, 180)
+        duration = random.randint(60, 120)
     adb = get_adb_path()
     _run_cmd(
         [adb, "-s", f"{ip}:{port}", "shell", "input", "swipe",

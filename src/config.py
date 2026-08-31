@@ -52,9 +52,9 @@ SLIDE_BUTTON = (1115, 575)
 HUMANLIKE_PLAY_DEFAULTS = {
     "jump_single_interval": 0.5,       # กระโดดเอง — ทุกกี่วิ
     "jump_double_interval": 1.1,       # กระโดดเบิ้ล (2 ครั้งติด) — ทุกกี่วิ
-    "jump_double_gap": 0.4,            # ระยะห่างระหว่าง 2 ครั้งของ jump เบิ้ล
+    "jump_double_gap": 0.15,           # ระยะห่างระหว่าง 2 ครั้งของ jump เบิ้ล — CookieRun Double 100-200ms
     "slide_interval": 1.3,             # สไลด์เอง (กดค้าง) — ทุกกี่วิ
-    "slide_hold_duration": 0.8,        # สไลด์กดค้างนานเท่าไหร่
+    "slide_hold_duration": 0.8,        # สไลด์กดค้างนานเท่าไหร่ — จะสุ่ม 300-1500ms แบบ Flat-press ขวาล่างตอนกดจริง
 }
 
 # -------------------

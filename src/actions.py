@@ -100,7 +100,7 @@ def start_game(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print(f"🏁 Starting the game on {ip}:{port}...")
     safe_device_tap(ip, port, START_BUTTON[0], START_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def play_game(device_ip=None, device_port=None):
@@ -108,14 +108,14 @@ def play_game(device_ip=None, device_port=None):
     print(f"🎮 Playing the game on {ip}:{port}...")
     safe_device_tap(ip, port, PLAY_BUTTON[0], PLAY_BUTTON[1])
     # รอ screen โหลด (เข้าหน้าจอเริ่มเกม) ก่อนตรวจจับ GAME_START — กันกดเร็วเกินเกมไม่ทัน
-    _human_sleep(1.5, 2.5)
+    _human_sleep(0.5, 3.0)
 
 
 def purchase_fast_start(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("🛒 Purchasing Fast Start...")
     safe_device_tap(ip, port, FAST_START_ITEM[0], FAST_START_ITEM[1])
-    _human_sleep(1.0, 1.8)
+    _human_sleep(0.3, 2.5)
     # TODO: ต้องการ template ปุ่ม Buy สีฟ้า (PURCHASE_BUTTON) เพื่อเช็คด้วย detect_templates()
     # ปัจจุบันยังไม่มีไฟล์ PURCHASE_BUTTON_TEMPLATE ใน templates/ จึงใช้ sleep รอ popup แทน
     # ถ้ามีภาพจริงของปุ่ม Buy ให้แจ้ง จะสร้าง template แล้วแก้ loop เป็น:
@@ -124,15 +124,15 @@ def purchase_fast_start(device_ip=None, device_port=None):
     #     if chk is not None and detect_templates(chk, PURCHASE_BUTTON_TEMPLATE, PURCHASE_BUTTON_REGION):
     #         break
     #     time.sleep(0.3)
-    time.sleep(0.9)
-    time.sleep(random.uniform(1, 2))
+    time.sleep(random.uniform(0.5, 1.5))
+    time.sleep(random.uniform(0.5, 2.5))
 
 
 def purchase_cookie_relay(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("🛒 Purchasing Cookie Relay...")
     safe_device_tap(ip, port, COOKIE_RELAY_ITEM[0], COOKIE_RELAY_ITEM[1])
-    _human_sleep(1.0, 1.8)
+    _human_sleep(0.3, 2.5)
     # TODO: ต้องการ template ปุ่ม Buy สีฟ้า (PURCHASE_BUTTON) เพื่อเช็คด้วย detect_templates()
     # ปัจจุบันยังไม่มีไฟล์ PURCHASE_BUTTON_TEMPLATE ใน templates/ จึงใช้ sleep รอ popup แทน
     # ถ้ามีภาพจริงของปุ่ม Buy ให้แจ้ง จะสร้าง template แล้วแก้ loop เป็น:
@@ -141,26 +141,26 @@ def purchase_cookie_relay(device_ip=None, device_port=None):
     #     if chk is not None and detect_templates(chk, PURCHASE_BUTTON_TEMPLATE, PURCHASE_BUTTON_REGION):
     #         break
     #     time.sleep(0.3)
-    time.sleep(0.9)
-    time.sleep(random.uniform(1, 2))
+    time.sleep(random.uniform(0.5, 1.5))
+    time.sleep(random.uniform(0.5, 2.5))
 
 
 def purchase_random_boost(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("🛒 Purchasing Random Boost...")
     safe_device_tap(ip, port, RANDOM_BOOST_ITEM[0], RANDOM_BOOST_ITEM[1])
-    _human_sleep(1.5, 2.5)
+    _human_sleep(0.5, 3.0)
     safe_device_tap(ip, port, PURCHASE_BUTTON[0], PURCHASE_BUTTON[1])
-    time.sleep(random.uniform(2.0, 3.0))
+    time.sleep(random.uniform(0.8, 3.5))
 
 
 def purchase_desired_random_boost(desired_template, desired_name, device_ip=None, device_port=None, desired_boost_id: str = None):
     ip, port = _resolve_device(device_ip, device_port)
     print("🛒 Purchasing Desired Random Boost...")
     safe_device_tap(ip, port, RANDOM_BOOST_ITEM[0], RANDOM_BOOST_ITEM[1])
-    _human_sleep(1.5, 2.5)  # รอ popup โผล่ก่อนกดปุ่มถัดไป
+    _human_sleep(0.5, 3.0)  # รอ popup โผล่ก่อนกดปุ่มถัดไป
     safe_device_tap(ip, port, MULTI_PURCHASE_BUTTON[0], MULTI_PURCHASE_BUTTON[1])
-    time.sleep(random.uniform(2.0, 3.0))  # รอ popup Pick desired Boosts! โหลดเสร็จ
+    time.sleep(random.uniform(0.8, 3.5))  # รอ popup Pick desired Boosts! โหลดเสร็จ
     # --- ขั้นตอนที่เคยขาด: ติ๊กบัฟใน popup ให้ตรงกับที่เลือกในเว็บ ก่อนกด Multi-Buy ---
     # ถ้าไม่ติ๊ก, ระบบจะสุ่มตาม default (Double Coins) ทำให้เปลี่ยน id แล้วเหมือนไม่เปลี่ยน
     _name_to_id = {
@@ -191,7 +191,7 @@ def purchase_desired_random_boost(desired_template, desired_name, device_ip=None
     else:
         print(f"⚠️ ไม่พบ PICK_BOOST_TAP_POS สำหรับ '{desired_boost_id}'/'{desired_name}' — ข้ามการติ๊ก")
     safe_device_tap(ip, port, MULTI_BUY_BUTTON[0], MULTI_BUY_BUTTON[1])
-    _human_sleep(1.5, 2.5)  # รอ animation ซื้อเสร็จ
+    _human_sleep(0.5, 3.0)  # รอ animation ซื้อเสร็จ
     print(f"🔍 Waiting for desired boost to be detected: {desired_name}...")
     timeout = 30
     start_time = time.time()
@@ -212,7 +212,7 @@ def using_fast_start(device_ip=None, device_port=None):
     print(f"⚡ Using Fast Start at {FAST_START_USE_BUTTON} (jitter +-15) on {ip}:{port}...")
     # กดครั้งเดียว — ถ้าไม่ติด loop ตรวจจับ GAME_START จะเรียกใหม่เอง (กันกดเบิ้ล)
     safe_device_tap(ip, port, FAST_START_USE_BUTTON[0], FAST_START_USE_BUTTON[1])
-    _human_sleep(1.2, 1.8)
+    _human_sleep(0.3, 2.5)
 
 
 def using_cookie_relay(device_ip=None, device_port=None):
@@ -220,7 +220,7 @@ def using_cookie_relay(device_ip=None, device_port=None):
     print(f"🍪 Using Cookie Relay at {COOKIE_RELAY_USE_BUTTON} (jitter +-15) on {ip}:{port}...")
     # กดครั้งเดียว — ถ้าไม่ติด loop ตรวจจับ GAME_RELAY จะเรียกใหม่เอง (กันกดเบิ้ล)
     safe_device_tap(ip, port, COOKIE_RELAY_USE_BUTTON[0], COOKIE_RELAY_USE_BUTTON[1])
-    _human_sleep(1.2, 1.8)
+    _human_sleep(0.3, 2.5)
 
 
 def complete_finish(device_ip=None, device_port=None):
@@ -237,7 +237,7 @@ def complete_finish(device_ip=None, device_port=None):
     except Exception:
         pass
     safe_device_tap(ip, port, x, y)
-    time.sleep(random.uniform(1.8, 2.4))
+    time.sleep(random.uniform(0.3, 3.0))
 
 
 def humanlike_jump(device_ip=None, device_port=None):
@@ -265,102 +265,102 @@ def accept_mystery_box(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("🎁 Opening Mystery Boxes...")
     safe_device_tap(ip, port, ACCEPT_MYSTERY_BOX_BUTTON[0], ACCEPT_MYSTERY_BOX_BUTTON[1])
-    time.sleep(random.uniform(1.8, 2.4))
+    time.sleep(random.uniform(0.3, 3.0))
     safe_device_tap(ip, port, ACCEPT_MYSTERY_BOX_BUTTON[0], ACCEPT_MYSTERY_BOX_BUTTON[1])
-    time.sleep(random.uniform(1.0, 1.5))
+    time.sleep(random.uniform(0.3, 2.5))
 
 
 def accept_congratulations(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("🎉 Accepting Congratulations...")
     safe_device_tap(ip, port, ACCEPT_CONGRATULATIONS_BUTTON[0], ACCEPT_CONGRATULATIONS_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def accept_level_up(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("⬆️ Accepting Level Up...")
     safe_device_tap(ip, port, ACCEPT_LEVEL_UP_BUTTON[0], ACCEPT_LEVEL_UP_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def accept_daily_checkin(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("📅 Accepting Daily Check-in...")
     safe_device_tap(ip, port, ACCEPT_DAILY_CHECKIN_BUTTON[0], ACCEPT_DAILY_CHECKIN_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def accept_daily_checkin_boost_set(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("📅 Accepting Daily Check-in Boost Set...")
     safe_device_tap(ip, port, ACCEPT_DAILY_CHECKIN_BOOST_SET_BUTTON[0], ACCEPT_DAILY_CHECKIN_BOOST_SET_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def accept_daily_treasure(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("💎 Accepting Daily Treasure...")
     safe_device_tap(ip, port, ACCEPT_DAILY_TREASURE_BUTTON[0], ACCEPT_DAILY_TREASURE_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def accept_daily_new(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("📰 Accepting Daily New...")
     safe_device_tap(ip, port, ACCEPT_DAILY_NEW_BUTTON[0], ACCEPT_DAILY_NEW_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def accept_enter_league(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("🏆 Accepting Enter League...")
     safe_device_tap(ip, port, ACCEPT_ENTER_LEAGUE_BUTTON[0], ACCEPT_ENTER_LEAGUE_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def accept_league_results(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("🏆 Accepting League Results...")
     safe_device_tap(ip, port, ACCEPT_LEAGUE_RESULTS_BUTTON[0], ACCEPT_LEAGUE_RESULTS_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def accept_previous_rank_results(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("🏆 Accepting Previous Rank Results...")
     safe_device_tap(ip, port, ACCEPT_PREVIOUS_RANK_RESULTS_BUTTON[0], ACCEPT_PREVIOUS_RANK_RESULTS_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def accept_too_many_treasures(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("💎 Accepting Too Many Treasures...")
     safe_device_tap(ip, port, ACCEPT_TOO_MANY_TREASURES_BUTTON[0], ACCEPT_TOO_MANY_TREASURES_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def accept_overtake_break_score(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("🏆 Accepting Overtake Break Score...")
     safe_device_tap(ip, port, ACCEPT_OVERTAKE_BREAK_SCORE_BUTTON[0], ACCEPT_OVERTAKE_BREAK_SCORE_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def open_relic_complete(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("🏺 Opening Relic Complete...")
     safe_device_tap(ip, port, RELIC_COMPLETE_BUTTON[0], RELIC_COMPLETE_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def accept_relic_claim(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("🏺 Accepting Relic Claim...")
     safe_device_tap(ip, port, RELIC_CLAIM_BUTTON[0], RELIC_CLAIM_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
     safe_device_tap(ip, port, RELIC_CLOSE_BUTTON[0], RELIC_CLOSE_BUTTON[1])
-    time.sleep(random.uniform(10, 15))
+    time.sleep(random.uniform(5, 20))
 
 
 def handle_anti_bot(screen, device_ip=None, device_port=None):
@@ -382,24 +382,24 @@ def handle_anti_bot(screen, device_ip=None, device_port=None):
         ty = random.randint(cy + margin, cy + ANTI_BOT_CARD_HEIGHT - margin)
         print(f"  👆 Tapping Card {idx + 1} at ({tx}, {ty})")
         safe_device_tap(ip, port, tx, ty)
-        time.sleep(random.uniform(10, 15))
+        time.sleep(random.uniform(5, 20))
 
     print("✅ Anti-Bot captcha solved!")
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def handle_connection_lost(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print(f"🔌 Handling Connection Lost on {ip}:{port}...")
     safe_device_tap(ip, port, CONNECTION_LOST_RELOAD_BUTTON[0], CONNECTION_LOST_RELOAD_BUTTON[1])
-    time.sleep(random.uniform(10, 15))
+    time.sleep(random.uniform(5, 20))
 
 
 def handle_inactive(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print(f"💤 Handling Inactive state on {ip}:{port}...")
     safe_device_tap(ip, port, INACTIVE_RELOAD_BUTTON[0], INACTIVE_RELOAD_BUTTON[1])
-    time.sleep(random.uniform(10, 15))
+    time.sleep(random.uniform(5, 20))
 
 
 def handle_send_friend_life(device_ip=None, device_port=None):
@@ -426,13 +426,13 @@ def handle_send_friend_life(device_ip=None, device_port=None):
             for x, y, w, h in send_life_button_coords:
                 print("💌 Sending life to friend...")
                 safe_device_tap(ip, port, x + w // 2, y + h // 2)
-                _human_sleep(0.8, 1.4)
+                _human_sleep(0.2, 2.0)
                 print("💌 Confirming send life...")
                 safe_device_tap(ip, port, CONFIRM_SEND_LIFE_BUTTON[0], CONFIRM_SEND_LIFE_BUTTON[1])
-                _human_sleep(0.8, 1.4)
+                _human_sleep(0.2, 2.0)
                 print("💌 Closing send life dialog...")
                 safe_device_tap(ip, port, CLOSE_SEND_LIFE_DIALOG_BUTTON[0], CLOSE_SEND_LIFE_DIALOG_BUTTON[1])
-                _human_sleep(0.8, 1.4)
+                _human_sleep(0.2, 2.0)
         else:
             no_button_scroll_count += 1
             if no_button_scroll_count >= 30:
@@ -446,11 +446,11 @@ def handle_send_friend_life(device_ip=None, device_port=None):
 def handle_quick_receive_and_send_lives(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print(f"✉️ Handling Quick Receive and Send Lives on {ip}:{port}...")
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
     safe_device_tap(ip, port, MAIL_BOX_BUTTON[0], MAIL_BOX_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
     safe_device_tap(ip, port, MAIL_BOX_LIVES_TAB_BUTTON[0], MAIL_BOX_LIVES_TAB_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
     screen = device_capture_screen(ip, port)
     if detect_templates(screen, NO_LIVES_TO_RECEIVE_TEMPLATE, NO_LIVES_TO_RECEIVE_REGION):
         print("✉️ No lives to receive. Proceeding to send lives...")
@@ -458,22 +458,22 @@ def handle_quick_receive_and_send_lives(device_ip=None, device_port=None):
         return
     print("✉️ Receiving all lives...")
     safe_device_tap(ip, port, QUICK_RECEIVE_AND_SEND_LIVES_BUTTON[0], QUICK_RECEIVE_AND_SEND_LIVES_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
     while True:
         screen = device_capture_screen(ip, port)
         all_lives_received_and_sent = detect_templates(screen, ALL_LIVES_RECEIVED_AND_SENT_TEMPLATE, ALL_LIVES_RECEIVED_AND_SENT_REGION)
         if all_lives_received_and_sent:
             print("✉️ All lives received and sent. Done!")
             safe_device_tap(ip, port, ACCEPT_ALL_LIVES_RECEIVED_AND_SENT_BUTTON[0], ACCEPT_ALL_LIVES_RECEIVED_AND_SENT_BUTTON[1])
-            _human_sleep(0.8, 1.4)
+            _human_sleep(0.2, 2.0)
             safe_device_tap(ip, port, MAIL_BOX_CLOSE_BUTTON[0], MAIL_BOX_CLOSE_BUTTON[1])
-            _human_sleep(0.8, 1.4)
+            _human_sleep(0.2, 2.0)
             break
         confirm_send_life_button_coords = detect_templates(screen, CONFIRM_SEND_LIFE_TEMPLATE, CONFIRM_SEND_LIFE_REGION)
         if confirm_send_life_button_coords:
             print("✉️ Sending lives to friends...")
             safe_device_tap(ip, port, CONFIRM_SEND_LIFE_BUTTON[0], CONFIRM_SEND_LIFE_BUTTON[1])
-            _human_sleep(0.8, 1.4)
+            _human_sleep(0.2, 2.0)
     print("✉️ Quick Receive and Send Lives completed.")
 
 
@@ -482,7 +482,7 @@ def close_announcement_popup(device_ip=None, device_port=None):
     pos = _find_close_x_pos(ip, port) or ANNOUNCEMENT_CLOSE_BUTTON
     print(f"❌ Closing generic announcement popup at {pos} on {ip}:{port}...")
     safe_device_tap(ip, port, pos[0], pos[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def close_friend_info_popup(device_ip=None, device_port=None):
@@ -491,7 +491,7 @@ def close_friend_info_popup(device_ip=None, device_port=None):
     # ใช้ tap แบบแม่นยำ + retry ถ้ายังไม่ปิด (popup บางทีต้องกด 2 ครั้งหรือดีเลย์นาน)
     for attempt in range(2):
         safe_device_tap(ip, port, CLOSE_FRIEND_INFO_POPUP_BUTTON[0], CLOSE_FRIEND_INFO_POPUP_BUTTON[1])
-        _human_sleep(0.8, 1.4)
+        _human_sleep(0.2, 2.0)
         try:
             chk = device_capture_screen(ip, port)
             if detect_stage(chk, ["FRIEND_INFO_POPUP"]) != "FRIEND_INFO_POPUP":
@@ -522,8 +522,8 @@ def close_announcement_dialog(device_ip=None, device_port=None):
             break
         print(f"🖱️ Tapping close X at {pos} (attempt {attempt+1}/3)")
         safe_device_tap(ip, port, pos[0], pos[1])
-        _human_sleep(0.8, 1.4)
-    _human_sleep(0.8, 1.4)
+        _human_sleep(0.2, 2.0)
+    _human_sleep(0.2, 2.0)
     device_screen = device_capture_screen(ip, port)
     # ตรวจ popup ก่อนเสมอ — กัน PARTY_RUN/GAME_SETTINGS false positive ตอน popup ยังเปิดอยู่
     if detect_stage(device_screen, ["ANNOUNCEMENT_POPUP"]) == "ANNOUNCEMENT_POPUP":
@@ -538,14 +538,14 @@ def close_party_run_mode(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print(f"🖱️ Closing Party Run mode on {ip}:{port}...")
     safe_device_tap(ip, port, EXIT_PARTY_RUN_MODE_BUTTON[0], EXIT_PARTY_RUN_MODE_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def close_game_settings(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print(f"🖱️ Closing Game Settings on {ip}:{port}...")
     safe_device_tap(ip, port, EXIT_GAME_SETTINGS_BUTTON[0], EXIT_GAME_SETTINGS_BUTTON[1])
-    _human_sleep(0.8, 1.4)
+    _human_sleep(0.2, 2.0)
 
 
 def handle_emu_home(device_ip=None, device_port=None):
@@ -554,7 +554,7 @@ def handle_emu_home(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print(f"🏠 Detected EMU_HOME — tapping CookieRun Classic at {EMU_HOME_TAP} on {ip}:{port}...")
     safe_device_tap(ip, port, EMU_HOME_TAP[0], EMU_HOME_TAP[1])
-    time.sleep(random.uniform(4, 6))
+    time.sleep(random.uniform(2, 8))
 
 
 def tap_confirm_popup(device_ip=None, device_port=None):
@@ -564,14 +564,14 @@ def tap_confirm_popup(device_ip=None, device_port=None):
 
     print(f"✅ Tapping CONFIRM at {CONFIRM_POPUP_TAP} on {ip}:{port}...")
     safe_device_tap(ip, port, CONFIRM_POPUP_TAP[0], CONFIRM_POPUP_TAP[1])
-    _human_sleep(1.2, 1.8)
+    _human_sleep(0.3, 2.5)
 
 
 def handle_anr(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print(f"⚠️ Handling ANR dialog on {ip}:{port}... tapping Wait at {ANR_WAIT_BUTTON}")
     safe_device_tap(ip, port, ANR_WAIT_BUTTON[0], ANR_WAIT_BUTTON[1])
-    time.sleep(random.uniform(2.5, 3.5))
+    time.sleep(random.uniform(1.0, 5.0))
 
 
 def _is_boost_checked_by_color(screen, region) -> bool:
@@ -732,7 +732,7 @@ def sync_pick_desired_boosts(desired_boost_id: str, device_ip=None, device_port=
         if should_check and not is_checked:
             print(f"✅ Pick Boosts: กำลังติ๊ก {bid} ที่ {pos} (ต้อง checked)")
             safe_device_tap(ip, port, pos[0], pos[1])
-            time.sleep(random.uniform(0.9, 1.3))
+            time.sleep(random.uniform(0.2, 2.0))
             try:
                 screen = device_capture_screen(ip, port)
             except Exception:
@@ -741,7 +741,7 @@ def sync_pick_desired_boosts(desired_boost_id: str, device_ip=None, device_port=
             # เอาติ๊กออก — ให้เหลือแค่ตัวที่เลือกตัวเดียว จะได้สุ่มจนได้ตัวนั้นจริง
             print(f"❌ Pick Boosts: เอาติ๊กออก {bid} ที่ {pos} (ต้อง unchecked — exclusive)")
             safe_device_tap(ip, port, pos[0], pos[1])
-            time.sleep(random.uniform(0.9, 1.3))
+            time.sleep(random.uniform(0.2, 2.0))
             try:
                 screen = device_capture_screen(ip, port)
             except Exception:
@@ -772,13 +772,13 @@ def sync_pick_desired_boosts(desired_boost_id: str, device_ip=None, device_port=
                 if should_check and not is_checked:
                     print(f"✅ [retry] ติ๊ก {bid}")
                     safe_device_tap(ip, port, pos[0], pos[1])
-                    time.sleep(0.7)
+                    time.sleep(random.uniform(0.3, 1.5))
                     try: screen = device_capture_screen(ip, port)
                     except Exception: pass
                 elif not should_check and is_checked:
                     print(f"❌ [retry] เอาติ๊กออก {bid}")
                     safe_device_tap(ip, port, pos[0], pos[1])
-                    time.sleep(0.7)
+                    time.sleep(random.uniform(0.3, 1.5))
                     try: screen = device_capture_screen(ip, port)
                     except Exception: pass
             if screen is not None:

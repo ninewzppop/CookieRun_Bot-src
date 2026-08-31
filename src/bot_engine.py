@@ -704,7 +704,9 @@ class BotEngine:
                 if not pause and self.humanlike_slide_enabled and now >= next_slide:
                     try:
                         if random.random() < weights["slide"]:
-                            humanlike_slide(self.device_ip, self.device_port, hold_duration=self.humanlike_slide_hold_duration)
+                            # hold สุ่มกว้าง 300-1500ms แบบคน CookieRun Flat-press ขวาล่าง — สั้น 300ms อุโมงค์สั้น / ยาว 1500ms+ อุโมงค์ยาว
+                            _hold = random.uniform(0.30, 1.50)
+                            humanlike_slide(self.device_ip, self.device_port, hold_duration=_hold)
                         next_slide = now + _jit(self.humanlike_slide_interval)
                     except Exception as e:
                         self.log(f"⚠️ humanlike slide error: {e}", "error")
@@ -911,8 +913,8 @@ class BotEngine:
                     self.current_stage = f"{detection_group} (Searching...)"
 
                 if stage == last_stage:
-                    # throttle polling 100ms+ กันโดนจับ adb ถี่
-                    fast_sleep = random.uniform(0.09, 0.18) if detection_group == "IN_GAME" else random.uniform(0.11, 0.22)
+                    # throttle polling 100ms+ กันโดนจับ adb ถี่ — ขยายให้กว้าง humanlike ไม่สม่ำเสมอ
+                    fast_sleep = random.uniform(0.05, 0.30) if detection_group == "IN_GAME" else random.uniform(0.08, 0.35)
                     if self.interruptible_sleep(fast_sleep):
                         break
                     continue
@@ -1433,7 +1435,7 @@ class BotEngine:
                     tap_confirm_popup(self.device_ip, self.device_port)
                     last_stage = None
 
-                loop_sleep = random.uniform(0.10, 0.16) if detection_group == "IN_GAME" else random.uniform(0.20, 0.32)
+                loop_sleep = random.uniform(0.05, 0.30) if detection_group == "IN_GAME" else random.uniform(0.08, 0.35)
                 if self.interruptible_sleep(loop_sleep):
                     break
 
