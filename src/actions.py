@@ -12,7 +12,7 @@ def _human_sleep(a: float = 0.8, b: float = 1.4):
     if random.random() < 0.03:
         v += random.uniform(1.0, 2.5)
     time.sleep(v)
-from adb import safe_device_tap, safe_device_scroll, device_capture_screen
+from adb import safe_device_tap, safe_device_scroll, safe_device_long_press, device_capture_screen
 from config import (
     ACCEPT_ALL_LIVES_RECEIVED_AND_SENT_BUTTON,
     ACCEPT_CONGRATULATIONS_BUTTON,
@@ -50,6 +50,8 @@ from config import (
     FAST_START_ITEM,
     FAST_START_USE_BUTTON,
     FRIEND_BOTTOM_LEADERBOARD_REGION,
+    JUMP_BUTTON,
+    SLIDE_BUTTON,
     FRIEND_BOTTOM_LEADERBOARD_TEMPLATE,
     FRIEND_SEND_LIFE_REGION,
     FRIEND_SEND_LIFE_TEMPLATE,
@@ -80,7 +82,7 @@ from config import (
     START_BUTTON,
     CONNECTION_LOST_RELOAD_BUTTON,
 )
-from detection import detect_templates, detect_anti_bot_odd_cards, detect_stage, find_close_x_button
+from detection import detect_templates, detect_anti_bot_odd_cards, detect_stage, find_close_x_button, find_green_ok_button
 from config import (
     ANTI_BOT_CARD_POS_1, ANTI_BOT_CARD_POS_2, ANTI_BOT_CARD_POS_3,
     ANTI_BOT_CARD_POS_4, ANTI_BOT_CARD_POS_5, ANTI_BOT_CARD_POS_6,
@@ -194,8 +196,39 @@ def using_cookie_relay(device_ip=None, device_port=None):
 def complete_finish(device_ip=None, device_port=None):
     ip, port = _resolve_device(device_ip, device_port)
     print(f"🏆 Completing the game on {ip}:{port}...")
-    safe_device_tap(ip, port, COMPLETE_FINISH_BUTTON[0], COMPLETE_FINISH_BUTTON[1])
+    x, y = COMPLETE_FINISH_BUTTON
+    try:
+        screen = device_capture_screen(ip, port)
+        if screen is not None:
+            pos = find_green_ok_button(screen)
+            if pos:
+                x, y = pos
+                print(f"🟢 OK button found at {pos} (dynamic)")
+    except Exception:
+        pass
+    safe_device_tap(ip, port, x, y)
     time.sleep(random.uniform(1.8, 2.4))
+
+
+def humanlike_jump(device_ip=None, device_port=None):
+    """กระโดด 1 ครั้ง (tap สั้นที่ปุ่ม Jump) — เล่นเสมือนมนุษย์"""
+    ip, port = _resolve_device(device_ip, device_port)
+    safe_device_tap(ip, port, JUMP_BUTTON[0], JUMP_BUTTON[1])
+
+
+def humanlike_jump_double(device_ip=None, device_port=None, gap=0.4):
+    """กระโดด 2 ครั้งติด (double jump) ห่างกันตาม gap วินาที ±เล็กน้อย"""
+    ip, port = _resolve_device(device_ip, device_port)
+    safe_device_tap(ip, port, JUMP_BUTTON[0], JUMP_BUTTON[1])
+    time.sleep(max(0.05, gap + random.uniform(-0.05, 0.05)))
+    safe_device_tap(ip, port, JUMP_BUTTON[0], JUMP_BUTTON[1])
+
+
+def humanlike_slide(device_ip=None, device_port=None, hold_duration=0.8):
+    """กดค้างที่ปุ่ม Slide นาน hold_duration วินาที (long-press ที่จุดเดิม)"""
+    ip, port = _resolve_device(device_ip, device_port)
+    ms = int(hold_duration * 1000)
+    safe_device_long_press(ip, port, SLIDE_BUTTON[0], SLIDE_BUTTON[1], duration_ms=ms)
 
 
 def accept_mystery_box(device_ip=None, device_port=None):

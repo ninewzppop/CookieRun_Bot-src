@@ -241,9 +241,7 @@ def main():
                     last_stage = None
                     continue
                 if not is_first_game:
-                    delay = random.uniform(28, 52)
-                    if random.random() < 0.08:
-                        delay += random.uniform(12, 22)
+                    delay = random.uniform(5, 10)
                     print(f"⏳ Waiting for {delay:.2f} seconds before starting the next game...")
                     time.sleep(delay)
                 is_first_game = False

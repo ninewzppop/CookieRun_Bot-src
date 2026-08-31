@@ -563,7 +563,7 @@
           const local = instances.find(l => l.instance_id === serverInst.instance_id);
           if (local && local._pendingSave) {
             // preserve pending settings keys
-            const keepKeys = ["use_fast_start","fast_start_min_stock","use_cookie_relay","cookie_relay_min_stock","hp_extension_enabled","power_jelly_enabled","double_xp_enabled","use_desired_random_boost","desired_boost_id","detect_relic","send_friend_lives","stop_goal_rounds_enabled","stop_goal_rounds_target","stop_goal_time_enabled","stop_goal_time_hours"];
+            const keepKeys = ["use_fast_start","fast_start_min_stock","use_cookie_relay","cookie_relay_min_stock","hp_extension_enabled","power_jelly_enabled","double_xp_enabled","use_desired_random_boost","desired_boost_id","detect_relic","send_friend_lives","stop_goal_rounds_enabled","stop_goal_rounds_target","stop_goal_time_enabled","stop_goal_time_hours","humanlike_play_enabled","humanlike_jump_enabled","humanlike_jump_interval","humanlike_jump_double_enabled","humanlike_jump_double_interval","humanlike_jump_double_gap","humanlike_slide_enabled","humanlike_slide_interval","humanlike_slide_hold_duration"];
             keepKeys.forEach(k=>{ if(k in local) serverInst[k]=local[k]; });
             serverInst._pendingSave = true;
           }
@@ -998,6 +998,32 @@
                 <label class="flex items-center justify-between cursor-pointer"><div><span class="text-sm font-semibold text-[#f5f0e8]">🎲 Random Boost</span><p class="text-[11px] text-[#e8dcc8]/60">สุ่มจนกว่าจะได้บัฟที่เลือก</p></div><input type="checkbox" id="cfg-boost-${inst.instance_id}" ${inst.use_desired_random_boost?'checked':''} onchange="saveInstanceSettings('${inst.instance_id}'); toggleBoostSelect('${inst.instance_id}')" class="gold-checkbox gold-checkbox-lg"></label>
                 <div id="boost-wrap-${inst.instance_id}" class="${inst.use_desired_random_boost?'':'hidden'}"><select id="cfg-boost-id-${inst.instance_id}" onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-select w-full rounded-xl px-3 py-2 text-sm">${boostOptionsHtml}</select></div>
               </div>
+              <!-- Human-like Play (สุ่มกด Jump/Slide ขณะวิ่ง) -->
+              <div class="space-y-2 bg-[#1a1a1a]/60 p-3 rounded-xl border border-[#2a2a2a]">
+                <label class="flex items-center justify-between cursor-pointer"><div><span class="text-sm font-semibold text-[#f5f0e8]">🎲 เล่นเสมือนมนุษย์ (สุ่มจังหวะ)</span><p class="text-[11px] text-[#e8dcc8]/60">สุ่มการกดทุกครั้ง ลดโอกาสเจอไฟมินิเกม</p></div><input type="checkbox" id="cfg-humanlike-${inst.instance_id}" ${inst.humanlike_play_enabled?'checked':''} onchange="saveInstanceSettings('${inst.instance_id}'); toggleHumanlike('${inst.instance_id}')" class="gold-checkbox gold-checkbox-lg"></label>
+                <div id="humanlike-wrap-${inst.instance_id}" class="${inst.humanlike_play_enabled?'':'hidden'} space-y-2">
+                  <div class="flex items-center justify-between bg-[#0a0a0a]/40 p-2 rounded-lg border border-[#2a2a2a]">
+                    <label class="flex items-center gap-2"><input type="checkbox" id="cfg-hl-jump-${inst.instance_id}" ${inst.humanlike_jump_enabled?'checked':''} onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-checkbox"><span class="text-[#f5f0e8] text-xs">🦘 กระโดดเอง: กระโดด 1 ครั้ง</span></label>
+                    <div class="flex items-center gap-1.5"><input type="number" id="cfg-hl-jump-int-${inst.instance_id}" value="${inst.humanlike_jump_interval??0.5}" min="0.2" step="0.1" onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-number w-14 rounded-lg px-2 py-1 text-center text-xs font-mono"><span class="text-[#e8dcc8]/70 text-xs">วิ</span></div>
+                  </div>
+                  <div class="flex items-center justify-between bg-[#0a0a0a]/40 p-2 rounded-lg border border-[#2a2a2a]">
+                    <label class="flex items-center gap-2"><input type="checkbox" id="cfg-hl-jump2-${inst.instance_id}" ${inst.humanlike_jump_double_enabled?'checked':''} onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-checkbox"><span class="text-[#f5f0e8] text-xs">🔲 กระโดดเบิ้ล: กระโดด 2 ครั้งติด</span></label>
+                    <div class="flex items-center gap-1.5"><input type="number" id="cfg-hl-jump2-int-${inst.instance_id}" value="${inst.humanlike_jump_double_interval??1.1}" min="0.3" step="0.1" onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-number w-14 rounded-lg px-2 py-1 text-center text-xs font-mono"><span class="text-[#e8dcc8]/70 text-xs">วิ</span></div>
+                  </div>
+                  <div class="flex items-center justify-between pl-6 bg-[#0a0a0a]/30 p-2 rounded-lg border border-[#2a2a2a]">
+                    <span class="text-[11px] text-[#e8dcc8]/60">↳ เวลาเบิ้ล: ระยะห่างระหว่าง 2 ครั้ง</span>
+                    <div class="flex items-center gap-1.5"><input type="number" id="cfg-hl-jump2-gap-${inst.instance_id}" value="${inst.humanlike_jump_double_gap??0.4}" min="0.05" step="0.05" onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-number w-14 rounded-lg px-2 py-1 text-center text-xs font-mono"><span class="text-[#e8dcc8]/70 text-xs">วิ</span></div>
+                  </div>
+                  <div class="flex items-center justify-between bg-[#0a0a0a]/40 p-2 rounded-lg border border-[#2a2a2a]">
+                    <label class="flex items-center gap-2"><input type="checkbox" id="cfg-hl-slide-${inst.instance_id}" ${inst.humanlike_slide_enabled?'checked':''} onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-checkbox"><span class="text-[#f5f0e8] text-xs">🛝 สไลด์เอง: กดค้างทำสไลด์ทุกกี่วิ</span></label>
+                    <div class="flex items-center gap-1.5"><input type="number" id="cfg-hl-slide-int-${inst.instance_id}" value="${inst.humanlike_slide_interval??1.3}" min="0.5" step="0.1" onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-number w-14 rounded-lg px-2 py-1 text-center text-xs font-mono"><span class="text-[#e8dcc8]/70 text-xs">วิ</span></div>
+                  </div>
+                  <div class="flex items-center justify-between pl-6 bg-[#0a0a0a]/30 p-2 rounded-lg border border-[#2a2a2a]">
+                    <span class="text-[11px] text-[#e8dcc8]/60">↳ ระยะกดค้าง: สไลด์กดค้างนานเท่าไหร่</span>
+                    <div class="flex items-center gap-1.5"><input type="number" id="cfg-hl-slide-hold-${inst.instance_id}" value="${inst.humanlike_slide_hold_duration??0.8}" min="0.2" step="0.1" onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-number w-14 rounded-lg px-2 py-1 text-center text-xs font-mono"><span class="text-[#e8dcc8]/70 text-xs">วิ</span></div>
+                  </div>
+                </div>
+              </div>
               <!-- Other toggles -->
               <label class="flex items-center justify-between p-2 rounded-lg bg-[#1a1a1a]/40 border border-[#2a2a2a]"><div><span class="text-[#f5f0e8] font-semibold">🏺 เปิดกล่อง Relic อัตโนมัติ</span></div><input type="checkbox" id="cfg-relic-${inst.instance_id}" ${inst.detect_relic?'checked':''} onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-checkbox"></label>
               <label class="flex items-center justify-between p-2 rounded-lg bg-[#1a1a1a]/40 border border-[#2a2a2a]"><div><span class="text-[#f5f0e8] font-semibold">💌 ส่งหัวใจให้เพื่อน (~30 นาที ออโต้)</span><p class="text-[11px] text-[#e8dcc8]/60">บอทจะส่งอัตโนมัติทุก ~30 นาทีเมื่อเปิด</p></div><input type="checkbox" id="cfg-lives-${inst.instance_id}" ${inst.send_friend_lives?'checked':''} onchange="saveInstanceSettings('${inst.instance_id}')" class="gold-checkbox"></label>
@@ -1111,6 +1137,13 @@
       if (chk.checked) wrap.classList.remove('hidden'); else wrap.classList.add('hidden');
     }
 
+    function toggleHumanlike(instanceId){
+      const chk = document.getElementById('cfg-humanlike-'+instanceId);
+      const wrap = document.getElementById('humanlike-wrap-'+instanceId);
+      if (!chk || !wrap) return;
+      if (chk.checked) wrap.classList.remove('hidden'); else wrap.classList.add('hidden');
+    }
+
     // Debounce map to avoid spamming API on rapid stepper changes
     const _saveDebounce = {};
     async function saveInstanceSettings(instanceId){
@@ -1135,6 +1168,15 @@
           stop_goal_rounds_target: parseInt(document.getElementById('cfg-goal-rounds-val-'+instanceId)?.value) || 50,
           stop_goal_time_enabled: document.getElementById('cfg-goal-time-'+instanceId)?.checked || false,
           stop_goal_time_hours: parseFloat(document.getElementById('cfg-goal-time-val-'+instanceId)?.value) || 2.0,
+          humanlike_play_enabled: document.getElementById('cfg-humanlike-'+instanceId)?.checked || false,
+          humanlike_jump_enabled: document.getElementById('cfg-hl-jump-'+instanceId)?.checked ?? true,
+          humanlike_jump_interval: parseFloat(document.getElementById('cfg-hl-jump-int-'+instanceId)?.value) || 0.5,
+          humanlike_jump_double_enabled: document.getElementById('cfg-hl-jump2-'+instanceId)?.checked ?? true,
+          humanlike_jump_double_interval: parseFloat(document.getElementById('cfg-hl-jump2-int-'+instanceId)?.value) || 1.1,
+          humanlike_jump_double_gap: parseFloat(document.getElementById('cfg-hl-jump2-gap-'+instanceId)?.value) || 0.4,
+          humanlike_slide_enabled: document.getElementById('cfg-hl-slide-'+instanceId)?.checked ?? true,
+          humanlike_slide_interval: parseFloat(document.getElementById('cfg-hl-slide-int-'+instanceId)?.value) || 1.3,
+          humanlike_slide_hold_duration: parseFloat(document.getElementById('cfg-hl-slide-hold-'+instanceId)?.value) || 0.8,
         };
         // Optimistic local update so UI doesn't flicker, and mark pending
         Object.assign(inst, payload);
@@ -1309,6 +1351,15 @@
         stop_goal_rounds_target: parseInt(document.getElementById('cfg-goal-rounds-val-'+instanceId)?.value) || 50,
         stop_goal_time_enabled: document.getElementById('cfg-goal-time-'+instanceId)?.checked || false,
         stop_goal_time_hours: parseFloat(document.getElementById('cfg-goal-time-val-'+instanceId)?.value) || 2.0,
+        humanlike_play_enabled: document.getElementById('cfg-humanlike-'+instanceId)?.checked || false,
+        humanlike_jump_enabled: document.getElementById('cfg-hl-jump-'+instanceId)?.checked ?? true,
+        humanlike_jump_interval: parseFloat(document.getElementById('cfg-hl-jump-int-'+instanceId)?.value) || 0.5,
+        humanlike_jump_double_enabled: document.getElementById('cfg-hl-jump2-'+instanceId)?.checked ?? true,
+        humanlike_jump_double_interval: parseFloat(document.getElementById('cfg-hl-jump2-int-'+instanceId)?.value) || 1.1,
+        humanlike_jump_double_gap: parseFloat(document.getElementById('cfg-hl-jump2-gap-'+instanceId)?.value) || 0.4,
+        humanlike_slide_enabled: document.getElementById('cfg-hl-slide-'+instanceId)?.checked ?? true,
+        humanlike_slide_interval: parseFloat(document.getElementById('cfg-hl-slide-int-'+instanceId)?.value) || 1.3,
+        humanlike_slide_hold_duration: parseFloat(document.getElementById('cfg-hl-slide-hold-'+instanceId)?.value) || 0.8,
       };
       const url = isRunning ? `/api/instances/${instanceId}/stop` : `/api/instances/${instanceId}/start`;
       try {
@@ -1427,7 +1478,7 @@
         const merged = data.map(serverInst => {
           const local = instances.find(l => l.instance_id === serverInst.instance_id);
           if (local && local._pendingSave) {
-            const keepKeys = ["use_fast_start","fast_start_min_stock","use_cookie_relay","cookie_relay_min_stock","hp_extension_enabled","power_jelly_enabled","double_xp_enabled","use_desired_random_boost","desired_boost_id","detect_relic","send_friend_lives","stop_goal_rounds_enabled","stop_goal_rounds_target","stop_goal_time_enabled","stop_goal_time_hours"];
+            const keepKeys = ["use_fast_start","fast_start_min_stock","use_cookie_relay","cookie_relay_min_stock","hp_extension_enabled","power_jelly_enabled","double_xp_enabled","use_desired_random_boost","desired_boost_id","detect_relic","send_friend_lives","stop_goal_rounds_enabled","stop_goal_rounds_target","stop_goal_time_enabled","stop_goal_time_hours","humanlike_play_enabled","humanlike_jump_enabled","humanlike_jump_interval","humanlike_jump_double_enabled","humanlike_jump_double_interval","humanlike_jump_double_gap","humanlike_slide_enabled","humanlike_slide_interval","humanlike_slide_hold_duration"];
             keepKeys.forEach(k=>{ if(k in local) serverInst[k]=local[k]; });
             serverInst._pendingSave = true;
           }

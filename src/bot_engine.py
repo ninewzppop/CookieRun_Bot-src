@@ -35,6 +35,9 @@ from actions import (
     handle_inactive,
     handle_quick_receive_and_send_lives,
     handle_send_friend_life,
+    humanlike_jump,
+    humanlike_jump_double,
+    humanlike_slide,
     open_relic_complete,
     play_game,
     purchase_cookie_relay,
@@ -186,6 +189,22 @@ class BotEngine:
         self.stop_goal_rounds_target: int = 50
         self.stop_goal_time_enabled: bool = False
         self.stop_goal_time_hours: float = 2.0
+        # Human-like play (สุ่มกด Jump/Slide ขณะวิ่ง) — ค่า default จาก config
+        _hl = config.HUMANLIKE_PLAY_DEFAULTS
+        self.humanlike_play_enabled: bool = False
+        self.humanlike_jump_enabled: bool = True
+        self.humanlike_jump_interval: float = float(_hl["jump_single_interval"])
+        self.humanlike_jump_double_enabled: bool = True
+        self.humanlike_jump_double_interval: float = float(_hl["jump_double_interval"])
+        self.humanlike_jump_double_gap: float = float(_hl["jump_double_gap"])
+        self.humanlike_slide_enabled: bool = True
+        self.humanlike_slide_interval: float = float(_hl["slide_interval"])
+        self.humanlike_slide_hold_duration: float = float(_hl["slide_hold_duration"])
+        # Human-like background thread — per instance, exclusive กับ IN_GAME
+        self.humanlike_thread: Optional[threading.Thread] = None
+        self.humanlike_stop_event = threading.Event()
+        self._in_game_since: float = 0.0
+        self._humanlike_grace: float = 4.0  # เริ่มกดหลังเข้า IN_GAME 4 วิ (ข้าม countdown Ready-GO)
         # Load persisted per-instance settings if exists (survives restart)
         try:
             _saved = _load_instance_settings(instance_id)
@@ -205,6 +224,15 @@ class BotEngine:
                 self.stop_goal_rounds_target = int(_saved.get("stop_goal_rounds_target", self.stop_goal_rounds_target))
                 self.stop_goal_time_enabled = bool(_saved.get("stop_goal_time_enabled", self.stop_goal_time_enabled))
                 self.stop_goal_time_hours = float(_saved.get("stop_goal_time_hours", self.stop_goal_time_hours))
+                self.humanlike_play_enabled = bool(_saved.get("humanlike_play_enabled", self.humanlike_play_enabled))
+                self.humanlike_jump_enabled = bool(_saved.get("humanlike_jump_enabled", self.humanlike_jump_enabled))
+                self.humanlike_jump_interval = float(_saved.get("humanlike_jump_interval", self.humanlike_jump_interval))
+                self.humanlike_jump_double_enabled = bool(_saved.get("humanlike_jump_double_enabled", self.humanlike_jump_double_enabled))
+                self.humanlike_jump_double_interval = float(_saved.get("humanlike_jump_double_interval", self.humanlike_jump_double_interval))
+                self.humanlike_jump_double_gap = float(_saved.get("humanlike_jump_double_gap", self.humanlike_jump_double_gap))
+                self.humanlike_slide_enabled = bool(_saved.get("humanlike_slide_enabled", self.humanlike_slide_enabled))
+                self.humanlike_slide_interval = float(_saved.get("humanlike_slide_interval", self.humanlike_slide_interval))
+                self.humanlike_slide_hold_duration = float(_saved.get("humanlike_slide_hold_duration", self.humanlike_slide_hold_duration))
         except Exception as e:
             print(f"[{instance_id}] Failed to load persisted settings: {e}")
 
@@ -344,59 +372,10 @@ class BotEngine:
                 self.device_name = str(user_config["name"])
 
             # Only update settings that are explicitly provided — keep persisted values otherwise (fixes revert bug d)
-            if "use_fast_start" in user_config:
-                self.use_fast_start = bool(user_config["use_fast_start"])
-            if "fast_start_min_stock" in user_config:
-                try: self.fast_start_min_stock = int(user_config["fast_start_min_stock"])
-                except: pass
-            if "use_cookie_relay" in user_config:
-                self.use_cookie_relay = bool(user_config["use_cookie_relay"])
-            if "cookie_relay_min_stock" in user_config:
-                try: self.cookie_relay_min_stock = int(user_config["cookie_relay_min_stock"])
-                except: pass
-            if "hp_extension_enabled" in user_config:
-                self.hp_extension_enabled = bool(user_config["hp_extension_enabled"])
-            if "power_jelly_enabled" in user_config:
-                self.power_jelly_enabled = bool(user_config["power_jelly_enabled"])
-            if "double_xp_enabled" in user_config:
-                self.double_xp_enabled = bool(user_config["double_xp_enabled"])
-            if "use_desired_random_boost" in user_config:
-                self.use_desired_random_boost = bool(user_config["use_desired_random_boost"])
-            if "desired_boost_id" in user_config:
-                self.desired_boost_id = str(user_config["desired_boost_id"])
-            if "detect_relic" in user_config:
-                self.detect_relic = bool(user_config["detect_relic"])
-            if "send_friend_lives" in user_config:
-                self.send_friend_lives = bool(user_config["send_friend_lives"])
-            if "stop_goal_rounds_enabled" in user_config:
-                self.stop_goal_rounds_enabled = bool(user_config["stop_goal_rounds_enabled"])
-            if "stop_goal_rounds_target" in user_config:
-                try: self.stop_goal_rounds_target = int(user_config["stop_goal_rounds_target"])
-                except: pass
-            if "stop_goal_time_enabled" in user_config:
-                self.stop_goal_time_enabled = bool(user_config["stop_goal_time_enabled"])
-            if "stop_goal_time_hours" in user_config:
-                try: self.stop_goal_time_hours = float(user_config["stop_goal_time_hours"])
-                except: pass
+            self._apply_settings(user_config)
             # Persist the (possibly updated) settings so they survive restart and next start call
             try:
-                _save_instance_settings(self.instance_id, {
-                    "use_fast_start": self.use_fast_start,
-                    "fast_start_min_stock": self.fast_start_min_stock,
-                    "use_cookie_relay": self.use_cookie_relay,
-                    "cookie_relay_min_stock": self.cookie_relay_min_stock,
-                    "hp_extension_enabled": self.hp_extension_enabled,
-                    "power_jelly_enabled": self.power_jelly_enabled,
-                    "double_xp_enabled": self.double_xp_enabled,
-                    "use_desired_random_boost": self.use_desired_random_boost,
-                    "desired_boost_id": self.desired_boost_id,
-                    "detect_relic": self.detect_relic,
-                    "send_friend_lives": self.send_friend_lives,
-                    "stop_goal_rounds_enabled": self.stop_goal_rounds_enabled,
-                    "stop_goal_rounds_target": self.stop_goal_rounds_target,
-                    "stop_goal_time_enabled": self.stop_goal_time_enabled,
-                    "stop_goal_time_hours": self.stop_goal_time_hours,
-                })
+                _save_instance_settings(self.instance_id, self._settings_snapshot())
             except Exception as e:
                 print(f"[{self.instance_id}] Persist on start failed: {e}")
 
@@ -413,87 +392,107 @@ class BotEngine:
 
         return {"success": True, "message": f"[{self.instance_id}] Bot started successfully"}
 
+    def _apply_settings(self, cfg: Dict[str, Any]):
+        """Apply เฉพาะ keys ที่ส่งมา (ไม่ reset ค่าอื่น) — ใช้ร่วมกับ start/update/live"""
+        if "use_fast_start" in cfg:
+            self.use_fast_start = bool(cfg["use_fast_start"])
+        if "fast_start_min_stock" in cfg:
+            try: self.fast_start_min_stock = int(cfg["fast_start_min_stock"])
+            except: pass
+        if "use_cookie_relay" in cfg:
+            self.use_cookie_relay = bool(cfg["use_cookie_relay"])
+        if "cookie_relay_min_stock" in cfg:
+            try: self.cookie_relay_min_stock = int(cfg["cookie_relay_min_stock"])
+            except: pass
+        if "hp_extension_enabled" in cfg:
+            self.hp_extension_enabled = bool(cfg["hp_extension_enabled"])
+        if "power_jelly_enabled" in cfg:
+            self.power_jelly_enabled = bool(cfg["power_jelly_enabled"])
+        if "double_xp_enabled" in cfg:
+            self.double_xp_enabled = bool(cfg["double_xp_enabled"])
+        if "use_desired_random_boost" in cfg:
+            self.use_desired_random_boost = bool(cfg["use_desired_random_boost"])
+        if "desired_boost_id" in cfg:
+            self.desired_boost_id = str(cfg["desired_boost_id"])
+        if "detect_relic" in cfg:
+            self.detect_relic = bool(cfg["detect_relic"])
+        if "send_friend_lives" in cfg:
+            self.send_friend_lives = bool(cfg["send_friend_lives"])
+        if "stop_goal_rounds_enabled" in cfg:
+            self.stop_goal_rounds_enabled = bool(cfg["stop_goal_rounds_enabled"])
+        if "stop_goal_rounds_target" in cfg:
+            try: self.stop_goal_rounds_target = int(cfg["stop_goal_rounds_target"])
+            except: pass
+        if "stop_goal_time_enabled" in cfg:
+            self.stop_goal_time_enabled = bool(cfg["stop_goal_time_enabled"])
+        if "stop_goal_time_hours" in cfg:
+            try: self.stop_goal_time_hours = float(cfg["stop_goal_time_hours"])
+            except: pass
+        if "humanlike_play_enabled" in cfg:
+            self.humanlike_play_enabled = bool(cfg["humanlike_play_enabled"])
+        if "humanlike_jump_enabled" in cfg:
+            self.humanlike_jump_enabled = bool(cfg["humanlike_jump_enabled"])
+        if "humanlike_jump_interval" in cfg:
+            try: self.humanlike_jump_interval = float(cfg["humanlike_jump_interval"])
+            except: pass
+        if "humanlike_jump_double_enabled" in cfg:
+            self.humanlike_jump_double_enabled = bool(cfg["humanlike_jump_double_enabled"])
+        if "humanlike_jump_double_interval" in cfg:
+            try: self.humanlike_jump_double_interval = float(cfg["humanlike_jump_double_interval"])
+            except: pass
+        if "humanlike_jump_double_gap" in cfg:
+            try: self.humanlike_jump_double_gap = float(cfg["humanlike_jump_double_gap"])
+            except: pass
+        if "humanlike_slide_enabled" in cfg:
+            self.humanlike_slide_enabled = bool(cfg["humanlike_slide_enabled"])
+        if "humanlike_slide_interval" in cfg:
+            try: self.humanlike_slide_interval = float(cfg["humanlike_slide_interval"])
+            except: pass
+        if "humanlike_slide_hold_duration" in cfg:
+            try: self.humanlike_slide_hold_duration = float(cfg["humanlike_slide_hold_duration"])
+            except: pass
+
+    def _settings_snapshot(self) -> Dict[str, Any]:
+        """คืน dict settings ปัจจุบันทั้งหมด (ใช้ persist + API)"""
+        return {
+            "use_fast_start": self.use_fast_start,
+            "fast_start_min_stock": self.fast_start_min_stock,
+            "use_cookie_relay": self.use_cookie_relay,
+            "cookie_relay_min_stock": self.cookie_relay_min_stock,
+            "hp_extension_enabled": self.hp_extension_enabled,
+            "power_jelly_enabled": self.power_jelly_enabled,
+            "double_xp_enabled": self.double_xp_enabled,
+            "use_desired_random_boost": self.use_desired_random_boost,
+            "desired_boost_id": self.desired_boost_id,
+            "detect_relic": self.detect_relic,
+            "send_friend_lives": self.send_friend_lives,
+            "stop_goal_rounds_enabled": self.stop_goal_rounds_enabled,
+            "stop_goal_rounds_target": self.stop_goal_rounds_target,
+            "stop_goal_time_enabled": self.stop_goal_time_enabled,
+            "stop_goal_time_hours": self.stop_goal_time_hours,
+            "humanlike_play_enabled": self.humanlike_play_enabled,
+            "humanlike_jump_enabled": self.humanlike_jump_enabled,
+            "humanlike_jump_interval": self.humanlike_jump_interval,
+            "humanlike_jump_double_enabled": self.humanlike_jump_double_enabled,
+            "humanlike_jump_double_interval": self.humanlike_jump_double_interval,
+            "humanlike_jump_double_gap": self.humanlike_jump_double_gap,
+            "humanlike_slide_enabled": self.humanlike_slide_enabled,
+            "humanlike_slide_interval": self.humanlike_slide_interval,
+            "humanlike_slide_hold_duration": self.humanlike_slide_hold_duration,
+        }
+
     def get_settings(self) -> Dict[str, Any]:
         """คืนค่า settings ปัจจุบันของ instance นี้ (สำหรับ API)"""
         with self.lock:
-            return {
-                "use_fast_start": self.use_fast_start,
-                "fast_start_min_stock": self.fast_start_min_stock,
-                "use_cookie_relay": self.use_cookie_relay,
-                "cookie_relay_min_stock": self.cookie_relay_min_stock,
-                "hp_extension_enabled": self.hp_extension_enabled,
-                "power_jelly_enabled": self.power_jelly_enabled,
-                "double_xp_enabled": self.double_xp_enabled,
-                "use_desired_random_boost": self.use_desired_random_boost,
-                "desired_boost_id": self.desired_boost_id,
-                "detect_relic": self.detect_relic,
-                "send_friend_lives": self.send_friend_lives,
-                "stop_goal_rounds_enabled": self.stop_goal_rounds_enabled,
-                "stop_goal_rounds_target": self.stop_goal_rounds_target,
-                "stop_goal_time_enabled": self.stop_goal_time_enabled,
-                "stop_goal_time_hours": self.stop_goal_time_hours,
-            }
+            return self._settings_snapshot()
 
     def update_settings(self, user_config: Dict[str, Any]) -> Dict[str, Any]:
         """อัปเดต settings ของ instance นี้แบบ persistent (ใช้ได้ทั้งตอนรันและหยุด)"""
         with self.lock:
             # Update only keys present in payload — don't reset others to default
-            if "use_fast_start" in user_config:
-                self.use_fast_start = bool(user_config["use_fast_start"])
-            if "fast_start_min_stock" in user_config:
-                try:
-                    self.fast_start_min_stock = int(user_config["fast_start_min_stock"])
-                except: pass
-            if "use_cookie_relay" in user_config:
-                self.use_cookie_relay = bool(user_config["use_cookie_relay"])
-            if "cookie_relay_min_stock" in user_config:
-                try:
-                    self.cookie_relay_min_stock = int(user_config["cookie_relay_min_stock"])
-                except: pass
-            if "hp_extension_enabled" in user_config:
-                self.hp_extension_enabled = bool(user_config["hp_extension_enabled"])
-            if "power_jelly_enabled" in user_config:
-                self.power_jelly_enabled = bool(user_config["power_jelly_enabled"])
-            if "double_xp_enabled" in user_config:
-                self.double_xp_enabled = bool(user_config["double_xp_enabled"])
-            if "use_desired_random_boost" in user_config:
-                self.use_desired_random_boost = bool(user_config["use_desired_random_boost"])
-            if "desired_boost_id" in user_config:
-                self.desired_boost_id = str(user_config["desired_boost_id"])
-            if "detect_relic" in user_config:
-                self.detect_relic = bool(user_config["detect_relic"])
-            if "send_friend_lives" in user_config:
-                self.send_friend_lives = bool(user_config["send_friend_lives"])
-            if "stop_goal_rounds_enabled" in user_config:
-                self.stop_goal_rounds_enabled = bool(user_config["stop_goal_rounds_enabled"])
-            if "stop_goal_rounds_target" in user_config:
-                try:
-                    self.stop_goal_rounds_target = int(user_config["stop_goal_rounds_target"])
-                except: pass
-            if "stop_goal_time_enabled" in user_config:
-                self.stop_goal_time_enabled = bool(user_config["stop_goal_time_enabled"])
-            if "stop_goal_time_hours" in user_config:
-                try:
-                    self.stop_goal_time_hours = float(user_config["stop_goal_time_hours"])
-                except: pass
-            # Persist to file (per-instance) — build dict directly to avoid re-locking get_settings()
-            settings_snapshot = {
-                "use_fast_start": self.use_fast_start,
-                "fast_start_min_stock": self.fast_start_min_stock,
-                "use_cookie_relay": self.use_cookie_relay,
-                "cookie_relay_min_stock": self.cookie_relay_min_stock,
-                "hp_extension_enabled": self.hp_extension_enabled,
-                "power_jelly_enabled": self.power_jelly_enabled,
-                "double_xp_enabled": self.double_xp_enabled,
-                "use_desired_random_boost": self.use_desired_random_boost,
-                "desired_boost_id": self.desired_boost_id,
-                "detect_relic": self.detect_relic,
-                "send_friend_lives": self.send_friend_lives,
-                "stop_goal_rounds_enabled": self.stop_goal_rounds_enabled,
-                "stop_goal_rounds_target": self.stop_goal_rounds_target,
-                "stop_goal_time_enabled": self.stop_goal_time_enabled,
-                "stop_goal_time_hours": self.stop_goal_time_hours,
-            }
+            self._apply_settings(user_config)
+            # Persist to file (per-instance)
+            settings_snapshot = self._settings_snapshot()
             try:
                 _save_instance_settings(self.instance_id, settings_snapshot)
             except Exception as e:
@@ -504,7 +503,8 @@ class BotEngine:
                 f"| HP={'ON' if self.hp_extension_enabled else 'OFF'} "
                 f"| Jelly={'ON' if self.power_jelly_enabled else 'OFF'} "
                 f"| DXP={'ON' if self.double_xp_enabled else 'OFF'} "
-                f"| Boost={'ON' if self.use_desired_random_boost else 'OFF'}({self.desired_boost_id})",
+                f"| Boost={'ON' if self.use_desired_random_boost else 'OFF'}({self.desired_boost_id}) "
+                f"| Humanlike={'ON' if self.humanlike_play_enabled else 'OFF'}",
                 "info",
             )
             # return copy
@@ -518,60 +518,16 @@ class BotEngine:
         with self.lock:
             if not self.is_running:
                 return {"success": False, "message": f"[{self.instance_id}] Bot is not running"}
-            if "use_fast_start" in user_config:
-                self.use_fast_start = bool(user_config["use_fast_start"])
-            if "fast_start_min_stock" in user_config:
-                self.fast_start_min_stock = int(user_config["fast_start_min_stock"])
-            if "use_cookie_relay" in user_config:
-                self.use_cookie_relay = bool(user_config["use_cookie_relay"])
-            if "cookie_relay_min_stock" in user_config:
-                self.cookie_relay_min_stock = int(user_config["cookie_relay_min_stock"])
-            if "hp_extension_enabled" in user_config:
-                self.hp_extension_enabled = bool(user_config["hp_extension_enabled"])
-            if "power_jelly_enabled" in user_config:
-                self.power_jelly_enabled = bool(user_config["power_jelly_enabled"])
-            if "double_xp_enabled" in user_config:
-                self.double_xp_enabled = bool(user_config["double_xp_enabled"])
-            if "use_desired_random_boost" in user_config:
-                self.use_desired_random_boost = bool(user_config["use_desired_random_boost"])
-            if "desired_boost_id" in user_config:
-                self.desired_boost_id = user_config["desired_boost_id"]
-            if "detect_relic" in user_config:
-                self.detect_relic = bool(user_config["detect_relic"])
-            if "send_friend_lives" in user_config:
-                self.send_friend_lives = bool(user_config["send_friend_lives"])
-            if "stop_goal_rounds_enabled" in user_config:
-                self.stop_goal_rounds_enabled = bool(user_config["stop_goal_rounds_enabled"])
-            if "stop_goal_rounds_target" in user_config:
-                self.stop_goal_rounds_target = int(user_config["stop_goal_rounds_target"])
-            if "stop_goal_time_enabled" in user_config:
-                self.stop_goal_time_enabled = bool(user_config["stop_goal_time_enabled"])
-            if "stop_goal_time_hours" in user_config:
-                self.stop_goal_time_hours = float(user_config["stop_goal_time_hours"])
+            self._apply_settings(user_config)
             # Persist live changes as well
             try:
-                _save_instance_settings(self.instance_id, {
-                    "use_fast_start": self.use_fast_start,
-                    "fast_start_min_stock": self.fast_start_min_stock,
-                    "use_cookie_relay": self.use_cookie_relay,
-                    "cookie_relay_min_stock": self.cookie_relay_min_stock,
-                    "hp_extension_enabled": self.hp_extension_enabled,
-                    "power_jelly_enabled": self.power_jelly_enabled,
-                    "double_xp_enabled": self.double_xp_enabled,
-                    "use_desired_random_boost": self.use_desired_random_boost,
-                    "desired_boost_id": self.desired_boost_id,
-                    "detect_relic": self.detect_relic,
-                    "send_friend_lives": self.send_friend_lives,
-                    "stop_goal_rounds_enabled": self.stop_goal_rounds_enabled,
-                    "stop_goal_rounds_target": self.stop_goal_rounds_target,
-                    "stop_goal_time_enabled": self.stop_goal_time_enabled,
-                    "stop_goal_time_hours": self.stop_goal_time_hours,
-                })
+                _save_instance_settings(self.instance_id, self._settings_snapshot())
             except Exception as e:
                 print(f"[{self.instance_id}] Persist live failed: {e}")
             self.log(
                 f"⚙️ อัปเดตตั้งค่าแบบ Live: FastStart={'ON' if self.use_fast_start else 'OFF'}({self.fast_start_min_stock}) "
-                f"| CookieRelay={'ON' if self.use_cookie_relay else 'OFF'}({self.cookie_relay_min_stock})",
+                f"| CookieRelay={'ON' if self.use_cookie_relay else 'OFF'}({self.cookie_relay_min_stock}) "
+                f"| Humanlike={'ON' if self.humanlike_play_enabled else 'OFF'}",
                 "info",
             )
         return {"success": True, "message": "Live config updated"}
@@ -585,6 +541,7 @@ class BotEngine:
             self.current_stage = "STOPPING"
             self.log("🛑 Stopping bot...", "warning")
 
+        self._stop_humanlike_thread()
         # ไม่ block API นาน — ให้ thread หยุดเองใน background (เช็ค should_stop ทุก 0.1วิ)
         # UI จะเห็น STOPPING แล้วค่อย IDLE เมื่อ thread จบจริงใน _run_loop finally
         def _wait_stop():
@@ -634,6 +591,85 @@ class BotEngine:
         self.box_history.clear()
         self.log("📊 Stats, Mystery Box counts, Coins, and EXP reset to zero", "info")
 
+    # ----------------------------------------------------------------
+    # Human-like play (สุ่มกด Jump/Slide ขณะ IN_GAME) — per instance
+    # ----------------------------------------------------------------
+    def _stop_humanlike_thread(self):
+        """หยุด thread เล่นเสมือนมนุษย์ทันที (ไม่ join — daemon, เช็ค event เอง)"""
+        self.humanlike_stop_event.set()
+
+    def _sync_humanlike_thread(self, in_game: bool):
+        """
+        เรียกทุก loop iteration — เริ่ม thread เมื่อเข้า IN_GAME (และตั้งค่าเปิดอยู่),
+        หยุดทันทีเมื่อออกจาก IN_GAME / ปิด toggle / บอทหยุด (กันกดมั่วตอน popup ขึ้น)
+        มี grace period หลังเข้า IN_GAME (ข้าม countdown Ready-GO ช่วงแรกของรอบ)
+        """
+        if in_game:
+            if self._in_game_since <= 0:
+                self._in_game_since = time.time()
+            in_game_ready = (time.time() - self._in_game_since) >= self._humanlike_grace
+        else:
+            self._in_game_since = 0.0
+            in_game_ready = False
+        if not in_game_ready or not self.humanlike_play_enabled or self.should_stop:
+            if self.humanlike_thread and self.humanlike_thread.is_alive():
+                self._stop_humanlike_thread()
+            return
+        if self.humanlike_thread is None or not self.humanlike_thread.is_alive():
+            self.humanlike_stop_event.clear()
+            self.humanlike_thread = threading.Thread(
+                target=self._humanlike_play_loop,
+                daemon=True,
+                name=f"Humanlike-{self.instance_id}",
+            )
+            self.humanlike_thread.start()
+
+    def _humanlike_play_loop(self):
+        """วนลูปสุ่มกด Jump/Slide แบบมนุษย์ — หยุดเมื่อ stop_event / should_stop"""
+        def _jit(v: float) -> float:
+            # jitter ±20% แต่ไม่ต่ำกว่า 0.15s กันกดถี่เกิน
+            return max(0.15, v + random.uniform(-v * 0.2, v * 0.2))
+
+        self.log("🤖 เล่นเสมือนมนุษย์ ON — สุ่มกด Jump/Slide ขณะวิ่ง", "info")
+        last_double_jump = 0.0
+        next_jump = time.time() + _jit(self.humanlike_jump_interval)
+        next_slide = time.time() + _jit(self.humanlike_slide_interval)
+        tap_count = 0
+        while not self.humanlike_stop_event.is_set() and not self.should_stop:
+            # self-check: หยุดเองเมื่อ main loop ตรวจเจอ stage อื่น (GAME_COMPLETE/popup)
+            # — main loop อาจ block ใน handler ที่ยาว (เช่น GAME_COMPLETE) จึงต้องเช็คเอง
+            if self.current_stage != "IN_GAME (Searching...)":
+                break
+            now = time.time()
+            if self.humanlike_jump_enabled and now >= next_jump:
+                try:
+                    # สุ่มกระโดดเดี่ยว หรือเบิ้ล (ถ้าเปิด sub-toggle และพ้น cooldown เบิ้ลแล้ว)
+                    if (
+                        self.humanlike_jump_double_enabled
+                        and (now - last_double_jump) >= self.humanlike_jump_double_interval
+                        and random.random() < 0.5
+                    ):
+                        humanlike_jump_double(self.device_ip, self.device_port, gap=self.humanlike_jump_double_gap)
+                        last_double_jump = now
+                        tap_count += 2
+                    else:
+                        humanlike_jump(self.device_ip, self.device_port)
+                        tap_count += 1
+                    next_jump = now + _jit(self.humanlike_jump_interval)
+                except Exception as e:
+                    self.log(f"⚠️ humanlike jump error: {e}", "error")
+            if self.humanlike_slide_enabled and now >= next_slide:
+                try:
+                    humanlike_slide(self.device_ip, self.device_port, hold_duration=self.humanlike_slide_hold_duration)
+                    next_slide = now + _jit(self.humanlike_slide_interval)
+                    tap_count += 1
+                except Exception as e:
+                    self.log(f"⚠️ humanlike slide error: {e}", "error")
+            if tap_count >= 8:
+                self.log(f"🎮 เล่นเสมือนมนุษย์: กดไปแล้ว {tap_count} ครั้ง (Jump@{config.JUMP_BUTTON} / Slide@{config.SLIDE_BUTTON})", "info")
+                tap_count = 0
+            self.humanlike_stop_event.wait(0.15)
+
     def get_status(self) -> Dict[str, Any]:
         uptime_sec = int(time.time() - self.start_time) if self.is_running and self.start_time else 0
         hours, remainder = divmod(uptime_sec, 3600)
@@ -679,6 +715,15 @@ class BotEngine:
             "stop_goal_rounds_target": self.stop_goal_rounds_target,
             "stop_goal_time_enabled": self.stop_goal_time_enabled,
             "stop_goal_time_hours": self.stop_goal_time_hours,
+            "humanlike_play_enabled": self.humanlike_play_enabled,
+            "humanlike_jump_enabled": self.humanlike_jump_enabled,
+            "humanlike_jump_interval": self.humanlike_jump_interval,
+            "humanlike_jump_double_enabled": self.humanlike_jump_double_enabled,
+            "humanlike_jump_double_interval": self.humanlike_jump_double_interval,
+            "humanlike_jump_double_gap": self.humanlike_jump_double_gap,
+            "humanlike_slide_enabled": self.humanlike_slide_enabled,
+            "humanlike_slide_interval": self.humanlike_slide_interval,
+            "humanlike_slide_hold_duration": self.humanlike_slide_hold_duration,
             "adb_path": get_adb_path(),
             "discord_settings": {
                 "webhook_url": discord_notifier.webhook_url,
@@ -725,6 +770,9 @@ class BotEngine:
 
             emu_check_jitter = random.uniform(8, 12)
             while not self.should_stop:
+                # สุ่มกด Jump/Slide เฉพาะตอนกำลังวิ่งจริง (IN_GAME + stage ยังไม่รู้จัก = เกมวิ่ง)
+                # หยุดทันทีเมื่อ stage โผล่ (GAME_COMPLETE/GAME_RELAY/popup) หรือออกจาก IN_GAME
+                self._sync_humanlike_thread(detection_group == "IN_GAME" and stage is None)
                 if time.time() - last_emu_check_time >= emu_check_jitter:
                     last_emu_check_time = time.time()
                     emu_check_jitter = random.uniform(8, 12)
@@ -862,9 +910,7 @@ class BotEngine:
                         break
 
                     if not is_first_game:
-                        delay = random.uniform(22, 48)
-                        if random.random() < 0.08:
-                            delay += random.uniform(12, 22)
+                        delay = random.uniform(5, 10)
                         self.log(f"⏳ Waiting {delay:.1f}s before starting next round to avoid detection...")
                         if self.interruptible_sleep(delay):
                             break
@@ -1287,6 +1333,7 @@ class BotEngine:
         except Exception as e:
             self.log(f"❌ Bot runtime error: {e}", "error")
         finally:
+            self._stop_humanlike_thread()
             with self.lock:
                 self.is_running = False
                 self.current_stage = "IDLE"

@@ -37,6 +37,24 @@ EMU_HOME_TAP = (538, 233)
 EMU_HOME_CHECK_INTERVAL = 10  # base — ใช้ jitter 8-12 วิใน bot_engine (กันจับ interval ตายตัว)
 
 # -------------------
+# GAMEPLAY BUTTONS (เล่นเสมือนมนุษย์ — สุ่มกด Jump/Slide ขณะวิ่ง)
+# -------------------
+# วัดจริงจาก ADB 1280×720 ขณะเกมวิ่ง (2026-08-31): 37 เฟรม gameplay / Hough circle cluster
+#   ปุ่ม Jump วงกลมโปร่งแสงซ้ายล่าง center (163,577) r≈122 — icon ขาว (164,625)
+#   ปุ่ม Slide วงกลมโปร่งแสงขวาล่าง center (1115,575) r≈122 — icon ขาว (1116,625)
+JUMP_BUTTON = (163, 577)
+SLIDE_BUTTON = (1115, 575)
+
+# ค่า default ระบบเล่นเสมือนมนุษย์ (หน่วยวินาที) — user ปรับได้ต่อ instance ผ่านเว็บ
+HUMANLIKE_PLAY_DEFAULTS = {
+    "jump_single_interval": 0.5,       # กระโดดเอง — ทุกกี่วิ
+    "jump_double_interval": 1.1,       # กระโดดเบิ้ล (2 ครั้งติด) — ทุกกี่วิ
+    "jump_double_gap": 0.4,            # ระยะห่างระหว่าง 2 ครั้งของ jump เบิ้ล
+    "slide_interval": 1.3,             # สไลด์เอง (กดค้าง) — ทุกกี่วิ
+    "slide_hold_duration": 0.8,        # สไลด์กดค้างนานเท่าไหร่
+}
+
+# -------------------
 # STAGE DETECTION TEMPLATES
 # -------------------
 STAGE_MAINMENU_TEMPLATE = ["MAINMENU_1.png"]
@@ -318,7 +336,9 @@ MULTI_PURCHASE_BUTTON = (1100, 195)
 MULTI_BUY_BUTTON = (640, 587)
 FAST_START_USE_BUTTON = (655, 340)
 COOKIE_RELAY_USE_BUTTON = (655, 340)
-COMPLETE_FINISH_BUTTON = (639, 641)  # ปุ่ม OK เขียว 315x98 — วัดจริงจาก ADB 1280×720 (2026-08-31) ภาพ GAME_COMPLETE 3 ภาพ
+COMPLETE_FINISH_BUTTON = (639, 641)  # fallback เท่านั้น — variant เก่า (ปุ่มเดียวกลางจอ) วัดจริง 2026-08-31
+# ⚠️ variant ใหม่ (เจอ 2026-08-31): หน้า GAME_COMPLETE มี 2 ปุ่มข้างกัน — ปุ่มเขียว OK center (462,619) + ปุ่มฟ้า RUN center (817,619)
+#    พิกัดเก่า (639,641) ตกกลางช่องว่างระหว่าง 2 ปุ่ม กดไม่ติด → complete_finish() ใช้ find_green_ok_button() หาแบบ dynamic แทน
 ACCEPT_MYSTERY_BOX_BUTTON = (650, 645)
 ACCEPT_CONGRATULATIONS_BUTTON = (640, 565)
 ACCEPT_LEVEL_UP_BUTTON = (640, 640)

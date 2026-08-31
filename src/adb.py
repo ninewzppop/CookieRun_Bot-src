@@ -135,6 +135,15 @@ def safe_device_tap(ip: str, port: int, x: int, y: int, duration: int = None):
     )
 
 
+def safe_device_long_press(ip: str, port: int, x: int, y: int, duration_ms: int = 800):
+    """
+    กดค้างที่จุด (x, y) นาน duration_ms — ใช้ input swipe x y x y <duration_ms>
+    ที่จุดเดียวกัน (x1=x2, y1=y2) เพื่อจำลอง long-press ค้างไว้ตามเวลาที่กำหนด
+    (มี jitter ±25px แบบ safe_device_tap + miss-tap 2% — เหมือนคน)
+    """
+    safe_device_tap(ip, port, x, y, duration=duration_ms)
+
+
 def safe_device_scroll(ip: str, port: int, x: int, y: int, direction: str = "up", distance: int = 500, duration: int = 300):
     # เพิ่ม Bezier-like jitter + duration variance
     jx = x + int(max(-25, min(25, random.gauss(0, 9))))

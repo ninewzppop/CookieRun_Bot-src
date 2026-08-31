@@ -134,6 +134,16 @@ Saved screenshots will appear in the `debug_screens/` folder with a timestamp.
 
 ## Troubleshooting
 
+**เจอปัญหาใหม่ (Live Screen ไม่ทำงาน / บอทค้าง / popup ใหม่) → เริ่มจาก `debug_tool.py capture` เสมอ**
+แทนที่จะเขียนสคริปต์ cv2 ใหม่ทุกครั้ง:
+
+```bash
+python3 debug_tool.py capture --port 5595     # ขั้นแรกเสมอ: capture + วินิจฉัย stage/X/popup
+python3 debug_tool.py new-stage --name XXX --port 5595   # ถ้า stage = None (หน้าจอใหม่)
+python3 debug_tool.py servers                 # สงสัย server ซ้อน/ค้างพอร์ต
+python3 debug_tool.py verify --port 5595      # regression ก่อนบอกว่า "แก้เสร็จ"
+```
+
 - **Stage not detected**: Save a debug screenshot and compare it against the template images. You may need to recapture templates at the correct resolution.
 - **ADB connection failed**: Verify ADB is in your PATH and the device is reachable (`adb devices`).
 - **Wrong tap coordinates**: All coordinates are calibrated for **1280×720**. Ensure your emulator/device is set to this resolution.

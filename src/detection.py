@@ -185,6 +185,112 @@ def _has_close_x(screen_gray):
     return max_val >= MATCH_THRESHOLD
 
 
+def find_green_blobs(screen, region=None, min_w=180, max_w=380, min_h=60, max_h=140):
+    """
+    หา blob สีเขียว (ปุ่ม OK เขียว ฯลฯ) ด้วย HSV (35-85,60+,60+) + morphology close.
+    คืน list ของ (x1, y1, x2, y2) ตามลำดับขนาดใหญ่ไปเล็ก — shared helper ของ
+    is_confirm_popup_visible / find_green_ok_button (เดิม copy-paste ซ้ำกัน 2 จุด)
+    """
+    screen_bgr = _normalize(screen)
+    if screen_bgr is None:
+        return []
+    if region is not None:
+        rx1, ry1, rx2, ry2 = region
+        crop = screen_bgr[ry1:ry2, rx1:rx2]
+        ox, oy = rx1, ry1
+    else:
+        crop = screen_bgr
+        ox = oy = 0
+    if crop.size == 0:
+        return []
+    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+    green = cv2.inRange(hsv, (35, 60, 60), (85, 255, 255))
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))
+    green = cv2.morphologyEx(green, cv2.MORPH_CLOSE, kernel, iterations=2)
+    contours, _ = cv2.findContours(green, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    blobs = []
+    for c in contours:
+        x, y, bw, bh = cv2.boundingRect(c)
+        if min_w <= bw <= max_w and min_h <= bh <= max_h:
+            blobs.append((ox + x, oy + y, ox + x + bw, oy + y + bh))
+    blobs.sort(key=lambda b: (b[2] - b[0]) * (b[3] - b[1]), reverse=True)
+    return blobs
+
+
+def find_bright_panels(screen, region=None, min_area=6000, brightness=200):
+    """
+    หา panel/popup สีสว่างกลางจอ (bright blob detection) — คืน list ของ (x1, y1, x2, y2)
+    เรียงขนาดใหญ่ไปเล็ก ใช้ debug_tool.py capture / verify ประกอบการวินิจฉัย
+    """
+    screen_bgr = _normalize(screen)
+    if screen_bgr is None:
+        return []
+    if region is not None:
+        rx1, ry1, rx2, ry2 = region
+        crop = screen_bgr[ry1:ry2, rx1:rx2]
+        ox, oy = rx1, ry1
+    else:
+        crop = screen_bgr
+        ox = oy = 0
+    if crop.size == 0:
+        return []
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    mask = cv2.inRange(gray, brightness, 255)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 15))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    panels = []
+    for c in contours:
+        if cv2.contourArea(c) >= min_area:
+            x, y, bw, bh = cv2.boundingRect(c)
+            panels.append((ox + x, oy + y, ox + x + bw, oy + y + bh))
+    panels.sort(key=lambda b: (b[2] - b[0]) * (b[3] - b[1]), reverse=True)
+    return panels
+
+
+def detect_templates_multiscale(screen, template_files, region=None, scales=(0.95, 1.0, 1.05, 1.1, 1.15), threshold=0.60):
+    """
+    matchTemplate แบบหลาย scale (gray) — คืน list ของ dict {score, x, y, w, h, filename, scale}
+    เรียง score มากไปน้อย ใช้หา X/ปุ่ม ที่ template เดิมขนาดไม่ตรงกับ variant ใหม่
+    """
+    screen_bgr = _normalize(screen)
+    if screen_bgr is None:
+        return []
+    if region is not None:
+        rx1, ry1, rx2, ry2 = region
+        search = screen_bgr[ry1:ry2, rx1:rx2]
+        ox, oy = rx1, ry1
+    else:
+        search = screen_bgr
+        ox = oy = 0
+    if search.size == 0:
+        return []
+    search_gray = cv2.cvtColor(search, cv2.COLOR_BGR2GRAY)
+    matches = []
+    for filename in template_files:
+        tmpl = _get_template_gray(filename)
+        if tmpl is None:
+            continue
+        for scale in scales:
+            t_scaled = tmpl if scale == 1.0 else cv2.resize(tmpl, (0, 0), fx=scale, fy=scale)
+            if t_scaled.shape[0] > search_gray.shape[0] or t_scaled.shape[1] > search_gray.shape[1]:
+                continue
+            result = cv2.matchTemplate(search_gray, t_scaled, cv2.TM_CCOEFF_NORMED)
+            _, max_val, _, max_loc = cv2.minMaxLoc(result)
+            if max_val >= threshold:
+                matches.append({
+                    "score": float(max_val),
+                    "x": int(max_loc[0] + ox),
+                    "y": int(max_loc[1] + oy),
+                    "w": int(t_scaled.shape[1]),
+                    "h": int(t_scaled.shape[0]),
+                    "filename": filename,
+                    "scale": scale,
+                })
+    matches.sort(key=lambda m: m["score"], reverse=True)
+    return matches
+
+
 def is_confirm_popup_visible(screen) -> bool:
     """
     ตรวจหน้าต่างยืนยันกลางจอ (ปุ่มเขียวใหญ่ 288x98 ที่ (635,454) — วัดจาก ADB 1280×720)
@@ -193,23 +299,34 @@ def is_confirm_popup_visible(screen) -> bool:
     """
     from config import CONFIRM_POPUP_REGION
 
+    return bool(
+        find_green_blobs(
+            screen,
+            region=CONFIRM_POPUP_REGION,
+            min_w=180, max_w=380, min_h=60, max_h=140,
+        )
+    )
+
+
+def find_green_ok_button(screen):
+    """
+    หาปุ่ม OK เขียวขนาดใหญ่ (315x98) บนหน้า GAME_COMPLETE — คืน (cx, cy) กลางปุ่ม หรือ None
+    วิธีเดียวกับ is_confirm_popup_visible: HSV green + morphology close
+    จำเป็นเพราะ variant ใหม่ (2026-08-31) มี 2 ปุ่มข้างกัน:
+        ปุ่มเขียว OK center (462,619) + ปุ่มฟ้า RUN center (817,619)
+        → พิกัดเก่า (639,641) ตกกลางช่องว่างระหว่าง 2 ปุ่ม กดไม่ติด
+    รองรับ variant เก่า (ปุ่มเดียวกลางจอ 639,641) ด้วย เพราะขนาดเท่ากัน
+    """
     screen_bgr = _normalize(screen)
     if screen_bgr is None:
-        return False
-    x1, y1, x2, y2 = CONFIRM_POPUP_REGION
-    crop = screen_bgr[y1:y2, x1:x2]
-    if crop.size == 0:
-        return False
-    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
-    green = cv2.inRange(hsv, (35, 60, 60), (85, 255, 255))
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))
-    green = cv2.morphologyEx(green, cv2.MORPH_CLOSE, kernel, iterations=2)
-    contours, _ = cv2.findContours(green, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    for c in contours:
-        x, y, w, h = cv2.boundingRect(c)
-        if 180 <= w <= 380 and 60 <= h <= 140:
-            return True
-    return False
+        return None
+    h, w = screen_bgr.shape[:2]
+    half = h // 2
+    blobs = find_green_blobs(screen, region=(0, half, w, h), min_w=200, max_w=420, min_h=60, max_h=140)
+    if not blobs:
+        return None
+    bx1, by1, bx2, by2 = blobs[0]  # เรียงใหญ่สุดมาก่อนแล้ว
+    return ((bx1 + bx2) // 2, (by1 + by2) // 2)
 
 
 def detect_mystery_box_grades(screen) -> list:
@@ -536,12 +653,17 @@ def is_emu_home_visible(screen) -> bool:
     1) Top search bar: white rounded bar with 'Search for games & apps' near (640, 150)
     2) Store/System apps text row is not same as game UI
     Works without template file; fallback when EMU_HOME_1.png missing.
+
+    ปรับ 2026-08-31 (กัน false positive ตอน countdown Ready-GO เริ่มรอบ):
+    - แถบขาวจริงต้องเป็น "แถบ" หนาแน่น: มี row ที่ white density >= 0.55
+      + longest white run >= 60% ของความกว้าง region
+    - countdown/เฟรมเกมมืดมีขาวกระจายบางๆ ทั่ว region (density ~0.3-0.45, run < 40%)
+      → ตัดทิ้งได้ (วัดจาก /tmp/emu_live.png เทียบ /tmp/ingame_burst/f083.png)
     """
     screen_bgr = _normalize(screen)
     if screen_bgr is None:
         return False
     h, w = screen_bgr.shape[:2]
-    # Expect 1280x720, but scale-safe
     # Search bar region: y 110-180, x 350-920
     x1, y1, x2, y2 = int(w*0.27), int(h*0.13), int(w*0.72), int(h*0.25)
     crop = screen_bgr[y1:y2, x1:x2]
@@ -553,8 +675,18 @@ def is_emu_home_visible(screen) -> bool:
     white_ratio = float(np.count_nonzero(white_mask)) / white_mask.size
     if white_ratio < 0.15:
         return False
-    # Icon row check: look for ~3 icons around 537,235 area -> colorful blobs
-    # Simple: bottom of search bar + dark background still has icons, but game screens never have this white bar ratio
+    # แถบขาวต้องหนาแน่นเป็นแถบจริง (ไม่ใช่ขาวกระจายบางทั่ว region)
+    row_densities = [float(np.count_nonzero(row)) / row.size for row in white_mask]
+    max_row_density = max(row_densities) if row_densities else 0.0
+    best_run = 0
+    for row in white_mask:
+        cur = 0
+        for v in row:
+            cur = cur + 1 if v else 0
+            best_run = max(best_run, cur)
+    run_ratio = best_run / white_mask.shape[1]
+    if max_row_density < 0.55 or run_ratio < 0.6:
+        return False
     # Confirm dark background around
     bg_crop = screen_bgr[int(h*0.30):int(h*0.50), int(w*0.05):int(w*0.55)]
     gray = cv2.cvtColor(bg_crop, cv2.COLOR_BGR2GRAY)

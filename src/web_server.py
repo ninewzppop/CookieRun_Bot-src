@@ -99,6 +99,15 @@ class StartBotRequest(BaseModel):
     stop_goal_rounds_target: int = 50
     stop_goal_time_enabled: bool = False
     stop_goal_time_hours: float = 2.0
+    humanlike_play_enabled: Optional[bool] = None
+    humanlike_jump_enabled: Optional[bool] = None
+    humanlike_jump_interval: Optional[float] = None
+    humanlike_jump_double_enabled: Optional[bool] = None
+    humanlike_jump_double_interval: Optional[float] = None
+    humanlike_jump_double_gap: Optional[float] = None
+    humanlike_slide_enabled: Optional[bool] = None
+    humanlike_slide_interval: Optional[float] = None
+    humanlike_slide_hold_duration: Optional[float] = None
 
 
 class ConnectionTestRequest(BaseModel):
@@ -600,6 +609,15 @@ class InstanceSettingsRequest(BaseModel):
     stop_goal_rounds_target: Optional[int] = None
     stop_goal_time_enabled: Optional[bool] = None
     stop_goal_time_hours: Optional[float] = None
+    humanlike_play_enabled: Optional[bool] = None
+    humanlike_jump_enabled: Optional[bool] = None
+    humanlike_jump_interval: Optional[float] = None
+    humanlike_jump_double_enabled: Optional[bool] = None
+    humanlike_jump_double_interval: Optional[float] = None
+    humanlike_jump_double_gap: Optional[float] = None
+    humanlike_slide_enabled: Optional[bool] = None
+    humanlike_slide_interval: Optional[float] = None
+    humanlike_slide_hold_duration: Optional[float] = None
 
 @app.get("/api/instances/{instance_id}/settings")
 def get_instance_settings(instance_id: str):
