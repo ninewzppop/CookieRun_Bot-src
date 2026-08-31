@@ -76,6 +76,7 @@ from config import (
     QUICK_RECEIVE_AND_SEND_LIVES_BUTTON,
     RANDOM_BOOST_ITEM,
     RANDOM_BOOST_REGION,
+    PICK_BOOST_TAP_POS,
     RELIC_CLAIM_BUTTON,
     RELIC_CLOSE_BUTTON,
     RELIC_COMPLETE_BUTTON,
@@ -153,13 +154,42 @@ def purchase_random_boost(device_ip=None, device_port=None):
     time.sleep(random.uniform(2.0, 3.0))
 
 
-def purchase_desired_random_boost(desired_template, desired_name, device_ip=None, device_port=None):
+def purchase_desired_random_boost(desired_template, desired_name, device_ip=None, device_port=None, desired_boost_id: str = None):
     ip, port = _resolve_device(device_ip, device_port)
     print("🛒 Purchasing Desired Random Boost...")
     safe_device_tap(ip, port, RANDOM_BOOST_ITEM[0], RANDOM_BOOST_ITEM[1])
     _human_sleep(1.5, 2.5)  # รอ popup โผล่ก่อนกดปุ่มถัดไป
     safe_device_tap(ip, port, MULTI_PURCHASE_BUTTON[0], MULTI_PURCHASE_BUTTON[1])
-    time.sleep(random.uniform(2.0, 3.0))  # รอ popup ซื้อโหลดเสร็จ
+    time.sleep(random.uniform(2.0, 3.0))  # รอ popup Pick desired Boosts! โหลดเสร็จ
+    # --- ขั้นตอนที่เคยขาด: ติ๊กบัฟใน popup ให้ตรงกับที่เลือกในเว็บ ก่อนกด Multi-Buy ---
+    # ถ้าไม่ติ๊ก, ระบบจะสุ่มตาม default (Double Coins) ทำให้เปลี่ยน id แล้วเหมือนไม่เปลี่ยน
+    _name_to_id = {
+        "Double Coins (2x)": "double_coins",
+        "+15% Score Bonus": "score_15",
+        "-15% HP Drain": "hp_drain_15",
+        "Revive Once with 80 HP": "revive_80",
+        "70% Crush Chance": "crush_70",
+        "+17% Base Speed": "speed_17",
+        "Gold Coin Magic": "coin_magic",
+        "-30% Collision Damage": "damage_30",
+        "+20% HP from Potions": "potions_20",
+        "Magnetic Aura": "magnetic",
+        "2 Pit Lifts": "pit_lifts_2",
+    }
+    _pick_id = desired_boost_id
+    if _pick_id is None or _pick_id not in PICK_BOOST_TAP_POS:
+        # fallback จากชื่อ
+        if desired_name in _name_to_id:
+            _pick_id = _name_to_id[desired_name]
+        elif desired_boost_id in _name_to_id:
+            _pick_id = _name_to_id[desired_boost_id]
+    if _pick_id in PICK_BOOST_TAP_POS:
+        try:
+            sync_pick_desired_boosts(_pick_id, ip, port)
+        except Exception as e:
+            print(f"⚠️ Pick Boosts sync failed ({e}) — จะกด Multi-Buy ต่อเลย")
+    else:
+        print(f"⚠️ ไม่พบ PICK_BOOST_TAP_POS สำหรับ '{desired_boost_id}'/'{desired_name}' — ข้ามการติ๊ก")
     safe_device_tap(ip, port, MULTI_BUY_BUTTON[0], MULTI_BUY_BUTTON[1])
     _human_sleep(1.5, 2.5)  # รอ animation ซื้อเสร็จ
     print(f"🔍 Waiting for desired boost to be detected: {desired_name}...")
@@ -636,3 +666,123 @@ def sync_boost_selection(desired_hp_ext, desired_power_jelly, desired_double_xp,
                 pass
         else:
             print(f"➖ {name} already {'checked' if is_checked else 'unchecked'} as desired ({'ON' if desired else 'OFF'}) src={src}")
+
+
+def _is_pick_checkbox_checked(screen, tap_pos) -> bool:
+    """ตรวจว่า checkbox ใน popup Pick desired Boosts! ที่ tap_pos ติ๊กถูกแล้วหรือยัง — ดูสีเขียวติ๊กในวงกลม 26px"""
+    import cv2
+    import numpy as np
+    # crop 32x32 รอบจุด tap (checkbox ~26px) — เผื่อคลาด 2-4px จากประมาณ
+    x, y = tap_pos
+    h, w = screen.shape[:2]
+    x1, y1 = max(0, x - 16), max(0, y - 16)
+    x2, y2 = min(w, x + 16), min(h, y + 16)
+    crop = screen[y1:y2, x1:x2]
+    if crop.size == 0:
+        return False
+    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+    # เขียวติ๊กถูก: H 35-85, S 60+, V 80+ — ในรูปติ๊กเขียวเข้ม ~10-18% ของ crop, unchecked ~1-3%
+    green = cv2.inRange(hsv, np.array([35, 60, 80]), np.array([85, 255, 255]))
+    ratio = np.count_nonzero(green) / (crop.shape[0]*crop.shape[1])
+    return ratio > 0.06  # ลดจาก 0.08 เป็น 0.06 เผื่อติ๊กเล็ก/เฟด
+
+
+def sync_pick_desired_boosts(desired_boost_id: str, device_ip=None, device_port=None):
+    """ใน popup Pick desired Boosts! ติ๊กให้ตรงกับ desired_boost_id ที่เลือกในเว็บ — แบบ Exclusive (เหลือติ๊กเดียวเท่านั้น)"""
+    ip, port = _resolve_device(device_ip, device_port)
+    # รอ popup โผล่เต็มที่ (หลัง MULTI_PURCHASE) — ลอง capture 1-2 ครั้ง
+    screen = None
+    for _ in range(3):
+        try:
+            screen = device_capture_screen(ip, port)
+            if screen is not None:
+                break
+        except Exception:
+            pass
+        time.sleep(0.6)
+    if screen is None:
+        print("⚠️ Pick Boosts popup: capture ไม่ได้ — ข้ามการติ๊ก, จะกด Multi-Buy เลย")
+        return
+
+    def _log_states(tag):
+        # debug log ทุกตัวว่า checked/unchecked ยังไง — ช่วยจูนพิกัด/threshold ถ้าติ๊กค้าง 2 อัน
+        for _bid, _pos in PICK_BOOST_TAP_POS.items():
+            try:
+                _chk = _is_pick_checkbox_checked(screen, _pos)
+            except Exception:
+                _chk = False
+            print(f"   {'✅' if _chk else '⬜'} {_bid:12} at {_pos} -> {'checked' if _chk else 'unchecked'}")
+        # นับจำนวนติ๊ก
+        try:
+            _cnt = sum(1 for _p in PICK_BOOST_TAP_POS.values() if _is_pick_checkbox_checked(screen, _p))
+            print(f"   [{tag}] ติ๊กทั้งหมด {_cnt} อัน — ต้อง =1 (เลือก '{desired_boost_id}')")
+        except Exception:
+            pass
+
+    print(f"🔍 Pick Boosts: ก่อนตั้งค่า (อยากได้ '{desired_boost_id}')")
+    _log_states("before")
+
+    # รอบ 1: ตั้งตาม exclusive — ถ้าไม่ใช่ตัวที่เลือกแล้วติ๊กอยู่ → เอาออก, ถ้าใช่แล้วไม่ติ๊ก → ติ๊ก
+    for bid, pos in PICK_BOOST_TAP_POS.items():
+        should_check = (bid == desired_boost_id)
+        try:
+            is_checked = _is_pick_checkbox_checked(screen, pos)
+        except Exception:
+            is_checked = False
+        if should_check and not is_checked:
+            print(f"✅ Pick Boosts: กำลังติ๊ก {bid} ที่ {pos} (ต้อง checked)")
+            safe_device_tap(ip, port, pos[0], pos[1])
+            time.sleep(random.uniform(0.9, 1.3))
+            try:
+                screen = device_capture_screen(ip, port)
+            except Exception:
+                pass
+        elif not should_check and is_checked:
+            # เอาติ๊กออก — ให้เหลือแค่ตัวที่เลือกตัวเดียว จะได้สุ่มจนได้ตัวนั้นจริง
+            print(f"❌ Pick Boosts: เอาติ๊กออก {bid} ที่ {pos} (ต้อง unchecked — exclusive)")
+            safe_device_tap(ip, port, pos[0], pos[1])
+            time.sleep(random.uniform(0.9, 1.3))
+            try:
+                screen = device_capture_screen(ip, port)
+            except Exception:
+                pass
+        else:
+            pass
+
+    # รอบ 2: verify แบบ exclusive — ถ้ายังติ๊กเกิน 1 หรือตัวที่เลือกยังไม่ติ๊ก → แก้ซ้ำจนถูก
+    time.sleep(0.5)
+    try:
+        screen = device_capture_screen(ip, port)
+    except Exception:
+        pass
+    if screen is not None:
+        print(f"🔍 Pick Boosts: หลังรอบ 1")
+        _log_states("after-1")
+        # นับใหม่
+        checked_ids = [bid for bid, pos in PICK_BOOST_TAP_POS.items() if _is_pick_checkbox_checked(screen, pos)]
+        # ถ้าติ๊กเกิน 1 หรือไม่ใช่ตัวที่เลือก → แก้
+        if len(checked_ids) != 1 or (checked_ids and checked_ids[0] != desired_boost_id):
+            print(f"⚠️ Pick Boosts: ยังติ๊กไม่ exclusive ({checked_ids}) — กำลังแก้รอบ 2 (ต้องเหลือแค่ '{desired_boost_id}')")
+            for bid, pos in PICK_BOOST_TAP_POS.items():
+                should_check = (bid == desired_boost_id)
+                try:
+                    is_checked = _is_pick_checkbox_checked(screen, pos)
+                except Exception:
+                    is_checked = False
+                if should_check and not is_checked:
+                    print(f"✅ [retry] ติ๊ก {bid}")
+                    safe_device_tap(ip, port, pos[0], pos[1])
+                    time.sleep(0.7)
+                    try: screen = device_capture_screen(ip, port)
+                    except Exception: pass
+                elif not should_check and is_checked:
+                    print(f"❌ [retry] เอาติ๊กออก {bid}")
+                    safe_device_tap(ip, port, pos[0], pos[1])
+                    time.sleep(0.7)
+                    try: screen = device_capture_screen(ip, port)
+                    except Exception: pass
+            if screen is not None:
+                print(f"🔍 Pick Boosts: หลังรอบ 2")
+                _log_states("after-2")
+
+    print(f"🎯 Pick Boosts: ตั้งค่าเสร็จ — เลือก '{desired_boost_id}' แล้ว (exclusive, ไม่ให้มีติ๊กเกิน 1)")

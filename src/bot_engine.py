@@ -790,14 +790,8 @@ class BotEngine:
             load_templates()
             self.log("✅ Templates loaded", "success")
 
-            desired_boost_template = None
-            desired_boost_name = None
-            if self.use_desired_random_boost:
-                boost_item = next((b for b in BOOST_OPTIONS if b["id"] == self.desired_boost_id), BOOST_OPTIONS[0])
-                desired_boost_template = boost_item["template"]
-                desired_boost_name = boost_item["name"]
-                self.log(f"🎲 Desired Random Boost: {desired_boost_name}")
-
+            # Desired boost จะ lookup แบบ live ทุกรอบใน PURCHASE_ITEM handler
+            # (ไม่ cache ไว้ตอน start) เพื่อให้เปลี่ยนในเว็บระหว่างบอทวิ่งแล้วมีผลทันทีรอบถัดไป
             relic_exclude = None if self.detect_relic else {"RELIC_COMPLETE", "RELIC_CLAIM"}
 
             last_stage = None
@@ -1059,9 +1053,15 @@ class BotEngine:
                     except Exception as e:
                         self.log(f"⚠️ Boost Selection sync failed: {e}", "warning")
 
-                    if self.use_desired_random_boost and desired_boost_template:
-                        self.log(f"🎲 Rolling boost for: {desired_boost_name}...")
-                        purchase_desired_random_boost(desired_boost_template, desired_boost_name, self.device_ip, self.device_port)
+                    if self.use_desired_random_boost:
+                        # lookup สดทุกรอบ — ถ้า user เปลี่ยน boost ในเว็บระหว่างรันจะได้ตัวใหม่ทันที
+                        _boost_item = next((b for b in BOOST_OPTIONS if b["id"] == self.desired_boost_id), None)
+                        if _boost_item is None:
+                            _boost_item = BOOST_OPTIONS[0]
+                            self.log(f"⚠️ desired_boost_id='{self.desired_boost_id}' ไม่พบใน BOOST_OPTIONS — fallback เป็น {_boost_item['name']}", "warning")
+                        _desired_tpl, _desired_name = _boost_item["template"], _boost_item["name"]
+                        self.log(f"🎲 Rolling boost for: {_desired_name} (id={self.desired_boost_id})...", "info")
+                        purchase_desired_random_boost(_desired_tpl, _desired_name, self.device_ip, self.device_port, desired_boost_id=self.desired_boost_id)
                     play_game(self.device_ip, self.device_port)
                     # Root-cause fix (ON/OFF flicker): อย่าตั้ง IN_GAME ทันทีหลังกด Play
                     # — บางรอบมี PURCHASE_ITEM จริงคั่นก่อนเข้าเกม (ไม่ใช่ false positive)

@@ -357,6 +357,23 @@ RANDOM_BOOST_ITEM = (535, 600)
 PURCHASE_BUTTON = (925, 295)
 MULTI_PURCHASE_BUTTON = (1100, 195)
 MULTI_BUY_BUTTON = (640, 587)
+# Pick desired Boosts! popup — หลังกด MULTI_PURCHASE จะมี popup ให้ติ๊กบัฟที่ต้องการสุ่ม
+# พิกัดวัดจริงจาก ADB 1280x720 เมื่อ 2026-09-01 02:06:44 via debug_tool.py + color-blob (panel 224,108-1050,612)
+# 2 คอลัมน์ 6 แถว, ติ๊กถูก=เขียวในวงกลมน้ำตาล 32x33 px — ใช้ tap กลางวงกลม
+PICK_BOOST_TAP_POS = {
+    "double_coins":  (284, 175),  # แถว 1 ซ้าย — Double Coins (วัดจริง 268,159 32x33 → center 284,175)
+    "score_15":      (667, 175),  # แถว 1 ขวา — 15% score bonus (651,159)
+    "hp_drain_15":   (284, 225),  # แถว 2 ซ้าย — -15% HP drain (268,209)
+    "revive_80":     (667, 225),  # แถว 2 ขวา — Revive once with 80 HP (651,209)
+    "crush_70":      (284, 274),  # แถว 3 ซ้าย — 70% Crush Chance (268,258)
+    "speed_17":      (667, 274),  # แถว 3 ขวา — +17% base speed (651,258)
+    "coin_magic":    (284, 324),  # แถว 4 ซ้าย — Gold Coin Magic (268,308)
+    "damage_30":     (667, 324),  # แถว 4 ขวา — -30% collision damage (651,308)
+    "potions_20":    (284, 373),  # แถว 5 ซ้าย — +20% HP from potions (268,357)
+    "magnetic":      (667, 373),  # แถว 5 ขวา — Magnetic Aura (651,357)
+    "pit_lifts_2":   (284, 423),  # แถว 6 ซ้าย — 2 Pit Lifts (268,407) แถวสุดท้ายมีตัวเดียว
+}
+# ขนาด checkbox ประมาณ 26x26 — ใช้ตรวจสีเขียวติ๊กถูกเพื่อรู้ว่า checked หรือไม่
 FAST_START_USE_BUTTON = (655, 340)
 COOKIE_RELAY_USE_BUTTON = (655, 340)
 COMPLETE_FINISH_BUTTON = (639, 641)  # fallback เท่านั้น — variant เก่า (ปุ่มเดียวกลางจอ) วัดจริง 2026-08-31
