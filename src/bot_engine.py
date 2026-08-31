@@ -215,7 +215,8 @@ class BotEngine:
         self._x_fallback_last_tap: float = 0.0
         self._x_fallback_last_pos: Optional[tuple] = None
         self._x_fallback_notified_pos: Optional[tuple] = None
-        self._hl_break_screen_ok: bool = False  # DEBUG-TEMP
+        # Manual heart sending flag — กัน main loop ปิด popup เมล์ระหว่างทำงาน (thread แยก)
+        self._sending_hearts: bool = False
         # Load persisted per-instance settings if exists (survives restart)
         try:
             _saved = _load_instance_settings(instance_id)
@@ -669,16 +670,13 @@ class BotEngine:
                     ):
                         # ยืนยันจากหน้าจอจริง: ถ้ายังเห็นปุ่ม Jump/Slide = เกมยังวิ่งอยู่
                         # (เช่น PURCHASE_ITEM โดน detect หลอกตอน countdown) → พัก ไม่แตก
-                        self._hl_break_screen_ok = False  # DEBUG-TEMP
                         try:
                             frame = device_capture_screen(self.device_ip, self.device_port)
                             if frame is not None and is_game_run_visible(frame):
                                 self.humanlike_stop_event.wait(0.4)
                                 continue
-                            self._hl_break_screen_ok = True  # DEBUG-TEMP
                         except Exception:
                             pass
-                        print(f"[DEBUG-HL-BREAK] st={st!r}")  # DEBUG-TEMP
                         break
                     # สเตจชั่วคราว (GAME_RELAY/CONFIRM/ANNOUNCEMENT ฯลฯ) — พักรอ
                     # ไม่กด กันชนกับ handler หลัก แล้วกลับมาเล่นต่อเองเมื่อวิ่งต่อ
@@ -836,6 +834,13 @@ class BotEngine:
                         last_detected_time = time.time()
                         continue
 
+                # กัน popup เมล์ถูกปิดจากภายนอกระหว่างส่งหัวใจ (manual thread แยก)
+                # ถ้ากำลังส่งหัวใจ → หยุด loop ชั่วคราว ไม่ตรวจ stage/ไม่กด X fallback จนกว่า send_hearts() จะ return
+                if getattr(self, "_sending_hearts", False):
+                    if self.interruptible_sleep(0.5):
+                        break
+                    continue
+
                 try:
                     device_screen = device_capture_screen(self.device_ip, self.device_port)
                     self.update_frame(device_screen)
@@ -878,7 +883,8 @@ class BotEngine:
                 # ── Generic popup X-close fallback ──
                 # popup ที่ไม่รู้จัก (stage ยังเป็น None) แต่มีปุ่ม X → ปิดให้อัตโนมัติ
                 # ระหว่าง IN_GAME: threshold สูง (0.90) + ข้าม exclude zones (Pause/Jump/Slide)
-                if stage is None:
+                # กันไม่ให้ปิด popup เมล์ระหว่างส่งหัวใจ (manual thread)
+                if stage is None and not getattr(self, "_sending_hearts", False):
                     now = time.time()
                     if now >= self._x_fallback_cd_until:
                         in_game = detection_group == "IN_GAME"
@@ -1057,7 +1063,13 @@ class BotEngine:
                         self.log(f"🎲 Rolling boost for: {desired_boost_name}...")
                         purchase_desired_random_boost(desired_boost_template, desired_boost_name, self.device_ip, self.device_port)
                     play_game(self.device_ip, self.device_port)
-                    detection_group = "IN_GAME"
+                    # Root-cause fix (ON/OFF flicker): อย่าตั้ง IN_GAME ทันทีหลังกด Play
+                    # — บางรอบมี PURCHASE_ITEM จริงคั่นก่อนเข้าเกม (ไม่ใช่ false positive)
+                    #   ถ้าตั้ง IN_GAME ทันที → humanlike thread เริ่ม/กระพริบก่อน handler จะรีเซ็ตกลับ PRE_GAME
+                    # → ตั้ง PRE_GAME ไว้ก่อน ให้ main loop รอบถัดไปตรวจจากภาพจริงตัดสินเอง:
+                    #   - is_game_run_visible() == True → จะพลิกเป็น IN_GAME เอง (บรรทัด 873-876)
+                    #   - หรือเจอ GAME_START/GAME_RELAY → handler นั้นจะตั้ง IN_GAME ให้เอง
+                    detection_group = "PRE_GAME"
                     self.rounds_played += 1
                     self.current_round_start_time = time.time()
                     self.current_round_recorded = False

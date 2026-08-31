@@ -55,7 +55,7 @@ from config import (
     GAME_PACKAGE,
     SESSION_RESET_INTERVAL,
 )
-from detection import detect_stage, extract_result_coins, extract_result_xp, is_emu_home_visible, is_confirm_popup_visible, load_templates
+from detection import detect_stage, extract_result_coins, extract_result_xp, is_emu_home_visible, is_confirm_popup_visible, is_game_run_visible, load_templates
 from debug import save_debug_screen
 
 # -------------------
@@ -195,6 +195,11 @@ def main():
             else:
                 last_detected_time = time.time()
 
+            # อิงจากภาพหน้าจอจริง: ถ้าเห็นปุ่ม Jump/Slide = เกมวิ่งอยู่จริง → พลิกเป็น IN_GAME
+            # (ไม่พึ่ง assumption หลังกด Play)
+            if stage is None and is_game_run_visible(device_screen):
+                detection_group = "IN_GAME"
+
             if stage == last_stage:
                 time.sleep(random.uniform(0.09, 0.18) if detection_group == "IN_GAME" else random.uniform(0.11, 0.22))
                 continue
@@ -256,7 +261,10 @@ def main():
                 if options["use_desired_random_boost"]:
                     purchase_desired_random_boost(options["desired_boost_template"], options["desired_boost_name"])
                 play_game()
-                detection_group = "IN_GAME"
+                # Root-cause fix: อย่าตั้ง IN_GAME ทันทีหลัง Play — ปล่อยให้ loop ถัดไป
+                # ตรวจจากภาพจริง (is_game_run_visible / GAME_START) เป็นตัวตัดสิน ป้องกัน flicker
+                # เมื่อมีหน้า PURCHASE_ITEM จริงคั่นก่อนเข้าเกม
+                detection_group = "PRE_GAME"
                 time.sleep(random.uniform(0.15, 0.30))
                 last_stage = None
             elif stage == "GAME_START":

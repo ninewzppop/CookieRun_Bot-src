@@ -666,8 +666,10 @@ def send_hearts_now(instance_id: str):
     if getattr(eng, "_sending_hearts", False):
         return {"success": False, "message": "กำลังส่งหัวใจอยู่แล้ว กรุณารอสักครู่"}
     import threading
+    # ตั้ง flag ก่อน start thread ทันที — กัน main loop ปิด popup เมล์ระหว่าง race window
+    # popup จะอยู่จนกว่า handle_quick_receive_and_send_lives() จะ return เท่านั้น (callback flag)
+    eng._sending_hearts = True
     def _do_send():
-        eng._sending_hearts = True
         try:
             eng.log("💖 [Manual] ผู้ใช้กดส่งหัวใจทันที — กำลังเปิดกล่องจดหมาย...", "info")
             from actions import handle_quick_receive_and_send_lives
@@ -677,7 +679,6 @@ def send_hearts_now(instance_id: str):
             eng.log(f"❌ [Manual] ส่งหัวใจล้มเหลว: {e}", "error")
         finally:
             eng._sending_hearts = False
-    eng._sending_hearts = False
     t = threading.Thread(target=_do_send, daemon=True, name=f"SendHeartsNow-{instance_id}")
     t.start()
     return {"success": True, "message": "เริ่มส่งหัวใจทันทีแล้ว — ดู Logs ด้านล่าง", "instance_id": instance_id}
