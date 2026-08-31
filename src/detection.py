@@ -136,6 +136,79 @@ def find_close_x_button(screen):
     return (x + tw // 2, y + th // 2)
 
 
+def find_close_x_button_safe(screen, threshold=0.90, exclude_zones=None):
+    """
+    หาปุ่ม X ปิด popup แบบปลอดภัย (ใช้กับ generic popup fallback):
+    - threshold สูงขึ้น (default 0.90 vs 0.80 ของ find_close_x_button)
+    - ข้าม exclude zones — บริเวณปุ่มควบคุมเกม (Pause มุมขวาบน, Jump/Slide มุมล่าง)
+    คืน ( (cx, cy), score ) ของ match ดีที่สุดนอกโซน หรือ None
+    """
+    screen_gray = _normalize_gray(screen)
+    if screen_gray is None:
+        return None
+    template = _get_template_gray(CLOSE_X_TEMPLATE)
+    if template is None:
+        return None
+    th, tw = template.shape[:2]
+    if screen_gray.shape[0] < th or screen_gray.shape[1] < tw:
+        return None
+    result = cv2.matchTemplate(screen_gray, template, cv2.TM_CCOEFF_NORMED)
+    locs = np.where(result >= threshold)
+    best_pos = None
+    best_score = -1.0
+    for pt in zip(*locs[::-1]):
+        cx = int(pt[0]) + tw // 2
+        cy = int(pt[1]) + th // 2
+        if exclude_zones:
+            blocked = False
+            for zx1, zy1, zx2, zy2 in exclude_zones:
+                if zx1 <= cx <= zx2 and zy1 <= cy <= zy2:
+                    blocked = True
+                    break
+            if blocked:
+                continue
+        score = float(result[pt[1], pt[0]])
+        if score > best_score:
+            best_score = score
+            best_pos = (cx, cy)
+    return (best_pos, best_score) if best_pos else None
+
+
+def is_game_run_visible(screen) -> bool:
+    """
+    ตรวจจับว่าเกมกำลังวิ่งอยู่ จากภาพหน้าจอจริงเท่านั้น (ไม่พึ่ง state/ประวัติบอท)
+    ดูจาก icon ขาวของปุ่ม Jump/Slide ที่มุมล่าง — ตำแหน่งคงที่ทุกเฟรม (วัดจริง 2026-08-31):
+      Jump icon ~(164,625), Slide icon ~(1116,625) — morphology close รวม stroke ลูกศร
+      เป็นก้อนเดียว (~105x36) แล้วกรองขนาด
+    คืน True ทั้งตอนวิ่งจริงและ GAME_COMPLETE (ทั้งคู่เป็น "หน้าจอโหมดเกม" — มีประโยชน์
+    ต่อ recovery เมื่อ state บอทหลุด sync จากหน้าจอจริง)
+    """
+    screen_bgr = _normalize(screen)
+    if screen_bgr is None:
+        return False
+    h, w = screen_bgr.shape[:2]
+    if w < 1280 or h < 720:
+        return False
+    hsv = cv2.cvtColor(screen_bgr, cv2.COLOR_BGR2HSV)
+    white = cv2.inRange(hsv, (0, 0, 200), (180, 40, 255))
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
+    white = cv2.morphologyEx(white, cv2.MORPH_CLOSE, kernel, iterations=2)
+
+    def _has_icon(cx, cy):
+        x1, y1, x2, y2 = cx - 60, cy - 30, cx + 60, cy + 30
+        sub = white[y1:y2, x1:x2]
+        if sub.size == 0:
+            return False
+        contours, _ = cv2.findContours(sub, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for c in contours:
+            bx, by, bw, bh = cv2.boundingRect(c)
+            if 60 <= bw <= 150 and 18 <= bh <= 70:
+                return True
+        return False
+
+    return _has_icon(164, 625) and _has_icon(1116, 625)
+
+
 def detect_stage(screen, stage_names=None, exclude=None):
     screen_gray = _normalize_gray(screen)
     if screen_gray is None:

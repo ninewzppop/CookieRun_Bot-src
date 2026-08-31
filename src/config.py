@@ -37,6 +37,9 @@ EMU_HOME_TAP = (538, 233)
 EMU_HOME_CHECK_INTERVAL = 10  # base — ใช้ jitter 8-12 วิใน bot_engine (กันจับ interval ตายตัว)
 
 # -------------------
+# GENERIC POPUP X-CLOSE FALLBACK (ปิด popup ที่ไม่รู้จัก — ปลอดภัย ไม่โดนปุ่มควบคุมเกม)
+# -------------------
+# -------------------
 # GAMEPLAY BUTTONS (เล่นเสมือนมนุษย์ — สุ่มกด Jump/Slide ขณะวิ่ง)
 # -------------------
 # วัดจริงจาก ADB 1280×720 ขณะเกมวิ่ง (2026-08-31): 37 เฟรม gameplay / Hough circle cluster
@@ -53,6 +56,26 @@ HUMANLIKE_PLAY_DEFAULTS = {
     "slide_interval": 1.3,             # สไลด์เอง (กดค้าง) — ทุกกี่วิ
     "slide_hold_duration": 0.8,        # สไลด์กดค้างนานเท่าไหร่
 }
+
+# -------------------
+# GENERIC POPUP X-CLOSE FALLBACK (ปิด popup ที่ไม่รู้จัก — ปลอดภัย ไม่โดนปุ่มควบคุมเกม)
+# -------------------
+X_CLOSE_FALLBACK_THRESHOLD = 0.85           # นอก IN_GAME
+X_CLOSE_FALLBACK_THRESHOLD_IN_GAME = 0.90   # ระหว่าง IN_GAME (เข้มงวดขึ้น — กันกดพลาด)
+# exclude zones ตอน IN_GAME — ห้ามค้นหา/กด X ในบริเวณปุ่มควบคุมเกม (วัดจากภาพจริง 1280×720):
+#   1. มุมขวาบน (1080-1280, 0-160): ปุ่ม Pause/HUD เกม + X หลอก (1219,122) บนเฟรม countdown
+#   2. ปุ่ม Jump ซ้ายล่าง center (163,577) r≈122
+#   3. ปุ่ม Slide ขวาล่าง center (1115,575) r≈122
+X_CLOSE_EXCLUDE_ZONES = [
+    (1080, 0, 1280, 160),
+    (40, 455, 290, 700),
+    (990, 455, 1240, 700),
+]
+# หมายเหตุ (menu mode / นอก IN_GAME): ไม่มี exclude zone —
+#   - flow ซื้อบูสต์ (popup "Buy some Boosts!" X@(1042,80), หน้าซื้อ X@(634,100))
+#     เกิดตอน handler synchronous ทำงาน (loop ถูก block) → fallback ไม่มีโอกาสกวน
+#   - กรณี popup ตกค้างจาก session ก่อน (stray grid) ต้องปิดได้ → ไม่อาจ exclude
+#   - popup ที่ไม่รู้จักจริง (เช่น X@(1123,101)) ต้องปิดได้ + แจ้งเตือน
 
 # -------------------
 # STAGE DETECTION TEMPLATES

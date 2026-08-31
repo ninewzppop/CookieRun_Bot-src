@@ -76,6 +76,9 @@ from config import (
     EMU_HOME_CHECK_INTERVAL,
     GAME_PACKAGE,
     SESSION_RESET_INTERVAL,
+    X_CLOSE_EXCLUDE_ZONES,
+    X_CLOSE_FALLBACK_THRESHOLD,
+    X_CLOSE_FALLBACK_THRESHOLD_IN_GAME,
 )
 from detection import (
     detect_result_screen_mystery_box,
@@ -84,8 +87,10 @@ from detection import (
     extract_item_stock,
     extract_result_coins,
     extract_result_xp,
+    find_close_x_button_safe,
     is_emu_home_visible,
     is_confirm_popup_visible,
+    is_game_run_visible,
     load_templates,
 )
 from discord_notifier import discord_notifier
@@ -205,6 +210,12 @@ class BotEngine:
         self.humanlike_stop_event = threading.Event()
         self._in_game_since: float = 0.0
         self._humanlike_grace: float = 4.0  # เริ่มกดหลังเข้า IN_GAME 4 วิ (ข้าม countdown Ready-GO)
+        # Generic popup X-close fallback — state กันกดซ้ำ/สแปมแจ้งเตือน
+        self._x_fallback_cd_until: float = 0.0
+        self._x_fallback_last_tap: float = 0.0
+        self._x_fallback_last_pos: Optional[tuple] = None
+        self._x_fallback_notified_pos: Optional[tuple] = None
+        self._hl_break_screen_ok: bool = False  # DEBUG-TEMP
         # Load persisted per-instance settings if exists (survives restart)
         try:
             _saved = _load_instance_settings(instance_id)
@@ -627,48 +638,84 @@ class BotEngine:
     def _humanlike_play_loop(self):
         """วนลูปสุ่มกด Jump/Slide แบบมนุษย์ — หยุดเมื่อ stop_event / should_stop"""
         def _jit(v: float) -> float:
-            # jitter ±20% แต่ไม่ต่ำกว่า 0.15s กันกดถี่เกิน
-            return max(0.15, v + random.uniform(-v * 0.2, v * 0.2))
+            # jitter ±35-40% ของ interval — กว้างพอให้ไม่เกิดแพทเทิร์นซ้ำ (เดิม ±20% แคบไป)
+            j = v * random.uniform(0.35, 0.40)
+            return max(0.15, v + random.uniform(-j, j))
+
+        def _roll_weights() -> Dict[str, float]:
+            # สุ่มน้ำหนักการกระทำใหม่ — กระโดดเดี่ยว/เบิ้ล/สไลด์ ไม่ได้สัดส่วนคงที่ตลอด
+            w_double = random.uniform(0.15, 0.45) if self.humanlike_jump_double_enabled else 0.0
+            w_single = random.uniform(0.35, 0.65) if self.humanlike_jump_enabled else 0.0
+            w_slide = random.uniform(0.6, 0.95) if self.humanlike_slide_enabled else 0.0
+            return {"double": w_double, "single": w_single, "slide": w_slide}
 
         self.log("🤖 เล่นเสมือนมนุษย์ ON — สุ่มกด Jump/Slide ขณะวิ่ง", "info")
         last_double_jump = 0.0
         next_jump = time.time() + _jit(self.humanlike_jump_interval)
         next_slide = time.time() + _jit(self.humanlike_slide_interval)
-        tap_count = 0
-        while not self.humanlike_stop_event.is_set() and not self.should_stop:
-            # self-check: หยุดเองเมื่อ main loop ตรวจเจอ stage อื่น (GAME_COMPLETE/popup)
-            # — main loop อาจ block ใน handler ที่ยาว (เช่น GAME_COMPLETE) จึงต้องเช็คเอง
-            if self.current_stage != "IN_GAME (Searching...)":
-                break
-            now = time.time()
-            if self.humanlike_jump_enabled and now >= next_jump:
-                try:
-                    # สุ่มกระโดดเดี่ยว หรือเบิ้ล (ถ้าเปิด sub-toggle และพ้น cooldown เบิ้ลแล้ว)
-                    if (
-                        self.humanlike_jump_double_enabled
-                        and (now - last_double_jump) >= self.humanlike_jump_double_interval
-                        and random.random() < 0.5
+        weights = _roll_weights()
+        next_reroll = time.time() + random.uniform(30, 60)
+        try:
+            while not self.humanlike_stop_event.is_set() and not self.should_stop:
+                st = self.current_stage
+                if st != "IN_GAME (Searching...)":
+                    # สเตจที่แปลว่า "จบรอบ/ออกจากเกมแล้ว" → หยุด thread จริง
+                    if st in (
+                        "GAME_COMPLETE", "MAINMENU", "PURCHASE_ITEM",
+                        "PRE_GAME (Searching...)", "POST_GAME (Searching...)",
+                        "EMU_HOME", "CONNECTION_LOST", "INACTIVE", "ANTI_BOT",
+                        "MYSTERY_BOX", "CONGRATULATIONS", "OVERTAKE_BREAK_SCORE",
+                        "STOPPING", "IDLE", "INITIALIZING", "STARTING",
                     ):
-                        humanlike_jump_double(self.device_ip, self.device_port, gap=self.humanlike_jump_double_gap)
-                        last_double_jump = now
-                        tap_count += 2
-                    else:
-                        humanlike_jump(self.device_ip, self.device_port)
-                        tap_count += 1
-                    next_jump = now + _jit(self.humanlike_jump_interval)
-                except Exception as e:
-                    self.log(f"⚠️ humanlike jump error: {e}", "error")
-            if self.humanlike_slide_enabled and now >= next_slide:
-                try:
-                    humanlike_slide(self.device_ip, self.device_port, hold_duration=self.humanlike_slide_hold_duration)
-                    next_slide = now + _jit(self.humanlike_slide_interval)
-                    tap_count += 1
-                except Exception as e:
-                    self.log(f"⚠️ humanlike slide error: {e}", "error")
-            if tap_count >= 8:
-                self.log(f"🎮 เล่นเสมือนมนุษย์: กดไปแล้ว {tap_count} ครั้ง (Jump@{config.JUMP_BUTTON} / Slide@{config.SLIDE_BUTTON})", "info")
-                tap_count = 0
-            self.humanlike_stop_event.wait(0.15)
+                        # ยืนยันจากหน้าจอจริง: ถ้ายังเห็นปุ่ม Jump/Slide = เกมยังวิ่งอยู่
+                        # (เช่น PURCHASE_ITEM โดน detect หลอกตอน countdown) → พัก ไม่แตก
+                        self._hl_break_screen_ok = False  # DEBUG-TEMP
+                        try:
+                            frame = device_capture_screen(self.device_ip, self.device_port)
+                            if frame is not None and is_game_run_visible(frame):
+                                self.humanlike_stop_event.wait(0.4)
+                                continue
+                            self._hl_break_screen_ok = True  # DEBUG-TEMP
+                        except Exception:
+                            pass
+                        print(f"[DEBUG-HL-BREAK] st={st!r}")  # DEBUG-TEMP
+                        break
+                    # สเตจชั่วคราว (GAME_RELAY/CONFIRM/ANNOUNCEMENT ฯลฯ) — พักรอ
+                    # ไม่กด กันชนกับ handler หลัก แล้วกลับมาเล่นต่อเองเมื่อวิ่งต่อ
+                    self.humanlike_stop_event.wait(0.5)
+                    continue
+                now = time.time()
+                # โอกาส "หยุดพัก" 5-8% ต่อรอบ — ข้ามการกระโดด/สไลด์ในรอบนี้ (เหมือนคนเผลอไม่ทัน)
+                pause = random.random() < random.uniform(0.05, 0.08)
+                if not pause and self.humanlike_jump_enabled and now >= next_jump:
+                    try:
+                        roll = random.random()
+                        if (
+                            weights["double"] > 0
+                            and roll < weights["double"]
+                            and (now - last_double_jump) >= self.humanlike_jump_double_interval
+                        ):
+                            humanlike_jump_double(self.device_ip, self.device_port, gap=self.humanlike_jump_double_gap)
+                            last_double_jump = now
+                        elif roll < weights["double"] + weights["single"]:
+                            humanlike_jump(self.device_ip, self.device_port)
+                        # นอกนั้น = ข้ามรอบ (เหมือนลังเล) ไม่กด
+                        next_jump = now + _jit(self.humanlike_jump_interval)
+                    except Exception as e:
+                        self.log(f"⚠️ humanlike jump error: {e}", "error")
+                if not pause and self.humanlike_slide_enabled and now >= next_slide:
+                    try:
+                        if random.random() < weights["slide"]:
+                            humanlike_slide(self.device_ip, self.device_port, hold_duration=self.humanlike_slide_hold_duration)
+                        next_slide = now + _jit(self.humanlike_slide_interval)
+                    except Exception as e:
+                        self.log(f"⚠️ humanlike slide error: {e}", "error")
+                if now >= next_reroll:
+                    weights = _roll_weights()
+                    next_reroll = now + random.uniform(30, 60)
+                self.humanlike_stop_event.wait(0.15)
+        finally:
+            self.log("🤖 เล่นเสมือนมนุษย์ OFF — หยุดกด Jump/Slide แล้ว", "info")
 
     def get_status(self) -> Dict[str, Any]:
         uptime_sec = int(time.time() - self.start_time) if self.is_running and self.start_time else 0
@@ -770,9 +817,9 @@ class BotEngine:
 
             emu_check_jitter = random.uniform(8, 12)
             while not self.should_stop:
-                # สุ่มกด Jump/Slide เฉพาะตอนกำลังวิ่งจริง (IN_GAME + stage ยังไม่รู้จัก = เกมวิ่ง)
-                # หยุดทันทีเมื่อ stage โผล่ (GAME_COMPLETE/GAME_RELAY/popup) หรือออกจาก IN_GAME
-                self._sync_humanlike_thread(detection_group == "IN_GAME" and stage is None)
+                # สุ่มกด Jump/Slide เฉพาะตอน IN_GAME — thread มี self-check ภายใน
+                # (พักเมื่อ stage ชั่วคราว / หยุดเมื่อ GAME_COMPLETE/ออกจากเกม) อยู่แล้ว
+                self._sync_humanlike_thread(detection_group == "IN_GAME")
                 if time.time() - last_emu_check_time >= emu_check_jitter:
                     last_emu_check_time = time.time()
                     emu_check_jitter = random.uniform(8, 12)
@@ -805,7 +852,16 @@ class BotEngine:
                     stage = "CONFIRM_POPUP"
                 if stage is None:
                     if time.time() - last_detected_time >= DETECTION_RECOVERY_SCAN_INTERVAL[detection_group]:
-                        stage = detect_stage(device_screen, exclude=relic_exclude)
+                        recovered = detect_stage(device_screen, exclude=relic_exclude)
+                        if recovered and detection_group == "IN_GAME":
+                            # กัน false positive: stage นอกกลุ่ม (เช่น PURCHASE_ITEM) ขึ้นขณะ
+                            # เกมวิ่ง (countdown/HUD) — เช็คหน้าจอจริง: ถ้ายังเห็นปุ่ม Jump/Slide
+                            # อยู่ = เกมยังวิ่ง → stage นั้นไม่จริง ทิ้งผล (จับเฉพาะ stage ในกลุ่ม
+                            # IN_GAME + ALWAYS ซึ่ง legit ตอนวิ่ง)
+                            in_game_names = get_detection_stage_names("IN_GAME", exclude=relic_exclude)
+                            if recovered not in in_game_names and is_game_run_visible(device_screen):
+                                recovered = None
+                        stage = recovered
                         if stage is None and is_emu_home_visible(device_screen):
                             stage = "EMU_HOME"
                         if stage is None and is_confirm_popup_visible(device_screen):
@@ -813,6 +869,41 @@ class BotEngine:
                         last_detected_time = time.time()
                 else:
                     last_detected_time = time.time()
+
+                # ── อิงจากภาพหน้าจอจริง: ถ้าเห็นปุ่ม Jump/Slide = เกมวิ่งอยู่จริง ──
+                # (ไม่สนว่าใครกดเริ่มเกม — ครอบคลุมกรณี user กดเองใน emulator / state หลุด sync)
+                if stage is None and is_game_run_visible(device_screen):
+                    detection_group = "IN_GAME"
+
+                # ── Generic popup X-close fallback ──
+                # popup ที่ไม่รู้จัก (stage ยังเป็น None) แต่มีปุ่ม X → ปิดให้อัตโนมัติ
+                # ระหว่าง IN_GAME: threshold สูง (0.90) + ข้าม exclude zones (Pause/Jump/Slide)
+                if stage is None:
+                    now = time.time()
+                    if now >= self._x_fallback_cd_until:
+                        in_game = detection_group == "IN_GAME"
+                        x_find = find_close_x_button_safe(
+                            device_screen,
+                            threshold=(X_CLOSE_FALLBACK_THRESHOLD_IN_GAME if in_game else X_CLOSE_FALLBACK_THRESHOLD),
+                            exclude_zones=(X_CLOSE_EXCLUDE_ZONES if in_game else None),
+                        )
+                        if x_find is not None:
+                            x_pos, x_score = x_find
+                            if x_pos != self._x_fallback_last_pos or now >= self._x_fallback_last_tap + 6.0:
+                                safe_device_tap(self.device_ip, self.device_port, x_pos[0], x_pos[1])
+                                self._x_fallback_last_pos = x_pos
+                                self._x_fallback_last_tap = now
+                                self._x_fallback_cd_until = now + 3.5
+                                if x_pos != self._x_fallback_notified_pos:
+                                    self._x_fallback_notified_pos = x_pos
+                                    self.log(
+                                        f"🛑 พบ popup ที่ไม่รู้จัก (stage=None, group={detection_group}) — "
+                                        f"เจอ X@{x_pos} score={x_score:.3f} — กดปิดให้แล้ว "
+                                        f"ถ้ายังติดซ้ำ: รัน debug_tool.py capture แล้วใช้ new-stage เพื่อเพิ่ม template",
+                                        "warning",
+                                    )
+                                last_stage = None
+                                continue
 
                 if stage:
                     self.current_stage = stage
@@ -921,6 +1012,10 @@ class BotEngine:
 
                 elif stage == "PURCHASE_ITEM":
                     self.log("🛒 Detected Stage: PURCHASE_ITEM", "stage")
+                    # หน้าซื้อบูสต์/ไอเทม = เฟสก่อนเกม (เริ่มจาก PLAY แต่ยังไม่วิ่ง)
+                    # — reset group กลับ PRE_GAME กัน state IN_GAME ค้างตอนซื้อของ
+                    #   (ไม่งั้น humanlike thread เริ่ม/แตกกระพริบระหว่างซื้อ)
+                    detection_group = "PRE_GAME"
 
                     if self.use_fast_start:
                         stock_fs = extract_item_stock(device_screen, "fast_start")
