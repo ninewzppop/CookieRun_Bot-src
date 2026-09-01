@@ -299,23 +299,6 @@ class DiscordNotifier:
         }
         self._async_send({"username": "CookieRun Bot Alert", "embeds": [embed]}, screen_img=screen_img)
 
-    def send_connection_lost(self, device_ip: str, device_port: int):
-        if not self.notify_status or not self.enabled or not self.webhook_url:
-            return
-
-        embed = {
-            "title": "🔌 การเชื่อมต่อขัดข้อง (Connection Lost)",
-            "description": f"บอทกำลังรีเซ็ตและเปิดเกม CookieRun ใหม่อัตโนมัติ...",
-            "color": 0xEF4444,  # Red
-            "fields": [
-                {"name": "📱 อุปกรณ์", "value": f"`{device_ip}:{device_port}`", "inline": True},
-                {"name": "⏰ เวลา", "value": datetime.now().strftime("%H:%M:%S"), "inline": True},
-            ],
-            "footer": {"text": "CookieRun Classic Bot"},
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        }
-        self._async_send({"username": "CookieRun Bot", "embeds": [embed]})
-
     def send_goal_reached(self, goal_description: str, uptime: str, rounds_played: int, total_boxes: int, coins_earned: int, session_xp: int):
         if not self.notify_status or not self.enabled or not self.webhook_url:
             return

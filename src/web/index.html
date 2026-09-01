@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NiNeWz Cookierun_bot DASHBOARD</title>
+  <title>NiNeWz</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -14,6 +14,7 @@
           fontFamily: {
             sans: ['Prompt', 'sans-serif'],
             mono: ['"JetBrains Mono"', 'monospace'],
+            pixel: ['"Pixelify Sans"', 'monospace'],
           },
           colors: {
             brand: {
@@ -408,7 +409,7 @@
             <svg width="22" height="22" viewBox="0 0 24 24"><defs><linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="50%" stop-color="#d4af37"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="url(#goldGrad)"/></svg>
         </div>
         <div>
-          <h1 class="text-lg font-bold tracking-wide text-[#f5f0e8] flex items-center gap-2">NiNeWz<span class="bg-gradient-to-r from-[#d4c4a8] to-[#c9b896] bg-clip-text text-transparent">DASHBOARD</span><span class="text-[10px] px-2 py-0.5 rounded-full bg-[#d4c4a8]/20 text-[#d4c4a8] border border-[#d4c4a8]/30 font-normal ml-1">Multi-Instance</span></h1>
+          <h1 class="text-lg font-bold tracking-wide text-[#f5f0e8] flex items-center gap-2 font-pixel">NiNeWz<span class="bg-gradient-to-r from-[#d4c4a8] to-[#c9b896] bg-clip-text text-transparent">DASHBOARD</span><span class="text-[10px] px-2 py-0.5 rounded-full bg-[#d4c4a8]/20 text-[#d4c4a8] border border-[#d4c4a8]/30 font-normal ml-1 font-sans">Multi-Instance</span></h1>
           <p class="text-xs text-[#e8dcc8]/70">บอทสุดโหด — ควบคุมหลายจอพร้อมกัน (Vertical Stack)</p>
         </div>
       </div>
@@ -501,6 +502,8 @@
     // Uptime ticker per instance — fixes multi-instance uptime stuck at --:--:--
     const uptimeIntervals = {};
     const uptimeBase = {}; // instance_id -> {seconds, baseTime}
+    // Settings details open state — กันเปิดแล้วปิดเองตอน poll 2.5s re-render
+    const settingsDetailsOpen = JSON.parse(localStorage.getItem('cr_settingsOpen')||'{}');
 
     async function loadBoostOptions(){
       try{
@@ -603,11 +606,11 @@
       // do not delete uptimeBase immediately — keep for resume
     }
     function updateGlobalUptime(){
-      // Show the longest running uptime among connected running instances, or --:--:-- if none
+      // Show the longest running uptime among running instances (ไม่ต้องรอ connected), หรือ --:--:-- ถ้าไม่มี
       let maxSec = -1;
       let hasRunning = false;
       for (const inst of instances){
-        if (inst.is_running && adbStatus[inst.instance_id]?.connected===true){
+        if (inst.is_running){
           hasRunning = true;
           const base = uptimeBase[inst.instance_id];
           let sec = 0;
@@ -629,9 +632,8 @@
       // Called after fetchInstances/pollStatus to start/stop tickers based on is_running + uptime_seconds from backend
       for (const inst of instances){
         const isRunning = !!inst.is_running;
-        const conn = adbStatus[inst.instance_id]?.connected===true;
-        // Only tick if running and connected; otherwise stop but keep last
-        if (isRunning && conn){
+        // Tick ต่อให้ disconnected ก็ยังนับเวลา (บอทยังรันอยู่ แค่ ADB หลุดชั่วคราว)
+        if (isRunning){
           const serverSec = Number(inst.uptime_seconds) || 0;
           const existing = uptimeBase[inst.instance_id];
           // If no ticker or serverSec drifted >2s, rebase
@@ -1087,8 +1089,8 @@
 
         <!-- Settings (per-instance, isolated) -->
         <div class="px-4 pb-2">
-          <details class="bg-[#121212]/60 border border-[#2a2a2a] rounded-xl overflow-hidden" open>
-            <summary class="px-4 py-3 cursor-pointer text-sm font-bold text-[#f5f0e8] list-none flex items-center justify-between border-b border-[#2a2a2a]"><span>⚙️ ตั้งค่า — ${inst.device_name}</span><span class="text-[11px] text-[#e8dcc8]/50">แยกอิสระต่อ instance</span></summary>
+          <details id="settings-details-${inst.instance_id}" class="bg-[#121212]/60 border border-[#2a2a2a] rounded-xl overflow-hidden" ${settingsDetailsOpen[inst.instance_id] ? 'open' : ''}>
+            <summary class="px-4 py-3 cursor-pointer text-sm font-bold text-[#f5f0e8] list-none flex items-center justify-between"><span>⚙️ ตั้งค่า — ${inst.device_name} <span class="text-[11px] font-normal text-[#e8dcc8]/50">(คลิกเพื่อเปิด/ปิด)</span></span><span class="text-[11px] text-[#e8dcc8]/50">แยกอิสระต่อ instance ▾</span></summary>
             <div class="p-4 space-y-4 text-xs">
               <!-- Fast Start -->
               <div class="space-y-2 bg-[#1a1a1a]/60 p-3 rounded-xl border border-[#2a2a2a]">
@@ -1172,8 +1174,8 @@
           </div>
         </div>
 
-        <!-- Logs + History (per-instance) -->
-        <div class="px-4 grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4">
+        <!-- Logs + History (per-instance) — เว้นวรรคจาก Stats ด้านบนให้หายชิด -->
+        <div class="px-4 grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4 mt-6 pt-4 border-t border-[#2a2a2a]/50">
           <div class="bg-[#0a0a0a]/70 border border-[#2a2a2a] rounded-xl overflow-hidden flex flex-col min-h-[220px]">
             <div class="px-3 py-1.5 border-b border-[#2a2a2a] flex items-center justify-between bg-[#121212]/60"><span class="text-xs font-semibold text-[#f5f0e8]">📜 Live Console Logs — ${inst.device_name}</span><button onclick="clearInstanceLogs('${inst.instance_id}')" class="text-[11px] px-2 py-0.5 rounded bg-[#2a2a2a] hover:bg-[#3a3a3a] text-[#e8dcc8]">Clear</button></div>
             <div id="logs-${inst.instance_id}" class="flex-1 p-2 overflow-y-auto font-mono text-[11px] space-y-1 custom-scrollbar max-h-[220px]"></div>
@@ -1187,6 +1189,14 @@
         <div class="border-t border-[#d4af37]/15 mx-4"></div>
       `;
       div.querySelectorAll('select').forEach(el=>{ if(el.id.includes('boost')) el.innerHTML = boostOptionsHtml; });
+      // กันเปิดแล้วปิดเองตอน poll 2.5s re-render — จำ state ไว้ localStorage
+      const detailsEl = div.querySelector(`#settings-details-${inst.instance_id}`);
+      if (detailsEl) {
+        detailsEl.addEventListener('toggle', () => {
+          settingsDetailsOpen[inst.instance_id] = detailsEl.open;
+          localStorage.setItem('cr_settingsOpen', JSON.stringify(settingsDetailsOpen));
+        });
+      }
       return div;
     }
 

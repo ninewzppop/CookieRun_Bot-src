@@ -483,19 +483,19 @@ def create_instance(req: CreateInstanceRequest):
     name = req.name.strip() or iid
     try:
         port = int(port)
-    except:
-        raise HTTPException(status_code=400, detail="port must be integer")
+    except (ValueError, TypeError) as e:
+        raise HTTPException(status_code=400, detail=f"port must be integer: {e}")
     eng = BotEngine(instance_id=iid, device_ip=host, device_port=port, device_name=name)
     # assign current event loop if available
     try:
         eng.loop = asyncio.get_event_loop()
-    except:
+    except Exception:
         pass
     bot_instances[iid] = eng
     # Update config.DEVICES in memory for introspection
     try:
         config.DEVICES.append({"id": iid, "name": name, "host": host, "port": port})
-    except:
+    except Exception:
         pass
     return {"success": True, "instance_id": iid, "status": eng.get_status()}
 
@@ -582,7 +582,7 @@ def delete_instance(instance_id: str):
     # remove from config.DEVICES
     try:
         config.DEVICES[:] = [d for d in config.DEVICES if d.get("id") != instance_id]
-    except:
+    except Exception:
         pass
     return {"success": True, "message": f"Instance {instance_id} deleted"}
 
@@ -662,13 +662,20 @@ def reset_instance_app(instance_id: str):
 @app.post("/api/instances/{instance_id}/send-hearts-now")
 def send_hearts_now(instance_id: str):
     eng = _get_instance_or_404(instance_id)
-    # กันกดรัว — ถ้ากำลังส่งอยู่ให้บอกก่อน
-    if getattr(eng, "_sending_hearts", False):
+    # กันกดรัว — ถ้ากำลังส่งอยู่ให้บอกก่อน (ใช้ Event แทน bool)
+    _ev = getattr(eng, "_sending_hearts", None)
+    if _ev is not None and _ev.is_set():
+        return {"success": False, "message": "กำลังส่งหัวใจอยู่แล้ว กรุณารอสักครู่"}
+    # fallback ถ้าเป็น bool เก่า (backward compat)
+    if isinstance(_ev, bool) and _ev:
         return {"success": False, "message": "กำลังส่งหัวใจอยู่แล้ว กรุณารอสักครู่"}
     import threading
     # ตั้ง flag ก่อน start thread ทันที — กัน main loop ปิด popup เมล์ระหว่าง race window
     # popup จะอยู่จนกว่า handle_quick_receive_and_send_lives() จะ return เท่านั้น (callback flag)
-    eng._sending_hearts = True
+    try:
+        eng._sending_hearts.set()
+    except AttributeError:
+        eng._sending_hearts = True
     def _do_send():
         try:
             eng.log("💖 [Manual] ผู้ใช้กดส่งหัวใจทันที — กำลังเปิดกล่องจดหมาย...", "info")
@@ -678,7 +685,10 @@ def send_hearts_now(instance_id: str):
         except Exception as e:
             eng.log(f"❌ [Manual] ส่งหัวใจล้มเหลว: {e}", "error")
         finally:
-            eng._sending_hearts = False
+            try:
+                eng._sending_hearts.clear()
+            except AttributeError:
+                eng._sending_hearts = False
     t = threading.Thread(target=_do_send, daemon=True, name=f"SendHeartsNow-{instance_id}")
     t.start()
     return {"success": True, "message": "เริ่มส่งหัวใจทันทีแล้ว — ดู Logs ด้านล่าง", "instance_id": instance_id}

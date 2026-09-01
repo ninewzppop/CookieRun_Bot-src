@@ -12,6 +12,16 @@ def _human_sleep(a: float = 0.8, b: float = 1.4):
     if random.random() < 0.03:
         v += random.uniform(1.0, 2.5)
     time.sleep(v)
+
+def _sleep_interruptible(seconds: float, stop_check=None) -> bool:
+    """sleep แบบเช็ค stop_check ทุก 0.2s — คืน True ถ้าโดน interrupt"""
+    end = time.time() + seconds
+    while time.time() < end:
+        if stop_check and stop_check():
+            return True
+        # sleep สั้นๆ ให้ responsive
+        time.sleep(min(0.2, end - time.time()))
+    return False
 from adb import safe_device_tap, safe_device_scroll, safe_device_long_press, device_capture_screen
 from config import (
     ACCEPT_ALL_LIVES_RECEIVED_AND_SENT_BUTTON,
@@ -81,7 +91,6 @@ from config import (
     RELIC_CLOSE_BUTTON,
     RELIC_COMPLETE_BUTTON,
     START_BUTTON,
-    CONNECTION_LOST_RELOAD_BUTTON,
 )
 from detection import detect_templates, detect_anti_bot_odd_cards, detect_stage, find_close_x_button, find_green_ok_button
 from config import (
@@ -116,14 +125,8 @@ def purchase_fast_start(device_ip=None, device_port=None):
     print("🛒 Purchasing Fast Start...")
     safe_device_tap(ip, port, FAST_START_ITEM[0], FAST_START_ITEM[1])
     _human_sleep(0.3, 2.5)
-    # TODO: ต้องการ template ปุ่ม Buy สีฟ้า (PURCHASE_BUTTON) เพื่อเช็คด้วย detect_templates()
-    # ปัจจุบันยังไม่มีไฟล์ PURCHASE_BUTTON_TEMPLATE ใน templates/ จึงใช้ sleep รอ popup แทน
-    # ถ้ามีภาพจริงของปุ่ม Buy ให้แจ้ง จะสร้าง template แล้วแก้ loop เป็น:
-    # for _ in range(6):
-    #     chk = device_capture_screen(ip, port)
-    #     if chk is not None and detect_templates(chk, PURCHASE_BUTTON_TEMPLATE, PURCHASE_BUTTON_REGION):
-    #         break
-    #     time.sleep(0.3)
+    # NOTE: PURCHASE_BUTTON_TEMPLATE ยังไม่มีใน templates/ — ใช้ sleep แบบ jitter รอ popup
+    # ถ้ามี template จริง ให้เปลี่ยนเป็น poll detect_templates แบบ purchase_desired_random_boost
     time.sleep(random.uniform(0.5, 1.5))
     time.sleep(random.uniform(0.5, 2.5))
 
@@ -133,14 +136,7 @@ def purchase_cookie_relay(device_ip=None, device_port=None):
     print("🛒 Purchasing Cookie Relay...")
     safe_device_tap(ip, port, COOKIE_RELAY_ITEM[0], COOKIE_RELAY_ITEM[1])
     _human_sleep(0.3, 2.5)
-    # TODO: ต้องการ template ปุ่ม Buy สีฟ้า (PURCHASE_BUTTON) เพื่อเช็คด้วย detect_templates()
-    # ปัจจุบันยังไม่มีไฟล์ PURCHASE_BUTTON_TEMPLATE ใน templates/ จึงใช้ sleep รอ popup แทน
-    # ถ้ามีภาพจริงของปุ่ม Buy ให้แจ้ง จะสร้าง template แล้วแก้ loop เป็น:
-    # for _ in range(6):
-    #     chk = device_capture_screen(ip, port)
-    #     if chk is not None and detect_templates(chk, PURCHASE_BUTTON_TEMPLATE, PURCHASE_BUTTON_REGION):
-    #         break
-    #     time.sleep(0.3)
+    # NOTE: PURCHASE_BUTTON_TEMPLATE ยังไม่มีใน templates/ — ใช้ sleep แบบ jitter รอ popup
     time.sleep(random.uniform(0.5, 1.5))
     time.sleep(random.uniform(0.5, 2.5))
 
@@ -354,16 +350,16 @@ def open_relic_complete(device_ip=None, device_port=None):
     _human_sleep(0.2, 2.0)
 
 
-def accept_relic_claim(device_ip=None, device_port=None):
+def accept_relic_claim(device_ip=None, device_port=None, stop_check=None):
     ip, port = _resolve_device(device_ip, device_port)
     print("🏺 Accepting Relic Claim...")
     safe_device_tap(ip, port, RELIC_CLAIM_BUTTON[0], RELIC_CLAIM_BUTTON[1])
     _human_sleep(0.2, 2.0)
     safe_device_tap(ip, port, RELIC_CLOSE_BUTTON[0], RELIC_CLOSE_BUTTON[1])
-    time.sleep(random.uniform(5, 20))
+    _sleep_interruptible(random.uniform(5, 20), stop_check)
 
 
-def handle_anti_bot(screen, device_ip=None, device_port=None):
+def handle_anti_bot(screen, device_ip=None, device_port=None, stop_check=None):
     ip, port = _resolve_device(device_ip, device_port)
     print(f"🤖 Solving Anti-Bot captcha on {ip}:{port}...")
     card_coords = [
@@ -376,30 +372,28 @@ def handle_anti_bot(screen, device_ip=None, device_port=None):
     print(f"🃏 Found odd cards: Card {card_nums[0]} and Card {card_nums[1]}")
 
     for idx in odd_indices:
+        if stop_check and stop_check():
+            print("⏹️ Anti-Bot interrupted by stop")
+            return
         cx, cy = card_coords[idx]
         margin = 20
         tx = random.randint(cx + margin, cx + ANTI_BOT_CARD_WIDTH - margin)
         ty = random.randint(cy + margin, cy + ANTI_BOT_CARD_HEIGHT - margin)
         print(f"  👆 Tapping Card {idx + 1} at ({tx}, {ty})")
         safe_device_tap(ip, port, tx, ty)
-        time.sleep(random.uniform(5, 20))
+        if _sleep_interruptible(random.uniform(5, 20), stop_check):
+            print("⏹️ Anti-Bot interrupted during wait")
+            return
 
     print("✅ Anti-Bot captcha solved!")
     _human_sleep(0.2, 2.0)
 
 
-def handle_connection_lost(device_ip=None, device_port=None):
-    ip, port = _resolve_device(device_ip, device_port)
-    print(f"🔌 Handling Connection Lost on {ip}:{port}...")
-    safe_device_tap(ip, port, CONNECTION_LOST_RELOAD_BUTTON[0], CONNECTION_LOST_RELOAD_BUTTON[1])
-    time.sleep(random.uniform(5, 20))
-
-
-def handle_inactive(device_ip=None, device_port=None):
+def handle_inactive(device_ip=None, device_port=None, stop_check=None):
     ip, port = _resolve_device(device_ip, device_port)
     print(f"💤 Handling Inactive state on {ip}:{port}...")
     safe_device_tap(ip, port, INACTIVE_RELOAD_BUTTON[0], INACTIVE_RELOAD_BUTTON[1])
-    time.sleep(random.uniform(5, 20))
+    _sleep_interruptible(random.uniform(5, 20), stop_check)
 
 
 def handle_send_friend_life(device_ip=None, device_port=None):
@@ -567,11 +561,11 @@ def tap_confirm_popup(device_ip=None, device_port=None):
     _human_sleep(0.3, 2.5)
 
 
-def handle_anr(device_ip=None, device_port=None):
+def handle_anr(device_ip=None, device_port=None, stop_check=None):
     ip, port = _resolve_device(device_ip, device_port)
     print(f"⚠️ Handling ANR dialog on {ip}:{port}... tapping Wait at {ANR_WAIT_BUTTON}")
     safe_device_tap(ip, port, ANR_WAIT_BUTTON[0], ANR_WAIT_BUTTON[1])
-    time.sleep(random.uniform(1.0, 5.0))
+    _sleep_interruptible(random.uniform(1.0, 5.0), stop_check)
 
 
 def _is_boost_checked_by_color(screen, region) -> bool:

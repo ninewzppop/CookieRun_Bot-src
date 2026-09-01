@@ -378,18 +378,6 @@ def main():
                 print("⚠️ Detected Stage: ANTI_BOT")
                 handle_anti_bot(device_screen)
                 last_stage = None
-            elif stage == "CONNECTION_LOST":
-                print("🔌 Detected Stage: CONNECTION_LOST")
-                device_reset_app(DEVICE_IP, DEVICE_PORT)
-                time.sleep(random.uniform(4.5, 5.8))
-                close_announcement_dialog()
-                session_start_time = time.time()
-                session_reset_interval = random.uniform(*SESSION_RESET_INTERVAL)
-                last_lives_time = time.time()
-                lives_interval = random.uniform(25 * 60, 35 * 60)
-                detection_group = "PRE_GAME"
-                last_stage = None
-                is_first_game = True
             elif stage == "EMU_HOME":
                 print("🏠 Detected Stage: EMU_HOME — tapping CookieRun Classic...")
                 handle_emu_home()

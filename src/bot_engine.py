@@ -215,8 +215,8 @@ class BotEngine:
         self._x_fallback_last_tap: float = 0.0
         self._x_fallback_last_pos: Optional[tuple] = None
         self._x_fallback_notified_pos: Optional[tuple] = None
-        # Manual heart sending flag — กัน main loop ปิด popup เมล์ระหว่างทำงาน (thread แยก)
-        self._sending_hearts: bool = False
+        # Manual heart sending flag — กัน main loop ปิด popup เมล์ระหว่างทำงาน (thread แยก) — ใช้ Event แทน bool ให้ atomic
+        self._sending_hearts = threading.Event()
         # Load persisted per-instance settings if exists (survives restart)
         try:
             _saved = _load_instance_settings(instance_id)
@@ -410,12 +410,14 @@ class BotEngine:
             self.use_fast_start = bool(cfg["use_fast_start"])
         if "fast_start_min_stock" in cfg:
             try: self.fast_start_min_stock = int(cfg["fast_start_min_stock"])
-            except: pass
+            except (ValueError, TypeError) as e:
+                self.log(f"⚠️ fast_start_min_stock invalid ({cfg.get('fast_start_min_stock')!r}): {e}", "warning")
         if "use_cookie_relay" in cfg:
             self.use_cookie_relay = bool(cfg["use_cookie_relay"])
         if "cookie_relay_min_stock" in cfg:
             try: self.cookie_relay_min_stock = int(cfg["cookie_relay_min_stock"])
-            except: pass
+            except (ValueError, TypeError) as e:
+                self.log(f"⚠️ cookie_relay_min_stock invalid ({cfg.get('cookie_relay_min_stock')!r}): {e}", "warning")
         if "hp_extension_enabled" in cfg:
             self.hp_extension_enabled = bool(cfg["hp_extension_enabled"])
         if "power_jelly_enabled" in cfg:
@@ -434,35 +436,42 @@ class BotEngine:
             self.stop_goal_rounds_enabled = bool(cfg["stop_goal_rounds_enabled"])
         if "stop_goal_rounds_target" in cfg:
             try: self.stop_goal_rounds_target = int(cfg["stop_goal_rounds_target"])
-            except: pass
+            except (ValueError, TypeError) as e:
+                self.log(f"⚠️ stop_goal_rounds_target invalid ({cfg.get('stop_goal_rounds_target')!r}): {e}", "warning")
         if "stop_goal_time_enabled" in cfg:
             self.stop_goal_time_enabled = bool(cfg["stop_goal_time_enabled"])
         if "stop_goal_time_hours" in cfg:
             try: self.stop_goal_time_hours = float(cfg["stop_goal_time_hours"])
-            except: pass
+            except (ValueError, TypeError) as e:
+                self.log(f"⚠️ stop_goal_time_hours invalid ({cfg.get('stop_goal_time_hours')!r}): {e}", "warning")
         if "humanlike_play_enabled" in cfg:
             self.humanlike_play_enabled = bool(cfg["humanlike_play_enabled"])
         if "humanlike_jump_enabled" in cfg:
             self.humanlike_jump_enabled = bool(cfg["humanlike_jump_enabled"])
         if "humanlike_jump_interval" in cfg:
             try: self.humanlike_jump_interval = float(cfg["humanlike_jump_interval"])
-            except: pass
+            except (ValueError, TypeError) as e:
+                self.log(f"⚠️ humanlike_jump_interval invalid ({cfg.get('humanlike_jump_interval')!r}): {e}", "warning")
         if "humanlike_jump_double_enabled" in cfg:
             self.humanlike_jump_double_enabled = bool(cfg["humanlike_jump_double_enabled"])
         if "humanlike_jump_double_interval" in cfg:
             try: self.humanlike_jump_double_interval = float(cfg["humanlike_jump_double_interval"])
-            except: pass
+            except (ValueError, TypeError) as e:
+                self.log(f"⚠️ humanlike_jump_double_interval invalid ({cfg.get('humanlike_jump_double_interval')!r}): {e}", "warning")
         if "humanlike_jump_double_gap" in cfg:
             try: self.humanlike_jump_double_gap = float(cfg["humanlike_jump_double_gap"])
-            except: pass
+            except (ValueError, TypeError) as e:
+                self.log(f"⚠️ humanlike_jump_double_gap invalid ({cfg.get('humanlike_jump_double_gap')!r}): {e}", "warning")
         if "humanlike_slide_enabled" in cfg:
             self.humanlike_slide_enabled = bool(cfg["humanlike_slide_enabled"])
         if "humanlike_slide_interval" in cfg:
             try: self.humanlike_slide_interval = float(cfg["humanlike_slide_interval"])
-            except: pass
+            except (ValueError, TypeError) as e:
+                self.log(f"⚠️ humanlike_slide_interval invalid ({cfg.get('humanlike_slide_interval')!r}): {e}", "warning")
         if "humanlike_slide_hold_duration" in cfg:
             try: self.humanlike_slide_hold_duration = float(cfg["humanlike_slide_hold_duration"])
-            except: pass
+            except (ValueError, TypeError) as e:
+                self.log(f"⚠️ humanlike_slide_hold_duration invalid ({cfg.get('humanlike_slide_hold_duration')!r}): {e}", "warning")
 
     def _settings_snapshot(self) -> Dict[str, Any]:
         """คืน dict settings ปัจจุบันทั้งหมด (ใช้ persist + API)"""
@@ -525,24 +534,15 @@ class BotEngine:
         return {"success": True, "message": f"[{self.instance_id}] Settings saved", "settings": self.get_settings()}
 
     def update_live_config(self, user_config: Dict[str, Any]):
-        """อัปเดต config แบบ hot-reload ขณะบอทกำลังรัน (legacy) — ตอนนี้เรียก update_settings ด้วยเพื่อ persist"""
-        # Reuse update_settings but keep running check for backward compat
-        with self.lock:
-            if not self.is_running:
-                return {"success": False, "message": f"[{self.instance_id}] Bot is not running"}
-            self._apply_settings(user_config)
-            # Persist live changes as well
-            try:
-                _save_instance_settings(self.instance_id, self._settings_snapshot())
-            except Exception as e:
-                print(f"[{self.instance_id}] Persist live failed: {e}")
-            self.log(
-                f"⚙️ อัปเดตตั้งค่าแบบ Live: FastStart={'ON' if self.use_fast_start else 'OFF'}({self.fast_start_min_stock}) "
-                f"| CookieRelay={'ON' if self.use_cookie_relay else 'OFF'}({self.cookie_relay_min_stock}) "
-                f"| Humanlike={'ON' if self.humanlike_play_enabled else 'OFF'}",
-                "info",
-            )
-        return {"success": True, "message": "Live config updated"}
+        """Legacy wrapper — ตอนนี้รวมกับ update_settings แล้ว (persist + live)"""
+        # ตรวจ is_running เพื่อคงพฤติกรรมเดิม แต่จริงๆ update_settings ใช้ได้ทั้งตอนรัน/หยุด
+        if not self.is_running:
+            return {"success": False, "message": f"[{self.instance_id}] Bot is not running"}
+        # Delegate ไป update_settings ตัวเดียว — ไม่ duplicate logic
+        res = self.update_settings(user_config)
+        # คง message เดิมเพื่อ backward compat
+        res["message"] = "Live config updated"
+        return res
 
     def stop(self):
         with self.lock:
@@ -658,13 +658,16 @@ class BotEngine:
         next_reroll = time.time() + random.uniform(30, 60)
         try:
             while not self.humanlike_stop_event.is_set() and not self.should_stop:
+                # ถ้าปิดสวิตช์หลักระหว่างวิ่ง — หยุดทันที ไม่รอ _sync รอบถัดไป (แก้ลั่นหลังปิด)
+                if not self.humanlike_play_enabled:
+                    break
                 st = self.current_stage
                 if st != "IN_GAME (Searching...)":
                     # สเตจที่แปลว่า "จบรอบ/ออกจากเกมแล้ว" → หยุด thread จริง
                     if st in (
                         "GAME_COMPLETE", "MAINMENU", "PURCHASE_ITEM",
                         "PRE_GAME (Searching...)", "POST_GAME (Searching...)",
-                        "EMU_HOME", "CONNECTION_LOST", "INACTIVE", "ANTI_BOT",
+                        "EMU_HOME", "INACTIVE", "ANTI_BOT",
                         "MYSTERY_BOX", "CONGRATULATIONS", "OVERTAKE_BREAK_SCORE",
                         "STOPPING", "IDLE", "INITIALIZING", "STARTING",
                     ):
@@ -685,25 +688,29 @@ class BotEngine:
                 now = time.time()
                 # โอกาส "หยุดพัก" 5-8% ต่อรอบ — ข้ามการกระโดด/สไลด์ในรอบนี้ (เหมือนคนเผลอไม่ทัน)
                 pause = random.random() < random.uniform(0.05, 0.08)
-                if not pause and self.humanlike_jump_enabled and now >= next_jump:
+                if not pause and self.humanlike_play_enabled and self.humanlike_jump_enabled and now >= next_jump:
                     try:
                         roll = random.random()
+                        # เช็ค double_enabled สดๆ — กัน cache weights 30-60s ทำให้ปิดแล้วยังเบิ้ล
+                        _double_live = weights["double"] if self.humanlike_jump_double_enabled else 0.0
+                        _single_live = weights["single"] if self.humanlike_jump_enabled else 0.0
                         if (
-                            weights["double"] > 0
-                            and roll < weights["double"]
+                            _double_live > 0
+                            and roll < _double_live
                             and (now - last_double_jump) >= self.humanlike_jump_double_interval
                         ):
                             humanlike_jump_double(self.device_ip, self.device_port, gap=self.humanlike_jump_double_gap)
                             last_double_jump = now
-                        elif roll < weights["double"] + weights["single"]:
+                        elif roll < _double_live + _single_live:
                             humanlike_jump(self.device_ip, self.device_port)
                         # นอกนั้น = ข้ามรอบ (เหมือนลังเล) ไม่กด
                         next_jump = now + _jit(self.humanlike_jump_interval)
                     except Exception as e:
                         self.log(f"⚠️ humanlike jump error: {e}", "error")
-                if not pause and self.humanlike_slide_enabled and now >= next_slide:
+                if not pause and self.humanlike_play_enabled and self.humanlike_slide_enabled and now >= next_slide:
                     try:
-                        if random.random() < weights["slide"]:
+                        _slide_live = weights["slide"] if self.humanlike_slide_enabled else 0.0
+                        if random.random() < _slide_live:
                             # hold สุ่มกว้าง 300-1500ms แบบคน CookieRun Flat-press ขวาล่าง — สั้น 300ms อุโมงค์สั้น / ยาว 1500ms+ อุโมงค์ยาว
                             _hold = random.uniform(0.30, 1.50)
                             humanlike_slide(self.device_ip, self.device_port, hold_duration=_hold)
@@ -832,7 +839,7 @@ class BotEngine:
 
                 # กัน popup เมล์ถูกปิดจากภายนอกระหว่างส่งหัวใจ (manual thread แยก)
                 # ถ้ากำลังส่งหัวใจ → หยุด loop ชั่วคราว ไม่ตรวจ stage/ไม่กด X fallback จนกว่า send_hearts() จะ return
-                if getattr(self, "_sending_hearts", False):
+                if getattr(self, "_sending_hearts", None) is not None and self._sending_hearts.is_set():
                     if self.interruptible_sleep(0.5):
                         break
                     continue
@@ -880,7 +887,8 @@ class BotEngine:
                 # popup ที่ไม่รู้จัก (stage ยังเป็น None) แต่มีปุ่ม X → ปิดให้อัตโนมัติ
                 # ระหว่าง IN_GAME: threshold สูง (0.90) + ข้าม exclude zones (Pause/Jump/Slide)
                 # กันไม่ให้ปิด popup เมล์ระหว่างส่งหัวใจ (manual thread)
-                if stage is None and not getattr(self, "_sending_hearts", False):
+                _sending = getattr(self, "_sending_hearts", None)
+                if stage is None and (_sending is None or not _sending.is_set()):
                     now = time.time()
                     if now >= self._x_fallback_cd_until:
                         in_game = detection_group == "IN_GAME"
@@ -939,7 +947,7 @@ class BotEngine:
                     elapsed = time.time() - session_start_time
                     if elapsed >= session_reset_interval:
                         self.log(f"🔄 Session reset triggered after {elapsed / 3600:.2f}h — restarting app...")
-                        device_reset_app(self.device_ip, self.device_port)
+                        device_reset_app(self.device_ip, self.device_port, stop_check=lambda: self.should_stop)
                         if self.interruptible_sleep(random.uniform(4.5, 5.8)):
                             break
                         close_announcement_dialog(self.device_ip, self.device_port)
@@ -1377,29 +1385,14 @@ class BotEngine:
 
                 elif stage == "RELIC_CLAIM":
                     self.log("🏺 Detected Stage: RELIC_CLAIM", "stage")
-                    accept_relic_claim(self.device_ip, self.device_port)
+                    accept_relic_claim(self.device_ip, self.device_port, stop_check=lambda: self.should_stop)
                     detection_group = "PRE_GAME"
 
                 elif stage == "ANTI_BOT":
                     self.log("⚠️ Detected Stage: ANTI_BOT — solving captcha automatically...", "warning")
                     discord_notifier.send_anti_bot_alert("ANTI_BOT", screen_img=device_screen)
-                    handle_anti_bot(device_screen, self.device_ip, self.device_port)
+                    handle_anti_bot(device_screen, self.device_ip, self.device_port, stop_check=lambda: self.should_stop)
                     last_stage = None
-
-                elif stage == "CONNECTION_LOST":
-                    self.log("🔌 Detected Stage: CONNECTION_LOST — resetting app...", "error")
-                    discord_notifier.send_connection_lost(self.device_ip, self.device_port)
-                    device_reset_app(self.device_ip, self.device_port)
-                    if self.interruptible_sleep(random.uniform(4.5, 5.8)):
-                        break
-                    close_announcement_dialog(self.device_ip, self.device_port)
-                    session_start_time = time.time()
-                    session_reset_interval = random.uniform(*SESSION_RESET_INTERVAL)
-                    last_lives_time = time.time()
-                    lives_interval = random.uniform(25 * 60, 35 * 60)
-                    detection_group = "PRE_GAME"
-                    last_stage = None
-                    is_first_game = True
 
                 elif stage == "EMU_HOME":
                     from config import EMU_HOME_TAP
@@ -1411,7 +1404,7 @@ class BotEngine:
 
                 elif stage == "INACTIVE":
                     self.log("💤 Detected Stage: INACTIVE — reconnecting...", "warning")
-                    handle_inactive(self.device_ip, self.device_port)
+                    handle_inactive(self.device_ip, self.device_port, stop_check=lambda: self.should_stop)
                     last_stage = None
 
                 elif stage == "FRIEND_INFO_POPUP":
@@ -1422,7 +1415,7 @@ class BotEngine:
 
                 elif stage == "ANR_DIALOG":
                     self.log("⚠️ Detected Stage: ANR_DIALOG — tapping Wait...", "warning")
-                    handle_anr(self.device_ip, self.device_port)
+                    handle_anr(self.device_ip, self.device_port, stop_check=lambda: self.should_stop)
                     last_stage = None
 
                 elif stage == "ANNOUNCEMENT_POPUP":

@@ -182,7 +182,15 @@ def device_is_app_running(ip: str, port: int, package: str) -> bool:
     return bool(result.stdout.strip())
 
 
-def device_reset_app(ip: str, port: int, package: str = "com.devsisters.crg", max_retries: int = 5):
+def _sleep_interruptible(seconds: float, stop_check=None) -> bool:
+    end = time.time() + seconds
+    while time.time() < end:
+        if stop_check and stop_check():
+            return True
+        time.sleep(min(0.2, end - time.time()))
+    return False
+
+def device_reset_app(ip: str, port: int, package: str = "com.devsisters.crg", max_retries: int = 5, stop_check=None):
     adb = get_adb_path()
     print(f"🔄 Resetting app {package} on device at {ip}:{port}...")
     _run_cmd(
@@ -192,9 +200,14 @@ def device_reset_app(ip: str, port: int, package: str = "com.devsisters.crg", ma
         text=True,
     )
     print(f"⏳ Waiting 15 seconds for app {package} to stop...")
-    time.sleep(random.uniform(14.5, 15.8))
+    if _sleep_interruptible(random.uniform(14.5, 15.8), stop_check):
+        print("⏹️ Reset interrupted")
+        return
 
     for attempt in range(1, max_retries + 1):
+        if stop_check and stop_check():
+            print("⏹️ Reset interrupted before restart")
+            return
         print(f"📱 Restarting app {package} on device at {ip}:{port} (attempt {attempt}/{max_retries})...")
         _run_cmd(
             [adb, "-s", f"{ip}:{port}", "shell", "monkey", "-p", package, "1"],
@@ -203,13 +216,17 @@ def device_reset_app(ip: str, port: int, package: str = "com.devsisters.crg", ma
             text=True,
         )
         print(f"⏳ Waiting 15 seconds to check if app started...")
-        time.sleep(random.uniform(14.2, 15.9))
+        if _sleep_interruptible(random.uniform(14.2, 15.9), stop_check):
+            print("⏹️ Reset interrupted")
+            return
 
         if device_is_app_running(ip, port, package):
             print(f"📊 App {package} is running, verifying stability...")
             stable = True
             for check in range(1, 4):
-                time.sleep(random.uniform(19.5, 20.8))
+                if _sleep_interruptible(random.uniform(19.5, 20.8), stop_check):
+                    print("⏹️ Stability check interrupted")
+                    return
                 if not device_is_app_running(ip, port, package):
                     print(f"💥 App {package} crashed during stability check ({check}/3).")
                     stable = False
@@ -222,6 +239,7 @@ def device_reset_app(ip: str, port: int, package: str = "com.devsisters.crg", ma
         print(f"💥 App {package} appears to have crashed after launch.")
         if attempt < max_retries:
             print(f"🔁 Retrying in 5 seconds...")
-            time.sleep(random.uniform(4.5, 5.7))
+            if _sleep_interruptible(random.uniform(4.5, 5.7), stop_check):
+                return
 
     raise Exception(f"❌ Failed to start {package} after {max_retries} attempts.")

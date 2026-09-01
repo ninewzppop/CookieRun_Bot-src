@@ -10,7 +10,7 @@ DEVICE_PORT = 5595           # Change to your adb device's port number
 # User can add/remove via API without code change; kept in memory + optionally persisted via web_server
 DEVICES = [
     {"id": "device_1", "name": "จอ 1", "host": "127.0.0.1", "port": 5595},
-    {"id": "device_2", "name": "จอ 2", "host": "127.0.0.1", "port": 5555},
+    {"id": "device_2", "name": "จอ 2", "host": "127.0.0.1", "port": 5605},
 ]
 
 TEMPLATE_DIR = _os.path.join(_os.path.dirname(__file__), "templates")
@@ -97,7 +97,6 @@ STAGE_DAILY_NEW_TEMPLATE = ["DAILY_NEW_1.png"]
 STAGE_ENTER_LEAGUE_TEMPLATE = ["ENTER_LEAGUE_1.png"]
 STAGE_LEAGUE_RESULTS_TEMPLATE = ["LEAGUE_RESULTS_1.png"]
 STAGE_ANTI_BOT_TEMPLATE = ["ANTI_BOT_1.png"]
-STAGE_CONNECTION_LOST_TEMPLATE = ["CONNECTION_LOST_1.png", "CONNECTION_LOST_2.png"]
 STAGE_INACTIVE_TEMPLATE = ["INACTIVE_1.png"]
 STAGE_EMU_HOME_TEMPLATE = ["EMU_HOME_1.png"]
 STAGE_PREVIOUS_RANK_RESULTS_TEMPLATE = ["PREVIOUS_RANK_RESULTS_1.png"]
@@ -130,7 +129,6 @@ STAGE_DAILY_NEW_REGION = (432, 12, 849, 78)
 STAGE_ENTER_LEAGUE_REGION = (318, 235, 962, 384)
 STAGE_LEAGUE_RESULTS_REGION = (512, 52, 779, 105)
 STAGE_ANTI_BOT_REGION = (309, 10, 968, 111)
-STAGE_CONNECTION_LOST_REGION = (351, 203, 936, 405)
 STAGE_INACTIVE_REGION = (358, 247, 934, 372)
 STAGE_EMU_HOME_REGION = (380, 130, 680, 380)
 STAGE_PREVIOUS_RANK_RESULTS_REGION = (454, 42, 832, 115)
@@ -140,7 +138,7 @@ STAGE_PARTY_RUN_REGION = (359, 44, 922, 138)
 STAGE_GAME_SETTINGS_REGION = (484, 62, 769, 122)
 STAGE_ANNOUNCEMENT_POPUP_REGION = (1090, 15, 1240, 115)  # ครอบปุ่ม X ทั้ง variant เก่า (1126,57) และใหม่ (1213,89)
 # Friend's Info popup header — full top bar from Send gift (left) to X (right)
-# Template cropped from real ADB capture debug_screenshots/current_screen.png (1280×720) → 1069×63 px
+# Template cropped from real ADB capture (1280×720) → 1069×63 px (archived)
 # Region covers entire header; interior popup content ignored (varies per friend)
 STAGE_FRIEND_INFO_POPUP_REGION = (100, 10, 1180, 78)
 # ANR dialog — cropped from real ADB capture /tmp/current.png (1280×720) → 655×247 px
@@ -232,7 +230,6 @@ STAGE_TEMPLATES = {
     "GAME_START":              STAGE_GAME_START_TEMPLATE,
     "GAME_RELAY":              STAGE_GAME_RELAY_TEMPLATE,
     "ANTI_BOT":                STAGE_ANTI_BOT_TEMPLATE,
-    "CONNECTION_LOST":         STAGE_CONNECTION_LOST_TEMPLATE,
     "INACTIVE":                STAGE_INACTIVE_TEMPLATE,
     "GAME_COMPLETE":           STAGE_GAME_COMPLETE_TEMPLATE,
     "OVERTAKE_BREAK_SCORE":    STAGE_OVERTAKE_BREAK_SCORE_TEMPLATE,
@@ -279,7 +276,6 @@ STAGE_REGIONS = {
     "ENTER_LEAGUE":            STAGE_ENTER_LEAGUE_REGION,
     "LEAGUE_RESULTS":          STAGE_LEAGUE_RESULTS_REGION,
     "ANTI_BOT":                STAGE_ANTI_BOT_REGION,
-    "CONNECTION_LOST":         STAGE_CONNECTION_LOST_REGION,
     "INACTIVE":                STAGE_INACTIVE_REGION,
     "EMU_HOME":                STAGE_EMU_HOME_REGION,
     "PREVIOUS_RANK_RESULTS":   STAGE_PREVIOUS_RANK_RESULTS_REGION,
@@ -293,7 +289,6 @@ DETECTION_ALWAYS_STAGES = (
     # popup ประกาศตรวจก่อนเสมอ — ต้องมาก่อน PARTY_RUN เพราะหัว popup ชน template PARTY_RUN ได้
     "ANNOUNCEMENT_POPUP",
     "EMU_HOME",
-    "CONNECTION_LOST",
     "INACTIVE",
     "FRIEND_INFO_POPUP",
     "ANR_DIALOG",
@@ -394,7 +389,6 @@ ACCEPT_OVERTAKE_BREAK_SCORE_BUTTON = (465, 640)
 RELIC_COMPLETE_BUTTON = (530, 110)
 RELIC_CLAIM_BUTTON = (640, 580)
 RELIC_CLOSE_BUTTON = (1076, 154)
-CONNECTION_LOST_RELOAD_BUTTON = (640, 460)
 INACTIVE_RELOAD_BUTTON = (640, 460)
 MAIL_BOX_BUTTON = (686, 677)
 MAIL_BOX_LIVES_TAB_BUTTON = (630, 148)
