@@ -221,13 +221,126 @@
     .gold-number::-webkit-inner-spin-button:hover {
       filter: sepia(1) hue-rotate(18deg) saturate(1.6) brightness(1.25);
     }
-    .lightning-flicker {
-      animation: lightning-flicker 10s ease-in-out infinite;
+    /* --- Lightning Storm Background --- */
+    .lightning-storm {
+      background: #05070a;
     }
-    @keyframes lightning-flicker {
-      0%, 92%, 100% { opacity: 0.05; }
-      93%, 96% { opacity: 0.35; filter: drop-shadow(0 0 6px rgba(212,175,55,0.6)); }
+    .lightning-storm::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 900px 500px at 15% 8%, rgba(212,175,55,0.10), transparent 55%),
+        radial-gradient(ellipse 700px 400px at 85% 95%, rgba(59,130,246,0.10), transparent 55%),
+        radial-gradient(ellipse 600px 300px at 50% 50%, rgba(139,92,246,0.06), transparent 60%);
+      pointer-events: none;
     }
+    .lightning-flash {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 1100px 650px at 30% 20%, rgba(255,250,210,0.30), transparent 55%),
+        radial-gradient(ellipse 1000px 600px at 70% 15%, rgba(255,240,180,0.24), transparent 50%),
+        radial-gradient(ellipse 1300px 800px at 50% 35%, rgba(255,255,255,0.18), transparent 65%),
+        radial-gradient(ellipse 900px 600px at 50% 50%, rgba(255,255,255,0.08), transparent 70%);
+      opacity: 0;
+      animation: storm-flash 8.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .lightning-flash-2 {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 950px 550px at 85% 30%, rgba(147,197,253,0.20), transparent 55%),
+        radial-gradient(ellipse 850px 550px at 15% 45%, rgba(253,224,71,0.16), transparent 55%),
+        radial-gradient(ellipse 1100px 700px at 50% 40%, rgba(255,255,255,0.10), transparent 65%);
+      opacity: 0;
+      animation: storm-flash-2 13s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes storm-flash {
+      0%, 14%, 100% { opacity: 0; }
+      14.6% { opacity: 0.88; }
+      15% { opacity: 0.14; }
+      15.4% { opacity: 0.95; }
+      15.9% { opacity: 0.08; }
+      16.6% { opacity: 0; }
+      42%, 42.5% { opacity: 0; }
+      43% { opacity: 0.58; }
+      43.5% { opacity: 0; }
+      44% { opacity: 0.52; }
+      44.4% { opacity: 0; }
+      71% { opacity: 0; }
+      71.6% { opacity: 0.70; }
+      72% { opacity: 0.12; }
+      72.5% { opacity: 0.78; }
+      73% { opacity: 0; }
+      88% { opacity: 0; }
+      88.4% { opacity: 0.42; }
+      88.8% { opacity: 0; }
+    }
+    @keyframes storm-flash-2 {
+      0%, 30%, 100% { opacity: 0; }
+      30.8% { opacity: 0.55; }
+      31.2% { opacity: 0.10; }
+      31.6% { opacity: 0.65; }
+      32% { opacity: 0; }
+      58% { opacity: 0; }
+      58.6% { opacity: 0.50; }
+      59% { opacity: 0.12; }
+      59.4% { opacity: 0.62; }
+      60% { opacity: 0; }
+      79% { opacity: 0; }
+      79.5% { opacity: 0.42; }
+      80% { opacity: 0; }
+    }
+    .lightning-bolt {
+      filter: drop-shadow(0 0 3px rgba(255,248,200,1)) drop-shadow(0 0 8px rgba(212,175,55,0.95)) drop-shadow(0 0 18px rgba(244,228,188,0.5));
+      animation: bolt-flicker var(--dur,6.5s) ease-in-out infinite;
+      animation-delay: var(--delay,0s);
+      opacity: 0;
+    }
+    .lightning-bolt-strong {
+      filter: drop-shadow(0 0 4px rgba(255,255,255,1)) drop-shadow(0 0 10px rgba(212,175,55,1)) drop-shadow(0 0 22px rgba(253,224,71,0.7));
+    }
+    @keyframes bolt-flicker {
+      0%, 72%, 100% { opacity: 0; transform: translateY(0) scaleY(1); }
+      73% { opacity: 0; }
+      73.8% { opacity: 1; }
+      74.3% { opacity: 0.12; }
+      74.9% { opacity: 0.98; }
+      75.6% { opacity: 0.15; }
+      76.2% { opacity: 0.85; }
+      77% { opacity: 0; }
+      89% { opacity: 0; }
+      89.6% { opacity: 0.55; }
+      90% { opacity: 0.08; }
+      90.5% { opacity: 0.70; }
+      91% { opacity: 0; }
+    }
+    /* ฟ้าผ่าแบบรัวๆ ถี่พิเศษ — ใช้กับ bolt ตัวเล็กที่พริบถี่ */
+    .bolt-rapid {
+      animation: bolt-rapid-flicker var(--dur,5s) ease-in-out infinite;
+      animation-delay: var(--delay,0s);
+    }
+    @keyframes bolt-rapid-flicker {
+      0%, 65%, 100% { opacity: 0; }
+      66% { opacity: 0; }
+      66.7% { opacity: 0.9; }
+      67.1% { opacity: 0.10; }
+      67.6% { opacity: 0.88; }
+      68% { opacity: 0; }
+      81% { opacity: 0; }
+      81.8% { opacity: 0.60; }
+      82.2% { opacity: 0; }
+      82.7% { opacity: 0.50; }
+      83% { opacity: 0; }
+      93% { opacity: 0; }
+      93.6% { opacity: 0.45; }
+      94% { opacity: 0; }
+    }
+    .lightning-flicker { animation: bolt-flicker 6.5s ease-in-out infinite; }
+    @keyframes lightning-flicker { 0%, 92%, 100% { opacity: 0.05; } 93%, 96% { opacity: 0.35; filter: drop-shadow(0 0 6px rgba(212,175,55,0.6)); } }
     /* View mode segmented control */
     .view-toggle {
       background: #121212;
@@ -277,14 +390,16 @@
 <body class="text-[#f5f0e8] font-sans antialiased selection:bg-[#d4c4a8] selection:text-[#0a0a0a]">
   <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"><defs><linearGradient id="goldLineGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs></svg>
   <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-    <div class="absolute inset-0 bg-gradient-to-br from-[#0a0a0a] via-[#121212] to-[#0a0a0a]"></div>
-    <svg class="absolute inset-0 w-full h-full opacity-[0.07]" preserveAspectRatio="none" viewBox="0 0 1200 800" aria-hidden="true">
-      <defs><linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4e4bc"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs>
-      <path d="M180 0 L130 220 L200 220 L80 480 L150 480 L60 760" stroke="url(#boltGrad)" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="lightning-flicker" style="animation-delay:0s"/>
-      <path d="M860 0 L800 190 L860 190 L740 400 L800 400 L690 730" stroke="url(#boltGrad)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="lightning-flicker" style="animation-delay:3.2s"/>
-      <path d="M520 0 L480 160 L530 160 L430 360 L480 360 L410 620" stroke="url(#boltGrad)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" class="lightning-flicker" style="animation-delay:6.1s"/>
-      <path d="M1020 10 L980 140 L1020 140 L950 300 L990 300 L930 480" stroke="url(#boltGrad)" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" class="lightning-flicker" style="animation-delay:8.7s"/>
-    </svg>
+    <!-- BG.png 1376x768 เป็นพื้นหลังหลัก — cover เต็มจอ -->
+    <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" style="background-image: url('/templates/BG.png');"></div>
+    <!-- overlay เข้ม + เบลอเล็กน้อยให้การ์ดอ่านง่าย เข้ากับธีมดำ-ทอง -->
+    <div class="absolute inset-0 bg-gradient-to-br from-black/55 via-[#0a0a0a]/45 to-black/65 backdrop-blur-[0.5px]"></div>
+    <div class="absolute inset-0 opacity-30" style="background: radial-gradient(ellipse 800px 400px at 50% 0%, rgba(212,175,55,0.08), transparent 60%);"></div>
+    <!-- แสงวาบฟ้าผ่า แบบไม่มีขีดสายฟ้า -->
+    <div class="lightning-flash"></div>
+    <div class="lightning-flash-2"></div>
+    <!-- เมฆพายุล่าง -->
+    <div class="absolute bottom-0 left-0 right-0 h-[45%] bg-gradient-to-t from-black/60 via-[#0a1020]/30 to-transparent"></div>
   </div>
   <header class="sticky top-0 z-40 backdrop-blur-md bg-[#0a0a0a]/80 border-b border-[#2a2a2a]">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
